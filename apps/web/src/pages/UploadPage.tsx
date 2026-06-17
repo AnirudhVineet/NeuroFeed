@@ -8,7 +8,8 @@ const STEPS: IngestStatus[] = [
   'uploaded',
   'parsing',
   'embedding',
-  'ready_for_generation',
+  'generating',
+  'ready',
 ];
 
 export default function UploadPage() {

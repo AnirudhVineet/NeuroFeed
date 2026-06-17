@@ -86,7 +86,7 @@ async def status_stream(doc_id: str, request: Request) -> StreamingResponse:
 
         q = await bus.subscribe(doc_id)
         try:
-            terminal = {"ready", "ready_for_generation", "error"}
+            terminal = {"ready", "error"}
             while True:
                 if await request.is_disconnected():
                     break

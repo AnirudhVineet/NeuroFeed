@@ -20,7 +20,7 @@ export function subscribeStatus(
   onDone?: (final: StatusEvent) => void,
 ): () => void {
   const es = new EventSource(`${BASE}/api/ingest/${encodeURIComponent(docId)}/status`);
-  const terminal = new Set<IngestStatus>(['ready', 'ready_for_generation', 'error']);
+  const terminal = new Set<IngestStatus>(['ready', 'error']);
 
   es.onmessage = (ev) => {
     try {

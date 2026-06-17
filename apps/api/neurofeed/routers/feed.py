@@ -51,7 +51,7 @@ async def get_feed(
     m_res = sb.table("mastery").select("concept_id,score").eq("user_id", user_id).execute()
     mastery = {row["concept_id"]: float(row["score"]) for row in (getattr(m_res, "data", None) or [])}
 
-    ranked = rank_artifacts(arts, mastery=mastery)[:limit]
+    ranked = rank_artifacts(arts, mastery=mastery, limit=limit)
 
     # Stamp into feed_items so analytics knows what we showed
     if ranked:

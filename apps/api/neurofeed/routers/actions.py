@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..deps import get_supabase_admin
 from ..services.llm.json_gen import generate_json
 from ..services.llm.router import fallback_client, route_client
+from ..services.mastery import recompute_for_user
 
 router = APIRouter(prefix="/api", tags=["actions"])
 
@@ -34,6 +35,11 @@ async def post_event(evt: EventIn) -> dict[str, str]:
     sb.table("learning_events").insert(
         {"user_id": evt.user_id, "type": evt.type, "payload": evt.payload}
     ).execute()
+    if evt.type in {"quiz_answer", "flashcard_review"}:
+        try:
+            recompute_for_user(evt.user_id)
+        except Exception:
+            pass
     return {"ok": "true"}
 
 

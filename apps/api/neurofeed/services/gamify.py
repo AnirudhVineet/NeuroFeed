@@ -64,7 +64,7 @@ def _achievements(events: list[dict[str, Any]]) -> list[str]:
 
 
 # ---------- XP ----------
-def _xp_for_event(e: dict[str, Any]) -> int:
+def xp_for_event(e: dict[str, Any]) -> int:
     t = e["type"]
     payload = e.get("payload") or {}
     if t == "quiz_answer":
@@ -82,7 +82,7 @@ def _cap_daily(events: list[dict[str, Any]]) -> dict[date, int]:
             d = datetime.fromisoformat(str(ts).replace("Z", "+00:00")).astimezone(timezone.utc).date()
         except Exception:
             continue
-        by_day[d] = min(DAILY_XP_CAP, by_day.get(d, 0) + _xp_for_event(e))
+        by_day[d] = min(DAILY_XP_CAP, by_day.get(d, 0) + xp_for_event(e))
     return by_day
 
 

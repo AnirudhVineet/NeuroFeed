@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CardActions } from '@/components/feed/CardActions';
 import { FlashcardCard } from '@/components/feed/FlashcardCard';
 import { QuizCard } from '@/components/feed/QuizCard';
@@ -45,9 +46,24 @@ export default function FeedPage() {
 
   const merged = useMemo(() => [...items, ...injected], [items, injected]);
 
-  if (!userId) return <EmptyState message="Sign in to see your feed." />;
+  if (!userId)
+    return <EmptyState message="Sign in to see your feed." cta={<Link to="/auth" className="text-accent underline">Sign in</Link>} />;
   if (error) return <EmptyState message={error} />;
-  if (!items.length) return <EmptyState message="Upload a document to seed your feed." />;
+  if (!items.length)
+    return (
+      <EmptyState
+        message="Your feed is empty."
+        sub="Upload a document to generate your first cards, quizzes, and reels."
+        cta={
+          <Link
+            to="/upload"
+            className="inline-block mt-2 px-4 py-2 rounded-full bg-accent text-white"
+          >
+            Upload now
+          </Link>
+        }
+      />
+    );
 
   return (
     <div className="feed">
@@ -134,10 +150,12 @@ function CardBody({
   }
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message, sub, cta }: { message: string; sub?: string; cta?: React.ReactNode }) {
   return (
-    <div className="h-dvh flex items-center justify-center p-8 text-center text-muted">
-      {message}
+    <div className="h-dvh flex flex-col items-center justify-center p-8 text-center">
+      <p className="text-lg">{message}</p>
+      {sub && <p className="text-muted mt-1 text-sm max-w-sm">{sub}</p>}
+      {cta}
     </div>
   );
 }

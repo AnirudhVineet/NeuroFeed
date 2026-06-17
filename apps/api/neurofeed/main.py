@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import actions, documents, feed, gamify, health, ingest, llm, tts, tutor
+from .routers import actions, analytics, documents, feed, gamify, health, ingest, llm, tts, tutor
 
 
 def create_app() -> FastAPI:
@@ -27,6 +27,7 @@ def create_app() -> FastAPI:
     app.include_router(tutor.router)
     app.include_router(tts.router)
     app.include_router(gamify.router)
+    app.include_router(analytics.router)
     return app
 
 

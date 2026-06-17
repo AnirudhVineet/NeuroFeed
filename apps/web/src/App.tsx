@@ -4,10 +4,13 @@ import UploadPage from './pages/UploadPage';
 import TutorPage from './pages/TutorPage';
 import DashboardPage from './pages/DashboardPage';
 import AuthPage from './pages/AuthPage';
+import { TopHud } from '@/components/gamify/TopHud';
+import { AchievementToast } from '@/components/gamify/AchievementToast';
 
 export default function App() {
   return (
     <div className="min-h-dvh flex flex-col">
+      <TopHud />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<FeedPage />} />
@@ -17,6 +20,7 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
         </Routes>
       </main>
+      <AchievementToast />
       <BottomNav />
     </div>
   );
@@ -31,7 +35,7 @@ function BottomNav() {
     { to: '/dashboard', label: 'You' },
   ];
   return (
-    <nav className="sticky bottom-0 inset-x-0 bg-ink/90 backdrop-blur border-t border-white/10 grid grid-cols-4 text-sm">
+    <nav className="sticky bottom-0 inset-x-0 bg-ink/90 backdrop-blur border-t border-white/10 grid grid-cols-4 text-sm z-20">
       {tabs.map((t) => {
         const active = pathname === t.to;
         return (

@@ -12,6 +12,7 @@ import {
   type FeedItem,
 } from '@/lib/feed';
 import { supabase } from '@/lib/supabase';
+import { useGamify } from '@/state/gamify';
 import type {
   Flashcard,
   QuizItem,
@@ -25,6 +26,7 @@ export default function FeedPage() {
   const [overrides, setOverrides] = useState<Record<string, { title: string; body: string } | null>>({});
   const [injected, setInjected] = useState<FeedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const refreshGamify = useGamify((s) => s.refreshAfter);
 
   useEffect(() => {
     void (async () => {
@@ -53,12 +55,21 @@ export default function FeedPage() {
         <section key={`${it.id}-${it.created_at}`} className="relative">
           <CardBody item={it} override={overrides[it.id] ?? null} userId={userId} />
           <CardActions
-            onLike={() => userId && postEvent(userId, 'like', { artifact_id: it.id })}
-            onSave={() => userId && postEvent(userId, 'save', { artifact_id: it.id })}
+            onLike={() => {
+              if (!userId) return;
+              void postEvent(userId, 'like', { artifact_id: it.id });
+              refreshGamify(userId);
+            }}
+            onSave={() => {
+              if (!userId) return;
+              void postEvent(userId, 'save', { artifact_id: it.id });
+              refreshGamify(userId);
+            }}
             onShare={() => navigator.share?.({ title: 'NeuroFeed', text: 'Check this out' })}
             onExplainSimpler={async () => {
               const r = await explainSimpler(it.id, userId);
               setOverrides((m) => ({ ...m, [it.id]: r }));
+              refreshGamify(userId);
             }}
             onQuizMe={
               it.concept_id
@@ -94,6 +105,7 @@ function CardBody({
   override: { title: string; body: string } | null;
   userId: string;
 }) {
+  const refreshGamify = useGamify((s) => s.refreshAfter);
   switch (item.type) {
     case 'swipe_card':
       return <SwipeCard data={item.payload as SwipeCardData} override={override} />;
@@ -103,11 +115,12 @@ function CardBody({
       return (
         <QuizCard
           data={item.payload as QuizItem}
-          onAnswer={(chosen, correct) =>
-            postEvent(userId, 'quiz_answer', {
+          onAnswer={(chosen, correct) => {
+            void postEvent(userId, 'quiz_answer', {
               artifact_id: item.id, chosen, correct,
-            })
-          }
+            });
+            refreshGamify(userId);
+          }}
         />
       );
     case 'reel_script':

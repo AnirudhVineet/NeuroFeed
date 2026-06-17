@@ -2,7 +2,7 @@
 name = "neurofeed-api"
 version = "0.0.1"
 description = "NeuroFeed FastAPI backend"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.30.6",
@@ -39,4 +39,4 @@ include = ["neurofeed*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"

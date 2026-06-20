@@ -3,6 +3,7 @@ import FeedPage from './pages/FeedPage';
 import UploadPage from './pages/UploadPage';
 import TutorPage from './pages/TutorPage';
 import DashboardPage from './pages/DashboardPage';
+import ChapterHubPage from './pages/ChapterHubPage';
 import AuthPage from './pages/AuthPage';
 import { TopHud } from '@/components/gamify/TopHud';
 import { AchievementToast } from '@/components/gamify/AchievementToast';
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/tutor" element={<TutorPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/doc/:id" element={<ChapterHubPage />} />
           <Route path="/auth" element={<AuthPage />} />
         </Routes>
       </main>

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { postEvent } from '@/lib/feed';
+import { inferSubject } from '@/lib/subjects';
 import { ttsUrl } from '@/lib/tts';
 import { InterestButtons } from './InterestButtons';
+import { QuickLearningSheet } from './QuickLearningSheet';
 import { SceneVisual } from './SceneVisual';
 import { SceneSubtitle } from './SceneSubtitle';
 import { TutorPanel, type TutorContext } from './TutorPanel';
 import type {
-  AnimationType,
   ReelScene,
   ReelScript,
   SceneType,
@@ -64,6 +65,7 @@ export function ReelCard({
   const [fullscreen, setFullscreen] = useState(false);
   const [speed, setSpeed] = useState<Speed>(() => loadSavedSpeed());
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
+  const [quickLearningOpen, setQuickLearningOpen] = useState(false);
   const speedRef = useRef<Speed>(speed);
 
   const normalised = useMemo(() => normaliseReel(data), [data]);
@@ -410,13 +412,21 @@ export function ReelCard({
         </motion.div>
       </AnimatePresence>
 
-      {/* Layer 1: vignette so subtitles + UI chrome read against any visual. */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-black/45" />
+      {/* Vignette so subtitles + chrome read against any visual. Bottom is
+          darker so the left-bottom info panel stays legible. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/40" />
 
-      {/* Layer 6: scene progress bars */}
-      <div className="absolute left-4 right-24 top-14 z-30 flex gap-1">
+      {/* TOP: scene progress segments. Each segment is tappable to jump scenes
+          — replaces the old standalone scene dots and the scene-type label. */}
+      <div className="absolute left-3 right-3 top-3 z-30 flex gap-1">
         {scenes.map((_, i) => (
-          <div key={i} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/15">
+          <button
+            key={i}
+            data-action
+            onClick={(e) => { e.stopPropagation(); jumpToScene(i); }}
+            aria-label={`Go to scene ${i + 1}`}
+            className="h-1 flex-1 overflow-hidden rounded-full bg-white/20"
+          >
             <div
               className="h-full bg-white"
               style={{
@@ -424,44 +434,12 @@ export function ReelCard({
                 transition: i === sceneIdx ? 'width 120ms linear' : 'width 300ms ease',
               }}
             />
-          </div>
+          </button>
         ))}
       </div>
 
-      {/* Top: scene meta */}
-      <div className="absolute left-4 right-24 top-20 z-30 flex items-baseline gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/55">
-          {(scene.scene_type ?? 'scene').replace('_', ' ')}
-        </span>
-        <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-white/80">
-          {normalised.title || normalised.topic}
-        </h3>
-        <span className="text-[11px] tabular-nums text-white/55">
-          {sceneIdx + 1}/{scenes.length}
-        </span>
-      </div>
-
-      {/* Layer 4: scene title — compact header above the visual content. The
-          visual itself is the star; this is just a punchy label. */}
-      <div className="pointer-events-none absolute left-4 right-24 top-28 z-30 max-h-[14vh]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`title-${sceneIdx}`}
-            {...transitionVariant(scene.transition_type)}
-            className="flex max-w-[min(94vw,520px)] flex-col gap-1.5"
-          >
-            <SceneTitle
-              text={scene.subtitle}
-              kind={scene.animation_type}
-              highlight={scene.highlight_words}
-              hue={hue}
-              sceneType={scene.scene_type}
-            />
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Layer 5: subtitle band — karaoke narration near the bottom. */}
+      {/* Karaoke subtitle band — pulled tighter to the bottom info panel,
+          functioning as the spoken caption layer. */}
       <SceneSubtitle
         narration={scene.narration}
         elapsedSec={elapsedSec}
@@ -470,7 +448,7 @@ export function ReelCard({
         hue={hue}
       />
 
-      {/* Pause overlay */}
+      {/* Pause overlay — central play glyph when paused (kept). */}
       <AnimatePresence>
         {paused && unlocked && (
           <motion.div
@@ -487,92 +465,50 @@ export function ReelCard({
         )}
       </AnimatePresence>
 
-      {/* Scene dots */}
-      <div className="absolute bottom-20 left-1/2 z-30 flex -translate-x-1/2 gap-1.5">
-        {scenes.map((_, i) => (
-          <button
-            key={i}
-            data-action
-            onClick={(e) => { e.stopPropagation(); jumpToScene(i); }}
-            className={`h-1.5 rounded-full transition-all ${
-              i === sceneIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/40'
-            }`}
-            aria-label={`Go to scene ${i + 1}`}
-          />
-        ))}
-      </div>
-
-      {/* Pause/play + speed cluster (bottom-left) */}
-      <div className="absolute bottom-[5.5rem] left-4 z-30 flex items-center gap-2">
-        <button
-          data-action
-          onClick={(e) => { e.stopPropagation(); togglePause(); }}
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur hover:bg-black/60"
-          aria-label={paused || !unlocked ? 'Play' : 'Pause'}
-        >
-          <span className="text-sm leading-none">{paused || !unlocked ? '▶' : '❚❚'}</span>
-          <span>{!unlocked ? 'Play' : paused ? 'Play' : 'Pause'}</span>
-        </button>
-        <div className="relative">
-          <button
-            data-action
-            onClick={(e) => { e.stopPropagation(); setSpeedMenuOpen((v) => !v); }}
-            className="inline-flex items-center rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/90 backdrop-blur hover:bg-black/60"
-            aria-label={`Playback speed ${speed}x`}
-            aria-haspopup="menu"
-            aria-expanded={speedMenuOpen}
-            title="Playback speed (Shift+> / Shift+<)"
-          >
-            {formatSpeed(speed)}x
-          </button>
-          <AnimatePresence>
-            {speedMenuOpen && (
-              <motion.div
-                data-action
-                initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.96 }}
-                transition={{ duration: 0.14 }}
-                role="menu"
-                className="absolute bottom-full left-0 z-40 mb-2 min-w-[7rem] overflow-hidden rounded-xl border border-white/10 bg-black/85 p-1 text-xs text-white shadow-xl backdrop-blur-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {SPEEDS.map((s) => {
-                  const active = s === speed;
-                  return (
-                    <button
-                      key={s}
-                      role="menuitemradio"
-                      aria-checked={active}
-                      onClick={() => {
-                        setSpeed(s);
-                        setSpeedMenuOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left tabular-nums ${
-                        active ? 'bg-white/15 font-semibold text-white' : 'text-white/80 hover:bg-white/10'
-                      }`}
-                    >
-                      <span>{formatSpeed(s)}x</span>
-                      {active && <span aria-hidden>✓</span>}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Right action rail */}
-      <div className="absolute right-3 bottom-24 z-30 flex flex-col items-center gap-3">
+      {/* RIGHT RAIL — vertical action stack in Instagram-Reels order.
+          Quick Learning (Practice) lives at the top so it's the most
+          discoverable surface for everything that's not the reel itself. */}
+      <div className="absolute right-3 bottom-20 z-30 flex flex-col items-center gap-3">
+        <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
+        <RailBtn glyph="↗" title="Share" onClick={onShare} />
+        <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} />
         <InterestButtons
           userId={userId ?? null}
           target={{ artifactId, documentId, conceptId }}
         />
-        <RailBtn label="↗" title="Share" onClick={onShare} />
-        <RailBtn label="?" title="Ask AI Tutor" onClick={() => setTutorOpen(true)} />
-        <RailBtn label="⬇" title="Download" onClick={onDownload} />
-        <RailBtn label={fullscreen ? '⤡' : '⛶'} title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'} onClick={toggleFullscreen} />
+        <SpeedRailBtn
+          speed={speed}
+          open={speedMenuOpen}
+          onToggle={() => setSpeedMenuOpen((v) => !v)}
+          onSelect={(s) => { setSpeed(s); setSpeedMenuOpen(false); }}
+        />
+        <RailBtn glyph="⬇" title="Download" onClick={onDownload} />
+        <RailBtn
+          glyph={fullscreen ? '⤡' : '⛶'}
+          title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          onClick={toggleFullscreen}
+        />
+      </div>
+
+      {/* LEFT BOTTOM — creator + subject + topic + short description. This is
+          the Instagram-Reels caption area: who made it, what it's about, and
+          a single-line teaser. */}
+      <div className="pointer-events-none absolute bottom-20 left-4 right-20 z-30 flex flex-col gap-1.5">
+        <div className="pointer-events-auto flex items-center gap-2 text-[11px] font-medium text-white/85">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[11px]">N</span>
+          <span>NeuroFeed</span>
+          <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/75">
+            {inferSubject(normalised.topic || normalised.title)}
+          </span>
+        </div>
+        <h2 className="line-clamp-2 text-[clamp(1rem,3.6vw,1.25rem)] font-bold leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
+          {normalised.title || normalised.topic}
+        </h2>
+        {normalised.hook && (
+          <p className="line-clamp-2 max-w-[min(92vw,420px)] text-xs leading-snug text-white/80 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+            {normalised.hook}
+          </p>
+        )}
       </div>
 
       <TutorPanel
@@ -580,111 +516,93 @@ export function ReelCard({
         ctx={tutorContext}
         onClose={() => setTutorOpen(false)}
       />
+
+      <QuickLearningSheet
+        open={quickLearningOpen}
+        onClose={() => setQuickLearningOpen(false)}
+        topic={normalised.topic || normalised.title}
+        documentId={documentId}
+        conceptId={conceptId ?? null}
+        userId={userId ?? null}
+        onOpenTutor={() => { setQuickLearningOpen(false); setTutorOpen(true); }}
+      />
     </div>
   );
 }
 
 function RailBtn({
-  label, onClick, title,
-}: { label: string; onClick: () => void; title: string }) {
+  glyph, onClick, title, accent = false,
+}: { glyph: string; onClick: () => void; title: string; accent?: boolean }) {
+  const base = accent
+    ? 'border-accent/60 bg-accent/30 text-white hover:bg-accent/45'
+    : 'border-white/15 bg-black/45 text-white hover:bg-black/60';
   return (
     <button
       title={title}
+      aria-label={title}
       data-action
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className="h-11 w-11 rounded-full border border-white/15 bg-black/45 text-xl leading-none text-white backdrop-blur hover:bg-black/60"
+      className={`h-11 w-11 rounded-full border text-xl leading-none backdrop-blur transition-colors ${base}`}
     >
-      {label}
+      {glyph}
     </button>
   );
 }
 
-// -------- Scene title (compact header at top of visual area) --------
-
-function SceneTitle({
-  text,
-  kind,
-  highlight,
-  hue,
-  sceneType,
+function SpeedRailBtn({
+  speed, open, onToggle, onSelect,
 }: {
-  text: string;
-  kind: AnimationType;
-  highlight: string[];
-  hue: number;
-  sceneType: SceneType;
+  speed: Speed;
+  open: boolean;
+  onToggle: () => void;
+  onSelect: (s: Speed) => void;
 }) {
-  const safeText = text ?? '';
-  const safeHighlight = highlight ?? [];
-  const variants = subtitleVariants(kind);
-  const baseStyle = sceneType === 'hook'
-    ? 'text-[clamp(1.15rem,4.4vw,1.7rem)] font-extrabold leading-tight tracking-tight'
-    : 'text-[clamp(1rem,3.6vw,1.4rem)] font-bold leading-tight tracking-tight';
-
-  if (kind === 'kinetic_text') {
-    const words = safeText.split(/\s+/);
-    return (
-      <motion.div
-        className={`${baseStyle} drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]`}
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
-        }}
+  return (
+    <div className="relative">
+      <button
+        data-action
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        className="h-11 w-11 rounded-full border border-white/15 bg-black/45 text-[11px] font-semibold tabular-nums text-white backdrop-blur hover:bg-black/60"
+        aria-label={`Playback speed ${speed}x`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Playback speed (Shift+> / Shift+<)"
       >
-        {words.map((w, i) => (
-          <motion.span
-            key={i}
-            className="mr-1.5 inline-block"
-            variants={{
-              hidden: { opacity: 0, y: 14, scale: 0.9 },
-              visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 22 } },
-            }}
+        {formatSpeed(speed)}x
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            data-action
+            initial={{ opacity: 0, x: 8, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 6, scale: 0.96 }}
+            transition={{ duration: 0.14 }}
+            role="menu"
+            className="absolute right-full top-1/2 z-40 mr-2 min-w-[7rem] -translate-y-1/2 overflow-hidden rounded-xl border border-white/10 bg-black/85 p-1 text-xs text-white shadow-xl backdrop-blur-lg"
+            onClick={(e) => e.stopPropagation()}
           >
-            {renderHighlighted(w, safeHighlight, hue, i)}
-          </motion.span>
-        ))}
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      className={`${baseStyle} drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]`}
-      {...variants}
-    >
-      <Highlighted text={safeText} highlight={safeHighlight} hue={hue} />
-    </motion.div>
-  );
-}
-
-function renderHighlighted(word: string, highlight: string[], hue: number, key: number) {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const isHit = highlight.some((h) => norm(h) === norm(word));
-  if (!isHit) return <span key={key}>{word}</span>;
-  return (
-    <span
-      key={key}
-      className="rounded-md px-1 py-0.5"
-      style={{
-        background: `linear-gradient(135deg, hsl(${hue} 80% 55% / 0.6), hsl(${(hue + 60) % 360} 80% 55% / 0.6))`,
-        boxShadow: `0 0 18px hsl(${hue} 80% 60% / 0.45)`,
-      }}
-    >
-      {word}
-    </span>
-  );
-}
-
-function Highlighted({ text, highlight, hue }: { text: string; highlight: string[]; hue: number }) {
-  const tokens = text.split(/(\s+)/);
-  return (
-    <>
-      {tokens.map((t, i) =>
-        /\s+/.test(t) ? t : renderHighlighted(t, highlight, hue, i),
-      )}
-    </>
+            {SPEEDS.map((s) => {
+              const active = s === speed;
+              return (
+                <button
+                  key={s}
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => onSelect(s)}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left tabular-nums ${
+                    active ? 'bg-white/15 font-semibold text-white' : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <span>{formatSpeed(s)}x</span>
+                  {active && <span aria-hidden>✓</span>}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -697,34 +615,6 @@ type MotionSpec = {
 };
 
 type TransitionSpec = MotionSpec & { exit: Record<string, number | string> };
-
-function subtitleVariants(kind: AnimationType): MotionSpec {
-  const t = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const };
-  switch (kind) {
-    case 'zoom_in':
-      return { initial: { opacity: 0, scale: 0.7 }, animate: { opacity: 1, scale: 1 }, transition: t };
-    case 'zoom_out':
-      return { initial: { opacity: 0, scale: 1.25 }, animate: { opacity: 1, scale: 1 }, transition: t };
-    case 'slide_left':
-      return { initial: { opacity: 0, x: 80 }, animate: { opacity: 1, x: 0 }, transition: t };
-    case 'slide_right':
-      return { initial: { opacity: 0, x: -80 }, animate: { opacity: 1, x: 0 }, transition: t };
-    case 'slide_up':
-      return { initial: { opacity: 0, y: 40 }, animate: { opacity: 1, y: 0 }, transition: t };
-    case 'scale_up':
-      return { initial: { opacity: 0, scale: 0.9 }, animate: { opacity: 1, scale: 1 }, transition: t };
-    case 'highlight':
-      return { initial: { opacity: 0, filter: 'blur(6px)' }, animate: { opacity: 1, filter: 'blur(0px)' }, transition: t };
-    case 'split':
-      return { initial: { opacity: 0, scaleX: 0 }, animate: { opacity: 1, scaleX: 1 }, transition: t };
-    case 'pulse':
-      return { initial: { opacity: 0, scale: 1.05 }, animate: { opacity: 1, scale: 1 }, transition: t };
-    case 'type_writer':
-    case 'fade':
-    default:
-      return { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: t };
-  }
-}
 
 function transitionVariant(kind: TransitionType): TransitionSpec {
   const t = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const };

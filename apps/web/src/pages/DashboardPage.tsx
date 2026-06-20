@@ -237,13 +237,13 @@ function DocRow({
   return (
     <li className="rounded-2xl border border-white/10 bg-white/5 p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <Link to={`/doc/${encodeURIComponent(doc.id)}`} className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/65">{doc.subject}</span>
             <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusTone}`}>{doc.status}</span>
             <span className="text-[10px] text-white/45">· {date}</span>
           </div>
-          <h3 className="mt-1 truncate text-sm font-semibold">{doc.title}</h3>
+          <h3 className="mt-1 truncate text-sm font-semibold hover:underline">{doc.title}</h3>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-white/65 tabular-nums">
             <span>{doc.counts.reel_script} reels</span>
             <span>{doc.counts.flashcard} flashcards</span>
@@ -253,13 +253,13 @@ function DocRow({
           {doc.error && (
             <p className="mt-1 text-[11px] text-rose-300">{doc.error}</p>
           )}
-        </div>
+        </Link>
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
-            to={`/tutor?doc=${encodeURIComponent(doc.id)}`}
-            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80 hover:bg-white/10"
+            to={`/doc/${encodeURIComponent(doc.id)}`}
+            className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-white hover:bg-accent/25"
           >
-            Open chat
+            Open hub
           </Link>
           <button
             disabled={busy}

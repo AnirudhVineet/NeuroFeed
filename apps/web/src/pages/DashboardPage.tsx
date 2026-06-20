@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchAnalytics, type AnalyticsPayload, type MasteryRow } from '@/lib/analytics';
 import {
   deleteDocument,
@@ -16,12 +16,16 @@ import { useGamify } from '@/state/gamify';
 type SortKey = 'recent' | 'oldest' | 'title' | 'reels' | 'total';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('recent');
   const [subjectFilter, setSubjectFilter] = useState<Subject | 'all'>('all');
@@ -30,8 +34,11 @@ export default function DashboardPage() {
   useEffect(() => {
     void (async () => {
       const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user.id ?? null;
+      const session = data.session;
+      const uid = session?.user.id ?? null;
       setUserId(uid);
+      setEmail(session?.user.email ?? null);
+      setCreatedAt(session?.user.created_at ?? null);
       if (!uid) return;
       try {
         const [a, s, d] = await Promise.all([
@@ -47,6 +54,19 @@ export default function DashboardPage() {
       }
     })();
   }, []);
+
+  async function onSignOut() {
+    if (!window.confirm('Sign out of NeuroFeed?')) return;
+    setSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth', { replace: true });
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   const docsEnriched = useMemo(
     () => docs.map((d) => ({ ...d, subject: inferSubject(d.title) })),
@@ -124,6 +144,32 @@ export default function DashboardPage() {
           </div>
         )}
       </header>
+
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-accent/25 text-base font-bold uppercase">
+              {(email ?? '?').slice(0, 1)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-widest text-white/55">Signed in as</p>
+              <p className="truncate text-sm font-semibold">{email ?? 'Unknown'}</p>
+              {createdAt && (
+                <p className="text-[11px] text-white/45">
+                  Joined {new Date(createdAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onSignOut}
+            disabled={signingOut}
+            className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-500/20 disabled:opacity-50"
+          >
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </button>
+        </div>
+      </section>
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="Uploads" value={stats.total_uploads} />

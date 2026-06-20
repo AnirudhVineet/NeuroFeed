@@ -5,6 +5,7 @@ import TutorPage from './pages/TutorPage';
 import DashboardPage from './pages/DashboardPage';
 import ChapterHubPage from './pages/ChapterHubPage';
 import AuthPage from './pages/AuthPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import { TopHud } from '@/components/gamify/TopHud';
 import { AchievementToast } from '@/components/gamify/AchievementToast';
 
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/doc/:id" element={<ChapterHubPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/reset" element={<ResetPasswordPage />} />
         </Routes>
       </main>
       <AchievementToast />

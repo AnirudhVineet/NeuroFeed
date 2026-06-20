@@ -226,7 +226,10 @@ function FilterPill({ active, onClick }: { active: number; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className="glass-strong fixed right-3 top-[4.75rem] z-30 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft transition-all hover:scale-[1.03] active:scale-95"
+      className="glass-strong fixed right-3 z-30 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft transition-all hover:scale-[1.03] active:scale-95"
+      // Sits below the TopHud and the reel progress bars (which start at
+      // top-[4.5rem] inside the reel) so it never overlaps the topmost segment.
+      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 6.25rem)' }}
       aria-label="Open filters"
     >
       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

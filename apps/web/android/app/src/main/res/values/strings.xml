@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NeuroFeed</string>
+    <string name="title_activity_main">NeuroFeed</string>
+    <string name="package_name">com.neurofeed.app</string>
+    <string name="custom_url_scheme">com.neurofeed.app</string>
+</resources>

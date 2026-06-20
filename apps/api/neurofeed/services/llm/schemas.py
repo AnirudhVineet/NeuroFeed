@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field, conint, conlist
 
 # ---------- Summary ----------
 class Summary(BaseModel):
-    tldr: str = Field(..., max_length=400)
-    bullets: conlist(str, min_length=5, max_length=8)  # type: ignore[valid-type]
+    tldr: str = Field(..., max_length=800)
+    bullets: conlist(str, min_length=3, max_length=12)  # type: ignore[valid-type]
 
 
 # ---------- Key concept ----------
@@ -31,15 +31,18 @@ class KeyConceptList(BaseModel):
 
 # ---------- Swipe card ----------
 class SwipeCard(BaseModel):
-    title: str = Field(..., max_length=60)
-    body: str = Field(..., max_length=240, description="<=40 words")
-    icon: str = Field(..., max_length=24, description="emoji or lucide name")
-    accent_color: str = Field(..., pattern=r"^#[0-9a-fA-F]{6}$")
+    title: str = Field(..., max_length=120)
+    body: str = Field(..., max_length=400, description="<=60 words")
+    icon: str = Field(default="✨", max_length=24, description="emoji or lucide name")
+    # Loosened: LLMs produce all kinds of garbage here — "#FFF", "blue",
+    # full UUIDs with a "#" prefix, etc. We accept anything; the frontend
+    # falls back to its own palette when the value isn't a real CSS color.
+    accent_color: str = Field(default="#8B5CF6")
     concept_id: str | None = None
 
 
 class SwipeCardSet(BaseModel):
-    cards: conlist(SwipeCard, min_length=8, max_length=14)  # type: ignore[valid-type]
+    cards: conlist(SwipeCard, min_length=4, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Flashcard ----------
@@ -47,39 +50,39 @@ Difficulty = conint(ge=1, le=3)  # type: ignore[valid-type]
 
 
 class Flashcard(BaseModel):
-    question: str = Field(..., max_length=240)
-    answer: str = Field(..., max_length=400)
+    question: str = Field(..., max_length=400)
+    answer: str = Field(..., max_length=600)
     concept_id: str | None = None
-    difficulty: Difficulty
+    difficulty: Difficulty = 2  # type: ignore[assignment]
 
 
 class FlashcardSet(BaseModel):
-    cards: conlist(Flashcard, min_length=10, max_length=20)  # type: ignore[valid-type]
+    cards: conlist(Flashcard, min_length=5, max_length=30)  # type: ignore[valid-type]
 
 
 # ---------- Quiz ----------
 class QuizItem(BaseModel):
-    stem: str = Field(..., max_length=300)
-    options: conlist(str, min_length=4, max_length=4)  # type: ignore[valid-type]
-    answer_index: conint(ge=0, le=3)  # type: ignore[valid-type]
-    explanation: str = Field(..., max_length=240)
+    stem: str = Field(..., max_length=500)
+    options: conlist(str, min_length=2, max_length=6)  # type: ignore[valid-type]
+    answer_index: conint(ge=0, le=5)  # type: ignore[valid-type]
+    explanation: str = Field(default="", max_length=500)
     source_chunk_id: int | None = None
 
 
 class QuizSet(BaseModel):
-    items: conlist(QuizItem, min_length=8, max_length=12)  # type: ignore[valid-type]
+    items: conlist(QuizItem, min_length=3, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Learning path ----------
 class LearningPathStep(BaseModel):
     order: conint(ge=1)  # type: ignore[valid-type]
-    concept_id: str
-    goal: str = Field(..., max_length=200)
+    concept_id: str = ""
+    goal: str = Field(..., max_length=400)
     artifact_ids: list[str] = Field(default_factory=list)
 
 
 class LearningPath(BaseModel):
-    steps: conlist(LearningPathStep, min_length=3, max_length=15)  # type: ignore[valid-type]
+    steps: conlist(LearningPathStep, min_length=2, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Reel script ----------
@@ -118,15 +121,18 @@ MusicMood = Literal["uplifting", "curious", "intense", "dreamy", "playful"]
 
 
 class ReelScene(BaseModel):
-    scene_type: SceneType
-    narration: str = Field(..., min_length=60, max_length=600)
-    subtitle: str = Field(..., min_length=3, max_length=80)
-    image_prompt: str = Field(..., min_length=10, max_length=240)
-    animation_type: AnimationType
-    transition_type: TransitionType
+    # All Literal types loosened to plain strings: LLMs frequently pick
+    # variants like "key_concept" or "visualize" that aren't in the enum.
+    # The frontend's `normaliseReel` defaults anything unknown sensibly.
+    scene_type: str = Field(default="concept", max_length=40)
+    narration: str = Field(..., min_length=10, max_length=1200)
+    subtitle: str = Field(..., min_length=1, max_length=160)
+    image_prompt: str = Field(default="", max_length=400)
+    animation_type: str = Field(default="fade", max_length=40)
+    transition_type: str = Field(default="fade", max_length=40)
     highlight_words: list[str] = Field(default_factory=list)
-    duration_sec: float = Field(..., gt=3.0, le=15.0)
-    visual_kind: VisualKind
+    duration_sec: float = Field(default=6.0, ge=1.0, le=30.0)
+    visual_kind: str = Field(default="flowchart", max_length=40)
     # Optional structured payload the visual renderer uses to draw the scene
     # accurately (chart points, network nodes, equation TeX, etc.). Schema is
     # intentionally open — see VISUAL_SPEC.md in the frontend for shapes.
@@ -134,11 +140,11 @@ class ReelScene(BaseModel):
 
 
 class ReelScript(BaseModel):
-    topic: str = Field(..., max_length=120)
-    title: str = Field(..., max_length=120)
-    hook: str = Field(..., max_length=300)
-    music_mood: MusicMood
-    scenes: conlist(ReelScene, min_length=5, max_length=10)  # type: ignore[valid-type]
+    topic: str = Field(..., max_length=240)
+    title: str = Field(default="", max_length=240)
+    hook: str = Field(default="", max_length=600)
+    music_mood: str = Field(default="curious", max_length=40)
+    scenes: conlist(ReelScene, min_length=2, max_length=15)  # type: ignore[valid-type]
 
 
 # ---------- Tutor ----------

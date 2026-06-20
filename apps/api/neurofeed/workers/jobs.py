@@ -137,55 +137,60 @@ async def generate_job(*, doc_id: str) -> None:
             for i, c in enumerate(concept_set.concepts)
         ]
 
-        # Fan out — Featherless client semaphore caps at 4 concurrent automatically.
-        results = await asyncio.gather(
-            gen.gen_summary(chunks),
-            gen.gen_swipe_cards(chunks, concepts_for_prompt),
-            gen.gen_flashcards(chunks, concepts_for_prompt),
-            gen.gen_quiz(chunks),
-            gen.gen_learning_path(concepts_for_prompt),
-            return_exceptions=True,
+        # Helper: persist one artifact immediately so the feed surfaces it as
+        # soon as it's ready. Avoids the "0 items until the entire job finishes"
+        # UX when concurrency is throttled (e.g. Featherless serial mode).
+        def _persist(row: dict[str, Any]) -> None:
+            try:
+                sb.table("artifacts").insert(row).execute()
+            except Exception:
+                log.exception("artifact insert failed (doc=%s type=%s)", doc_id, row.get("type"))
+
+        async def _run_and_persist(coro, on_success) -> None:
+            try:
+                result = await coro
+            except Exception as e:
+                log.warning("generator failed (doc=%s): %s", doc_id, e)
+                return
+            on_success(result)
+
+        def _persist_summary(r):
+            _persist({"document_id": doc_id, "concept_id": None,
+                      "type": "summary", "payload": r.model_dump()})
+
+        def _persist_swipes(r):
+            for card in r.cards:
+                _persist({"document_id": doc_id,
+                          "concept_id": card.concept_id or None,
+                          "type": "swipe_card", "payload": card.model_dump()})
+
+        def _persist_flashcards(r):
+            for card in r.cards:
+                _persist({"document_id": doc_id,
+                          "concept_id": card.concept_id or None,
+                          "type": "flashcard", "payload": card.model_dump()})
+
+        def _persist_quiz(r):
+            for item in r.items:
+                _persist({"document_id": doc_id, "concept_id": None,
+                          "type": "quiz", "payload": item.model_dump()})
+
+        def _persist_path(r):
+            for step in r.steps:
+                _persist({"document_id": doc_id,
+                          "concept_id": step.concept_id or None,
+                          "type": "learning_path_step", "payload": step.model_dump()})
+
+        # Fan out the non-reel generators. With the Featherless semaphore set
+        # to 1 these still serialise, but each result is persisted the moment
+        # it lands instead of being buffered until the whole job finishes.
+        await asyncio.gather(
+            _run_and_persist(gen.gen_summary(chunks), _persist_summary),
+            _run_and_persist(gen.gen_swipe_cards(chunks, concepts_for_prompt), _persist_swipes),
+            _run_and_persist(gen.gen_flashcards(chunks, concepts_for_prompt), _persist_flashcards),
+            _run_and_persist(gen.gen_quiz(chunks), _persist_quiz),
+            _run_and_persist(gen.gen_learning_path(concepts_for_prompt), _persist_path),
         )
-        summary_r, swipe_r, flash_r, quiz_r, path_r = results
-
-        artifact_rows: list[dict[str, Any]] = []
-
-        if not isinstance(summary_r, Exception):
-            artifact_rows.append({
-                "document_id": doc_id, "concept_id": None,
-                "type": "summary", "payload": summary_r.model_dump(),
-            })
-
-        if not isinstance(swipe_r, Exception):
-            for card in swipe_r.cards:
-                artifact_rows.append({
-                    "document_id": doc_id,
-                    "concept_id": card.concept_id if card.concept_id else None,
-                    "type": "swipe_card", "payload": card.model_dump(),
-                })
-
-        if not isinstance(flash_r, Exception):
-            for card in flash_r.cards:
-                artifact_rows.append({
-                    "document_id": doc_id,
-                    "concept_id": card.concept_id if card.concept_id else None,
-                    "type": "flashcard", "payload": card.model_dump(),
-                })
-
-        if not isinstance(quiz_r, Exception):
-            for item in quiz_r.items:
-                artifact_rows.append({
-                    "document_id": doc_id, "concept_id": None,
-                    "type": "quiz", "payload": item.model_dump(),
-                })
-
-        if not isinstance(path_r, Exception):
-            for step in path_r.steps:
-                artifact_rows.append({
-                    "document_id": doc_id,
-                    "concept_id": step.concept_id if step.concept_id else None,
-                    "type": "learning_path_step", "payload": step.model_dump(),
-                })
 
         # Reels: one per concept, capped. Each reel uses concept-specific chunks
         # so deep PDFs get topic-grounded scenes instead of a stale prefix window.
@@ -206,22 +211,24 @@ async def generate_job(*, doc_id: str) -> None:
 
         reel_cap = gen.CAPS["reel_scripts"] if isinstance(gen.CAPS["reel_scripts"], int) else 30
         reel_targets = concepts_for_prompt[:reel_cap]
-        reels = await asyncio.gather(
-            *(gen.gen_reel_script(t, _chunks_for_topic(t)) for t in reel_targets),
-            return_exceptions=True,
-        )
-        for target, script in zip(reel_targets, reels):
-            if isinstance(script, Exception):
-                log.warning("reel_script failed for concept %s: %s", target["name"], script)
-                continue
-            artifact_rows.append({
+
+        async def _run_reel(target: dict[str, Any]) -> None:
+            try:
+                script = await gen.gen_reel_script(target, _chunks_for_topic(target))
+            except Exception as e:
+                log.warning("reel_script failed for concept %s: %s", target["name"], e)
+                return
+            _persist({
                 "document_id": doc_id,
                 "concept_id": target["id"] or None,
                 "type": "reel_script", "payload": script.model_dump(),
             })
+            log.info("reel_script persisted (doc=%s concept=%s)", doc_id, target["name"])
 
-        for i in range(0, len(artifact_rows), 100):
-            sb.table("artifacts").insert(artifact_rows[i : i + 100]).execute()
+        # Kick all reel generators off at once; the Featherless semaphore
+        # caps how many actually hit the API, but every successful reel writes
+        # itself the moment it finishes so the feed populates incrementally.
+        await asyncio.gather(*(_run_reel(t) for t in reel_targets))
 
         await _set_status(doc_id, "ready")
     except Exception as e:

@@ -102,7 +102,7 @@ function RailBtn({
       title={title}
       data-action
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`h-11 w-11 rounded-full border text-xl leading-none backdrop-blur transition-colors ${accent}`}
+      className={`h-12 w-12 rounded-full border text-xl leading-none backdrop-blur transition-colors active:scale-95 ${accent}`}
       aria-pressed={active}
     >
       {glyph}

@@ -35,7 +35,7 @@ CAPS = {
     "flashcards": (10, 20),
     "quiz": (8, 12),
     "learning_path": (3, 15),
-    "reel_scripts": 30,          # max reels per doc (one per top concept)
+    "reel_scripts": 5,           # max reels per doc (one per top concept)
     "reel_scenes_per_script": (5, 10),
 }
 

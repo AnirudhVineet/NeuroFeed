@@ -419,7 +419,10 @@ export function ReelCard({
       {/* TOP: scene progress segments. Each segment is tappable to jump scenes
           — replaces the old standalone scene dots and the scene-type label.
           Sits below the floating TopHud so the two layers never collide. */}
-      <div className="absolute left-3 right-3 top-[4.5rem] z-30 flex gap-1">
+      <div
+        className="absolute left-3 right-3 z-30 flex gap-1"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
+      >
         {scenes.map((_, i) => (
           <button
             key={i}
@@ -469,8 +472,12 @@ export function ReelCard({
       {/* RIGHT RAIL — vertical action stack in Instagram-Reels order.
           Quick Learning (Practice) lives at the top so it's the most
           discoverable surface for everything that's not the reel itself.
-          `bottom-28` keeps it clear of the floating bottom nav. */}
-      <div className="absolute right-3 bottom-28 z-30 flex flex-col items-center gap-3">
+          Bottom offset clears the floating bottom nav AND the phone's home
+          indicator safe-area. */}
+      <div
+        className="absolute right-3 z-30 flex flex-col items-center gap-3"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+      >
         <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
         <RailBtn glyph="↗" title="Share" onClick={onShare} />
         <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} />
@@ -494,8 +501,11 @@ export function ReelCard({
 
       {/* LEFT BOTTOM — creator + subject + topic + short description. This is
           the Instagram-Reels caption area: who made it, what it's about, and
-          a single-line teaser. */}
-      <div className="pointer-events-none absolute bottom-28 left-4 right-20 z-30 flex flex-col gap-1.5">
+          a single-line teaser. Bottom offset matches the right rail. */}
+      <div
+        className="pointer-events-none absolute left-4 right-20 z-30 flex flex-col gap-1.5"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+      >
         <div className="pointer-events-auto flex items-center gap-2 text-[11px] font-medium text-white/85">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[11px]">N</span>
           <span>NeuroFeed</span>
@@ -544,7 +554,7 @@ function RailBtn({
       aria-label={title}
       data-action
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`h-11 w-11 rounded-full border text-xl leading-none backdrop-blur transition-colors ${base}`}
+      className={`h-12 w-12 rounded-full border text-xl leading-none backdrop-blur transition-colors active:scale-95 ${base}`}
     >
       {glyph}
     </button>
@@ -564,7 +574,7 @@ function SpeedRailBtn({
       <button
         data-action
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
-        className="h-11 w-11 rounded-full border border-white/15 bg-black/45 text-[11px] font-semibold tabular-nums text-white backdrop-blur hover:bg-black/60"
+        className="h-12 w-12 rounded-full border border-white/15 bg-black/45 text-[11px] font-semibold tabular-nums text-white backdrop-blur transition-colors active:scale-95 hover:bg-black/60"
         aria-label={`Playback speed ${speed}x`}
         aria-haspopup="menu"
         aria-expanded={open}

@@ -23,9 +23,9 @@ export function BottomNav() {
     >
       <div
         className="pointer-events-auto w-full max-w-md px-4"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
       >
-        <div className="glass-strong flex items-center justify-between gap-1 rounded-full p-1.5 shadow-soft-lg">
+        <div className="glass-strong flex items-center justify-between gap-1 rounded-full p-1 shadow-soft-lg sm:p-1.5">
           {TABS.map((t) => {
             const active = isActive(pathname, t.to);
             return (
@@ -33,19 +33,22 @@ export function BottomNav() {
                 key={t.to}
                 to={t.to}
                 aria-current={active ? 'page' : undefined}
-                className={`group relative flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-all duration-300 ease-out ${
+                aria-label={t.label}
+                className={`group relative flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2.5 text-xs font-semibold transition-all duration-300 ease-out sm:px-3 sm:py-2 ${
                   active
                     ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white shadow-glow'
                     : 'text-white/55 hover:text-white'
                 }`}
               >
                 <t.Icon
-                  className={`h-[18px] w-[18px] transition-transform duration-300 ${
+                  className={`h-[22px] w-[22px] transition-transform duration-300 sm:h-[18px] sm:w-[18px] ${
                     active ? 'scale-105' : 'group-hover:scale-105'
                   }`}
                 />
+                {/* Labels show only when active on phone (mirrors Instagram /
+                    TikTok) and inline on tablet+ widths. */}
                 <span
-                  className={`overflow-hidden transition-[max-width,opacity] duration-300 ${
+                  className={`hidden overflow-hidden transition-[max-width,opacity] duration-300 sm:inline ${
                     active ? 'max-w-[5rem] opacity-100' : 'max-w-0 opacity-0 sm:max-w-[5rem] sm:opacity-100'
                   }`}
                 >

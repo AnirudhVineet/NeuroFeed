@@ -38,6 +38,21 @@ export async function postEvent(userId: string, type: string, payload: Record<st
   });
 }
 
+export type InterestKind = 'interested' | 'not_interested';
+
+export async function postInterest(
+  userId: string,
+  kind: InterestKind,
+  payload: { artifact_id?: string; document_id?: string | null; concept_id?: string | null },
+) {
+  // Strip nulls so the payload stays compact server-side.
+  const cleaned: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(payload)) {
+    if (v != null) cleaned[k] = v;
+  }
+  return postEvent(userId, kind, cleaned);
+}
+
 export async function explainSimpler(artifactId: string, userId?: string) {
   return api<{ title: string; body: string }>('/api/explain-simpler', {
     method: 'POST',

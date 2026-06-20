@@ -108,12 +108,13 @@ async def generate_job(*, doc_id: str) -> None:
             .select("id,ord,text,page_ref")
             .eq("document_id", doc_id)
             .order("ord")
-            .limit(60)
+            .limit(300)
             .execute()
         )
         chunks: list[dict[str, Any]] = getattr(res, "data", None) or []
         if not chunks:
             raise RuntimeError("no chunks to generate from")
+        chunk_by_id: dict[int, dict[str, Any]] = {c["id"]: c for c in chunks}
 
         # Concepts first (downstream artifacts reference concept ids).
         concept_set = await gen.gen_key_concepts(chunks)
@@ -130,6 +131,8 @@ async def generate_job(*, doc_id: str) -> None:
                 "name": c.name,
                 "definition": c.definition,
                 "summary": c.definition,
+                "why_it_matters": c.why_it_matters,
+                "source_chunk_ids": list(c.source_chunk_ids),
             }
             for i, c in enumerate(concept_set.concepts)
         ]
@@ -184,10 +187,27 @@ async def generate_job(*, doc_id: str) -> None:
                     "type": "learning_path_step", "payload": step.model_dump(),
                 })
 
-        # Reels: one per top concept, capped.
-        reel_targets = concepts_for_prompt[: gen.CAPS["reel_scripts"]]
+        # Reels: one per concept, capped. Each reel uses concept-specific chunks
+        # so deep PDFs get topic-grounded scenes instead of a stale prefix window.
+        def _chunks_for_topic(topic: dict[str, Any]) -> list[dict[str, Any]]:
+            ids = topic.get("source_chunk_ids") or []
+            selected = [chunk_by_id[i] for i in ids if i in chunk_by_id]
+            if len(selected) >= 3:
+                return selected[:15]
+            # Fallback: top-of-doc plus any cited chunks, so generation always has signal.
+            seen: set[int] = {c["id"] for c in selected}
+            for c in chunks:
+                if c["id"] in seen:
+                    continue
+                selected.append(c)
+                if len(selected) >= 12:
+                    break
+            return selected
+
+        reel_cap = gen.CAPS["reel_scripts"] if isinstance(gen.CAPS["reel_scripts"], int) else 30
+        reel_targets = concepts_for_prompt[:reel_cap]
         reels = await asyncio.gather(
-            *(gen.gen_reel_script(t, chunks) for t in reel_targets),
+            *(gen.gen_reel_script(t, _chunks_for_topic(t)) for t in reel_targets),
             return_exceptions=True,
         )
         for target, script in zip(reel_targets, reels):

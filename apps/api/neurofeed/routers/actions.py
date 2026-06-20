@@ -16,8 +16,9 @@ router = APIRouter(prefix="/api", tags=["actions"])
 
 # ---------- Events ----------
 EventType = Literal[
-    "upload", "view", "like", "save", "quiz_answer",
+    "upload", "view", "quiz_answer",
     "flashcard_review", "reel_complete", "tutor_query", "explain_simpler",
+    "interested", "not_interested",
 ]
 
 

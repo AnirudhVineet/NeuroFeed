@@ -6,7 +6,7 @@ system prompt.
 """
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, conint, conlist
 
@@ -26,7 +26,7 @@ class KeyConcept(BaseModel):
 
 
 class KeyConceptList(BaseModel):
-    concepts: conlist(KeyConcept, min_length=5, max_length=15)  # type: ignore[valid-type]
+    concepts: conlist(KeyConcept, min_length=5, max_length=60)  # type: ignore[valid-type]
 
 
 # ---------- Swipe card ----------
@@ -83,15 +83,62 @@ class LearningPath(BaseModel):
 
 
 # ---------- Reel script ----------
+SceneType = Literal[
+    "hook", "problem", "concept", "visualization", "example",
+    "analogy", "fun_fact", "summary", "application", "comparison",
+]
+AnimationType = Literal[
+    "zoom_in", "zoom_out", "slide_left", "slide_right", "slide_up",
+    "fade", "scale_up", "kinetic_text", "type_writer", "highlight",
+    "split", "pulse",
+]
+TransitionType = Literal["fade", "slide", "zoom", "wipe", "morph"]
+VisualKind = Literal[
+    # legacy decorative kinds — kept for back-compat, but the prompt no longer
+    # suggests them; the frontend degrades them into educational fallbacks.
+    "arrow_flow", "icon_grid", "comparison", "timeline", "diagram",
+    "bar_chart", "particles", "concept_map", "gradient_pulse", "shape_morph",
+    # new educational visuals — each one TEACHES, it does not just decorate.
+    "network_packets",       # packets traveling over a wired network
+    "neural_network",        # input/hidden/output layers + animated activations
+    "tree_traversal",        # binary tree with highlighted traversal
+    "sorting_bars",          # bars rearranging into sorted order
+    "linked_list",           # nodes connected with next pointers
+    "stack_queue",           # push/pop or enqueue/dequeue ops
+    "equation",              # rendered formula(s)
+    "coordinate_graph",      # x/y axes with a function curve
+    "flowchart",             # ordered process steps with arrows
+    "molecule",              # atoms + bonds
+    "waveform",              # sine / square wave / pulse train
+    "supply_demand",         # crossing economic curves
+    "map_route",             # simple map with a highlighted path
+    "process_diagram",       # block diagram of a process / pipeline
+]
+MusicMood = Literal["uplifting", "curious", "intense", "dreamy", "playful"]
+
+
 class ReelScene(BaseModel):
-    caption: str = Field(..., max_length=120)
-    voiceover: str = Field(..., max_length=240)
-    visual_hint: str = Field(..., max_length=120)
-    duration_sec: float = Field(..., gt=0.5, le=8.0)
+    scene_type: SceneType
+    narration: str = Field(..., min_length=60, max_length=600)
+    subtitle: str = Field(..., min_length=3, max_length=80)
+    image_prompt: str = Field(..., min_length=10, max_length=240)
+    animation_type: AnimationType
+    transition_type: TransitionType
+    highlight_words: list[str] = Field(default_factory=list)
+    duration_sec: float = Field(..., gt=3.0, le=15.0)
+    visual_kind: VisualKind
+    # Optional structured payload the visual renderer uses to draw the scene
+    # accurately (chart points, network nodes, equation TeX, etc.). Schema is
+    # intentionally open — see VISUAL_SPEC.md in the frontend for shapes.
+    visual_spec: dict[str, Any] | None = None
 
 
 class ReelScript(BaseModel):
-    scenes: conlist(ReelScene, min_length=3, max_length=8)  # type: ignore[valid-type]
+    topic: str = Field(..., max_length=120)
+    title: str = Field(..., max_length=120)
+    hook: str = Field(..., max_length=300)
+    music_mood: MusicMood
+    scenes: conlist(ReelScene, min_length=5, max_length=10)  # type: ignore[valid-type]
 
 
 # ---------- Tutor ----------

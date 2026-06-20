@@ -18,6 +18,10 @@ W_WEAK = 1.0
 W_RECENCY = 0.6
 W_SUBJECT = 0.4
 W_VARIETY = 0.2
+W_INTEREST = 0.8  # interest signals carry weight close to weak-concept boost
+
+INTEREST_HARD_HIDE = -2.0  # net signal at-or-below this hides the artifact
+INTEREST_CLAMP = 3.0  # bound aggregated signed counts so a single doc can't dominate
 
 REVISION_FRACTION = 0.2  # ~20% of returned items target weak concepts
 WEAK_MASTERY_FLOOR = 0.4  # mastery score below this counts as "weak"
@@ -41,6 +45,8 @@ def _score(
     subjects: set[str] | None,
     served_concept_ids: set[str],
     seen_types: dict[str, int],
+    doc_interest: dict[str, float],
+    concept_interest: dict[str, float],
 ) -> tuple[float, dict[str, float]]:
     concept_id = a.get("concept_id") or ""
     m = mastery.get(concept_id, 0.0) if concept_id else 0.0
@@ -59,17 +65,31 @@ def _score(
     if concept_id and concept_id in served_concept_ids:
         variety *= 0.5
 
+    # Interest signal: per-document and per-concept signals are summed.
+    # +1 per "interested" event, -1 per "not_interested". Clamped to avoid
+    # one heavily-interacted item dominating the whole feed.
+    doc_id = a.get("document_id") or ""
+    sig = 0.0
+    if doc_id:
+        sig += max(-INTEREST_CLAMP, min(INTEREST_CLAMP, doc_interest.get(doc_id, 0.0)))
+    if concept_id:
+        sig += max(-INTEREST_CLAMP, min(INTEREST_CLAMP, concept_interest.get(concept_id, 0.0)))
+    # Normalise to roughly [-1, 1] before weighting.
+    interest = max(-1.0, min(1.0, sig / (INTEREST_CLAMP * 2)))
+
     score = (
         W_WEAK * weak
         + W_RECENCY * recency
         + W_SUBJECT * subject_hit
         + W_VARIETY * variety
+        + W_INTEREST * interest
     )
     return score, {
         "weak": round(weak, 3),
         "recency": round(recency, 3),
         "subject": round(subject_hit, 3),
         "variety": round(variety, 3),
+        "interest": round(interest, 3),
     }
 
 
@@ -80,18 +100,28 @@ def rank_artifacts(
     subjects: set[str] | None = None,
     served_concept_ids: set[str] | None = None,
     limit: int | None = None,
+    doc_interest: dict[str, float] | None = None,
+    concept_interest: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
     served_concept_ids = set(served_concept_ids or set())
+    doc_interest = doc_interest or {}
+    concept_interest = concept_interest or {}
 
     base: list[dict[str, Any]] = []
     seen_types: dict[str, int] = {}
     for a in artifacts:
+        # Hard-hide items the user has strongly dismissed (doc-level).
+        doc_id = a.get("document_id") or ""
+        if doc_id and doc_interest.get(doc_id, 0.0) <= INTEREST_HARD_HIDE:
+            continue
         s, reason = _score(
             a,
             mastery=mastery,
             subjects=subjects,
             served_concept_ids=served_concept_ids,
             seen_types=seen_types,
+            doc_interest=doc_interest,
+            concept_interest=concept_interest,
         )
         base.append({**a, "score": s, "reason": reason})
         seen_types[a["type"]] = seen_types.get(a["type"], 0) + 1

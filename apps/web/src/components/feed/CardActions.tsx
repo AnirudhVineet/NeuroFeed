@@ -1,57 +1,49 @@
 import { useState } from 'react';
+import { InterestButtons, type InterestTarget } from './InterestButtons';
+import { TutorPanel, type TutorContext } from './TutorPanel';
 
 export interface ActionHandlers {
-  onLike: () => void;
-  onSave: () => void;
   onShare: () => void;
-  onExplainSimpler: () => Promise<void> | void;
-  onQuizMe?: () => void;
+  tutorContext: TutorContext;
+  userId?: string | null;
+  interestTarget?: InterestTarget;
 }
 
-export function CardActions({ onLike, onSave, onShare, onExplainSimpler, onQuizMe }: ActionHandlers) {
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [busy, setBusy] = useState(false);
+// Side rail used by non-reel cards (swipe, flashcard, quiz). Share +
+// Ask AI Doubt + Interested / Not Interested.
+export function CardActions({
+  onShare,
+  tutorContext,
+  userId,
+  interestTarget,
+}: ActionHandlers) {
+  const [askOpen, setAskOpen] = useState(false);
 
   return (
-    <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
-      <IconBtn
-        label={liked ? '♥' : '♡'}
-        accent={liked}
-        onClick={() => { setLiked(true); onLike(); }}
-      />
-      <IconBtn
-        label={saved ? '★' : '☆'}
-        accent={saved}
-        onClick={() => { setSaved(true); onSave(); }}
-      />
-      <IconBtn label="↗" onClick={onShare} />
-      <IconBtn
-        label={busy ? '…' : '↓'}
-        title="Explain simpler"
-        onClick={async () => {
-          setBusy(true);
-          try { await onExplainSimpler(); } finally { setBusy(false); }
-        }}
-      />
-      {onQuizMe && <IconBtn label="?" title="Quiz me" onClick={onQuizMe} />}
-    </div>
+    <>
+      <div className="absolute right-3 bottom-24 z-20 flex flex-col items-center gap-3">
+        {interestTarget && (
+          <InterestButtons userId={userId ?? null} target={interestTarget} />
+        )}
+        <IconBtn label="↗" onClick={onShare} title="Share" />
+        <IconBtn label="?" title="Ask AI Doubt" onClick={() => setAskOpen(true)} />
+      </div>
+      <TutorPanel open={askOpen} ctx={tutorContext} onClose={() => setAskOpen(false)} />
+    </>
   );
 }
 
 function IconBtn({
   label,
   onClick,
-  accent,
   title,
-}: { label: string; onClick: () => void; accent?: boolean; title?: string }) {
+}: { label: string; onClick: () => void; title?: string }) {
   return (
     <button
       title={title}
-      onClick={onClick}
-      className={`h-12 w-12 rounded-full bg-black/40 backdrop-blur border border-white/15 text-2xl leading-none ${
-        accent ? 'text-accent' : 'text-white'
-      }`}
+      data-action
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="h-11 w-11 rounded-full border border-white/15 bg-black/45 text-xl leading-none text-white backdrop-blur hover:bg-black/60"
     >
       {label}
     </button>

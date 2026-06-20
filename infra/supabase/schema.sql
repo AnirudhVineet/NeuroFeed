@@ -94,9 +94,16 @@ create index if not exists idx_feed_items_user_served
 do $$ begin
   create type public.event_type as enum (
     'upload', 'view', 'like', 'save', 'quiz_answer',
-    'flashcard_review', 'reel_complete', 'tutor_query', 'explain_simpler'
+    'flashcard_review', 'reel_complete', 'tutor_query', 'explain_simpler',
+    'interested', 'not_interested'
   );
 exception when duplicate_object then null; end $$;
+
+-- Idempotent enum extensions for projects created before the values existed.
+-- Must run outside a transaction block (ALTER TYPE ADD VALUE limitation), so
+-- not wrapped in DO $$ ... $$.
+alter type public.event_type add value if not exists 'interested';
+alter type public.event_type add value if not exists 'not_interested';
 
 create table if not exists public.learning_events (
   id bigserial primary key,

@@ -1,4 +1,4 @@
-import { Route, Routes, Link, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import FeedPage from './pages/FeedPage';
 import UploadPage from './pages/UploadPage';
 import TutorPage from './pages/TutorPage';
@@ -8,11 +8,16 @@ import AuthPage from './pages/AuthPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import { TopHud } from '@/components/gamify/TopHud';
 import { AchievementToast } from '@/components/gamify/AchievementToast';
+import { BottomNav } from '@/components/BottomNav';
 
 export default function App() {
+  const { pathname } = useLocation();
+  const isAuthRoute = pathname.startsWith('/auth');
+  const showChrome = !isAuthRoute;
+
   return (
     <div className="min-h-dvh flex flex-col">
-      <TopHud />
+      {showChrome && <TopHud />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<FeedPage />} />
@@ -25,33 +30,7 @@ export default function App() {
         </Routes>
       </main>
       <AchievementToast />
-      <BottomNav />
+      {showChrome && <BottomNav />}
     </div>
-  );
-}
-
-function BottomNav() {
-  const { pathname } = useLocation();
-  const tabs = [
-    { to: '/', label: 'Feed' },
-    { to: '/upload', label: 'Upload' },
-    { to: '/tutor', label: 'Tutor' },
-    { to: '/dashboard', label: 'You' },
-  ];
-  return (
-    <nav className="sticky bottom-0 inset-x-0 bg-ink/90 backdrop-blur border-t border-white/10 grid grid-cols-4 text-sm z-20">
-      {tabs.map((t) => {
-        const active = pathname === t.to;
-        return (
-          <Link
-            key={t.to}
-            to={t.to}
-            className={`py-3 text-center ${active ? 'text-accent' : 'text-muted'}`}
-          >
-            {t.label}
-          </Link>
-        );
-      })}
-    </nav>
   );
 }

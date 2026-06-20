@@ -28,7 +28,7 @@ export function AchievementToast() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 60, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 18 }}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-accent text-white rounded-full px-4 py-2 shadow-lg"
+          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow-lg"
         >
           ✨ {LABELS[unlocked] ?? unlocked}
         </motion.div>

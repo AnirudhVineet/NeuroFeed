@@ -12,6 +12,12 @@ node_modules/
 dist/
 .vite/
 *.log
+*.tsbuildinfo
+
+# Local notes / scratch
+AdditionalFeatures.txt
+fix.md
+run.txt
 
 # Python
 __pycache__/

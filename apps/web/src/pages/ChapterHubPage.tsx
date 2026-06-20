@@ -101,8 +101,8 @@ export default function ChapterHubPage() {
   const subject = inferSubject(doc.title);
 
   return (
-    <div className="mx-auto max-w-3xl pb-24">
-      <header className="px-4 pt-4">
+    <div className="mx-auto max-w-3xl pb-32 pt-20">
+      <header className="px-4 pt-2">
         <Link to="/dashboard" className="text-xs text-white/60 hover:text-white">← Library</Link>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/80">{subject}</span>
@@ -123,7 +123,7 @@ export default function ChapterHubPage() {
         )}
       </header>
 
-      <nav className="sticky top-0 z-20 mt-4 border-b border-white/10 bg-ink/85 backdrop-blur">
+      <nav className="sticky top-[5rem] z-20 mt-4 border-b border-white/10 bg-ink/85 backdrop-blur">
         <div className="flex gap-1 overflow-x-auto px-4 py-2 text-xs">
           {SECTIONS.map((s) => (
             <button

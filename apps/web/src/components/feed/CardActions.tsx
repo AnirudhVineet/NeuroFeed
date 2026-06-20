@@ -21,7 +21,7 @@ export function CardActions({
 
   return (
     <>
-      <div className="absolute right-3 bottom-24 z-20 flex flex-col items-center gap-3">
+      <div className="absolute right-3 bottom-32 z-20 flex flex-col items-center gap-3">
         {interestTarget && (
           <InterestButtons userId={userId ?? null} target={interestTarget} />
         )}

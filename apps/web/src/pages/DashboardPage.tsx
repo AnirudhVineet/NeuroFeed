@@ -114,8 +114,6 @@ export default function DashboardPage() {
     setBusyId(doc.id);
     try {
       await regenerateDocument(doc.id, userId);
-      // Optimistically mark as generating; the underlying counts won't update
-      // until the worker finishes. The user can refresh later.
       setDocs((ds) =>
         ds.map((d) => (d.id === doc.id ? { ...d, status: 'generating' } : d)),
       );
@@ -131,71 +129,76 @@ export default function DashboardPage() {
   if (!analytics || !stats) return <Empty msg="Loading…" />;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-7 p-4 pb-24">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Your dashboard</h1>
-          <p className="text-xs text-muted">Track your library and learning progress.</p>
-        </div>
-        {gamify && (
-          <div className="text-right text-xs text-muted">
-            <div className="text-sm font-semibold text-white">{gamify.xp_total.toLocaleString()} XP</div>
-            <div>🔥 {gamify.streak}-day streak</div>
-          </div>
-        )}
-      </header>
-
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-accent/25 text-base font-bold uppercase">
-              {(email ?? '?').slice(0, 1)}
+    <div className="mx-auto max-w-4xl space-y-7 px-4 pb-32 pt-24">
+      {/* Profile header */}
+      <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-card/60 p-5 shadow-soft">
+        <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-brand-gradient opacity-25 blur-3xl" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-brand-gradient opacity-50 blur-md" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-xl font-bold uppercase text-white shadow-glow">
+                {(email ?? '?').slice(0, 1)}
+              </div>
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-white/55">Signed in as</p>
-              <p className="truncate text-sm font-semibold">{email ?? 'Unknown'}</p>
-              {createdAt && (
-                <p className="text-[11px] text-white/45">
-                  Joined {new Date(createdAt).toLocaleDateString()}
-                </p>
-              )}
+              <p className="truncate text-base font-semibold text-white">
+                {email ?? 'Unknown'}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
+                {createdAt && (
+                  <span>Joined {new Date(createdAt).toLocaleDateString()}</span>
+                )}
+                {gamify && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5">
+                    <span aria-hidden>🔥</span>
+                    <span className="font-semibold text-white">{gamify.streak}</span>
+                    <span className="text-white/55">day streak</span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
             onClick={onSignOut}
             disabled={signingOut}
-            className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-500/20 disabled:opacity-50"
+            className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
           >
             {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </div>
-      </section>
+      </header>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile label="Uploads" value={stats.total_uploads} />
-        <StatTile label="Reels made" value={stats.total_reels} />
-        <StatTile label="Watch time" value={fmtDuration(stats.seconds_watched)} />
+      {/* Stats grid */}
+      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+        <StatTile glyph="📤" label="Uploads" value={stats.total_uploads} />
+        <StatTile glyph="🎬" label="Reels made" value={stats.total_reels} />
+        <StatTile glyph="⏱" label="Watch time" value={fmtDuration(stats.seconds_watched)} />
         <StatTile
+          glyph="❓"
           label="Quizzes"
           value={stats.quizzes_completed}
           sub={stats.quizzes_completed ? `${pct(stats.quizzes_correct, stats.quizzes_completed)}% correct` : undefined}
         />
-        <StatTile label="XP" value={gamify?.xp_total.toLocaleString() ?? '–'} />
-        <StatTile label="Streak" value={`${gamify?.streak ?? 0}d`} />
+        <StatTile glyph="✨" label="XP" value={gamify?.xp_total.toLocaleString() ?? '–'} accent />
+        <StatTile glyph="🔥" label="Streak" value={`${gamify?.streak ?? 0}d`} accent />
       </section>
 
-      <Section title="Your library" right={<Link to="/upload" className="text-xs text-accent hover:underline">Upload more →</Link>}>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search documents…"
-            className="min-w-[180px] flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm placeholder:text-white/40 focus:border-accent focus:outline-none"
-          />
+      {/* Library */}
+      <Section
+        title="Your library"
+        right={
+          <Link to="/upload" className="text-xs font-semibold text-primary hover:underline">
+            Upload more →
+          </Link>
+        }
+      >
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search documents…" />
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs"
+            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none transition-colors hover:bg-white/[0.08] focus:border-primary"
           >
             <option value="recent">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -206,7 +209,7 @@ export default function DashboardPage() {
           <select
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value as Subject | 'all')}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs"
+            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none transition-colors hover:bg-white/[0.08] focus:border-primary"
           >
             <option value="all">All subjects</option>
             {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -217,12 +220,12 @@ export default function DashboardPage() {
           docs.length === 0 ? (
             <EmptyLibrary />
           ) : (
-            <p className="px-3 py-6 text-center text-sm text-muted">No documents match those filters.</p>
+            <p className="px-3 py-8 text-center text-sm text-white/55">No documents match those filters.</p>
           )
         ) : (
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {filteredDocs.map((d) => (
-              <DocRow
+              <DocCard
                 key={d.id}
                 doc={d}
                 busy={busyId === d.id}
@@ -253,17 +256,71 @@ export default function DashboardPage() {
   );
 }
 
-function StatTile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function SearchInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-      <div className="text-[10px] uppercase tracking-widest text-white/55">{label}</div>
-      <div className="mt-1 text-xl font-bold tabular-nums leading-none">{value}</div>
+    <div className="relative min-w-[180px] flex-1">
+      <svg
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2 pl-9 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/40 focus:border-primary"
+      />
+    </div>
+  );
+}
+
+function StatTile({
+  glyph,
+  label,
+  value,
+  sub,
+  accent = false,
+}: {
+  glyph: string;
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border p-3.5 shadow-soft transition-all hover:-translate-y-0.5 ${
+        accent
+          ? 'border-primary/30 bg-gradient-to-br from-primary/15 via-secondary/10 to-accent/15'
+          : 'border-white/10 bg-white/[0.03]'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-widest text-white/55">{label}</div>
+        <span className="text-base leading-none opacity-80">{glyph}</span>
+      </div>
+      <div className="mt-2 text-2xl font-bold tabular-nums leading-none text-white">{value}</div>
       {sub && <div className="mt-1 text-[10px] text-white/55">{sub}</div>}
     </div>
   );
 }
 
-function DocRow({
+function DocCard({
   doc,
   busy,
   onDelete,
@@ -276,62 +333,85 @@ function DocRow({
 }) {
   const date = new Date(doc.created_at).toLocaleDateString();
   const statusTone =
-    doc.status === 'ready' ? 'bg-emerald-500/15 text-emerald-300'
-    : doc.status === 'error' ? 'bg-rose-500/15 text-rose-300'
-    : 'bg-amber-500/15 text-amber-200';
+    doc.status === 'ready' ? 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200'
+    : doc.status === 'error' ? 'border-rose-400/30 bg-rose-500/15 text-rose-200'
+    : 'border-amber-400/30 bg-amber-500/15 text-amber-100';
 
   return (
-    <li className="rounded-2xl border border-white/10 bg-white/5 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link to={`/doc/${encodeURIComponent(doc.id)}`} className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/65">{doc.subject}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusTone}`}>{doc.status}</span>
-            <span className="text-[10px] text-white/45">· {date}</span>
-          </div>
-          <h3 className="mt-1 truncate text-sm font-semibold hover:underline">{doc.title}</h3>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-white/65 tabular-nums">
-            <span>{doc.counts.reel_script} reels</span>
-            <span>{doc.counts.flashcard} flashcards</span>
-            <span>{doc.counts.quiz} quizzes</span>
-            <span>{doc.counts.swipe_card} cards</span>
-          </div>
-          {doc.error && (
-            <p className="mt-1 text-[11px] text-rose-300">{doc.error}</p>
-          )}
-        </Link>
+    <li className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow">
+      <Link to={`/doc/${encodeURIComponent(doc.id)}`} className="block">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Link
-            to={`/doc/${encodeURIComponent(doc.id)}`}
-            className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-white hover:bg-accent/25"
-          >
-            Open hub
-          </Link>
-          <button
-            disabled={busy}
-            onClick={onRegenerate}
-            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80 hover:bg-white/10 disabled:opacity-50"
-          >
-            {busy ? '…' : 'Regenerate'}
-          </button>
-          <button
-            disabled={busy}
-            onClick={onDelete}
-            className="rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1 text-xs text-rose-200 hover:bg-rose-500/20 disabled:opacity-50"
-          >
-            Delete
-          </button>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/75">
+            {doc.subject}
+          </span>
+          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusTone}`}>
+            {doc.status}
+          </span>
+          <span className="ml-auto text-[10px] text-white/45">{date}</span>
         </div>
+        <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-white">{doc.title}</h3>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          <CountBadge label="reels" value={doc.counts.reel_script} />
+          <CountBadge label="cards" value={doc.counts.flashcard} />
+          <CountBadge label="quizzes" value={doc.counts.quiz} />
+        </div>
+        {doc.error && (
+          <p className="mt-2 text-[11px] text-rose-300">{doc.error}</p>
+        )}
+      </Link>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <Link
+          to={`/doc/${encodeURIComponent(doc.id)}`}
+          className="flex-1 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-center text-xs font-semibold text-white shadow-glow"
+        >
+          Open Hub
+        </Link>
+        <button
+          disabled={busy}
+          onClick={onRegenerate}
+          className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:opacity-50"
+        >
+          {busy ? '…' : 'Regenerate'}
+        </button>
+        <button
+          disabled={busy}
+          onClick={onDelete}
+          aria-label="Delete document"
+          className="rounded-full border border-rose-400/30 bg-rose-500/10 p-2 text-rose-200 hover:bg-rose-500/20 disabled:opacity-50"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18" />
+            <path d="m19 6-1.4 14a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          </svg>
+        </button>
       </div>
     </li>
   );
 }
 
+function CountBadge({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] py-1.5">
+      <div className="text-sm font-bold tabular-nums leading-none text-white">{value}</div>
+      <div className="mt-0.5 text-[9px] uppercase tracking-widest text-white/45">{label}</div>
+    </div>
+  );
+}
+
 function EmptyLibrary() {
   return (
-    <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center">
-      <p className="mb-3 text-sm text-muted">No uploads yet.</p>
-      <Link to="/upload" className="inline-block rounded-full bg-accent px-4 py-2 text-sm text-white">
+    <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 text-2xl">
+        📚
+      </div>
+      <p className="mb-4 text-sm text-white/65">No uploads yet.</p>
+      <Link
+        to="/upload"
+        className="inline-flex rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow"
+      >
         Upload your first document
       </Link>
     </div>
@@ -341,16 +421,16 @@ function EmptyLibrary() {
 function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm uppercase tracking-widest text-muted">{title}</h2>
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-white/55">{title}</h2>
         {right}
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-3">{children}</div>
+      <div className="rounded-3xl border border-white/10 bg-card/40 p-4 shadow-soft">{children}</div>
     </section>
   );
 }
 
-function Sparkline({ points, labels, stroke = '#7c5cff' }: {
+function Sparkline({ points, labels, stroke = '#A855F7' }: {
   points: number[]; labels: string[]; stroke?: string;
 }) {
   const w = 480; const h = 120; const pad = 8;
@@ -362,12 +442,24 @@ function Sparkline({ points, labels, stroke = '#7c5cff' }: {
       .map((v, i) => `${i === 0 ? 'M' : 'L'} ${pad + i * stepX} ${pad + (h - pad * 2) * (1 - v / max)}`)
       .join(' ');
   }, [points, max]);
+  const areaPath = useMemo(() => {
+    if (!path) return '';
+    const last = pad + (w - pad * 2);
+    return `${path} L ${last} ${h - pad} L ${pad} ${h - pad} Z`;
+  }, [path]);
   return (
     <div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-28">
-        <path d={path} fill="none" stroke={stroke} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-28 w-full">
+        <defs>
+          <linearGradient id="spark-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#spark-area)" />
+        <path d={path} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <div className="flex justify-between text-[10px] text-muted mt-1">
+      <div className="mt-1 flex justify-between text-[10px] text-white/45">
         <span>{labels[0]}</span><span>{labels[labels.length - 1]}</span>
       </div>
     </div>
@@ -376,20 +468,20 @@ function Sparkline({ points, labels, stroke = '#7c5cff' }: {
 
 function Heatmap({ rows }: { rows: MasteryRow[] }) {
   if (!rows.length) {
-    return <p className="text-muted text-sm">Answer a few quiz items to populate this.</p>;
+    return <p className="text-sm text-white/55">Answer a few quiz items to populate this.</p>;
   }
   return (
     <ul className="space-y-2">
       {rows.map((r) => (
         <li key={r.concept_id} className="flex items-center gap-3">
-          <span className="flex-1 truncate text-sm">{r.name}</span>
-          <div className="w-32 h-2 bg-white/10 rounded overflow-hidden">
+          <span className="flex-1 truncate text-sm text-white/90">{r.name}</span>
+          <div className="h-2 w-32 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full"
+              className="h-full transition-all"
               style={{ width: `${Math.round(r.score * 100)}%`, background: barColor(r.score) }}
             />
           </div>
-          <span className="text-xs text-muted w-9 text-right">{Math.round(r.score * 100)}%</span>
+          <span className="w-9 text-right text-xs tabular-nums text-white/55">{Math.round(r.score * 100)}%</span>
         </li>
       ))}
     </ul>
@@ -403,7 +495,7 @@ function barColor(score: number): string {
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <div className="p-8 text-center text-muted">{msg}</div>;
+  return <div className="px-8 pb-32 pt-32 text-center text-white/55">{msg}</div>;
 }
 
 function fmtDuration(seconds: number): string {

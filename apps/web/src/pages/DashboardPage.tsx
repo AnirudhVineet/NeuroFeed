@@ -159,14 +159,29 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={onSignOut}
-            disabled={signingOut}
-            className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
-          >
-            {signingOut ? 'Signing out…' : 'Sign out'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/profile"
+              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10"
+            >
+              View profile
+            </Link>
+            <Link
+              to="/settings/privacy"
+              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs text-white/75 hover:bg-white/10"
+            >
+              Privacy
+            </Link>
+            <button
+              onClick={onSignOut}
+              disabled={signingOut}
+              className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
+            >
+              {signingOut ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
         </div>
+        <SocialQuickRow />
       </header>
 
       {/* Stats grid */}
@@ -252,6 +267,31 @@ export default function DashboardPage() {
       <Section title="Mastery heatmap">
         <Heatmap rows={analytics.mastery} />
       </Section>
+    </div>
+  );
+}
+
+function SocialQuickRow() {
+  const links: { to: string; glyph: string; label: string }[] = [
+    { to: '/paths', glyph: '🗺', label: 'Paths' },
+    { to: '/discover', glyph: '🔭', label: 'Discover' },
+    { to: '/friends', glyph: '👥', label: 'Friends' },
+    { to: '/activity', glyph: '⏱', label: 'Activity' },
+    { to: '/leaderboard', glyph: '🏆', label: 'Leaderboard' },
+    { to: '/badges', glyph: '🏅', label: 'Badges' },
+  ];
+  return (
+    <div className="relative mt-4 flex flex-wrap gap-1.5">
+      {links.map((l) => (
+        <Link
+          key={l.to}
+          to={l.to}
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/85 hover:bg-white/10"
+        >
+          <span aria-hidden>{l.glyph}</span>
+          {l.label}
+        </Link>
+      ))}
     </div>
   );
 }

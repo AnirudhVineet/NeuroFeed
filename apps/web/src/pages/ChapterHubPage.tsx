@@ -5,8 +5,10 @@ import { fetchAnalytics, type MasteryRow } from '@/lib/analytics';
 import { postEvent } from '@/lib/feed';
 import { inferSubject } from '@/lib/subjects';
 import { supabase } from '@/lib/supabase';
+import { LearningPath, type ConceptIndex } from '@/components/learning/LearningPath';
 import type {
   Flashcard,
+  LearningPathStep,
   QuizItem,
   ReelScript,
   Summary,
@@ -35,9 +37,10 @@ interface GroupedArtifacts {
   flashcard?: ArtifactRow<Flashcard>[];
   quiz?: ArtifactRow<QuizItem>[];
   reel_script?: ArtifactRow<ReelScript>[];
+  learning_path_step?: ArtifactRow<LearningPathStep>[];
 }
 
-type SectionId = 'overview' | 'reels' | 'flashcards' | 'quiz' | 'tutor' | 'progress';
+type SectionId = 'overview' | 'path' | 'reels' | 'flashcards' | 'quiz' | 'tutor' | 'progress';
 
 export default function ChapterHubPage() {
   const { id: docId } = useParams();
@@ -93,7 +96,28 @@ export default function ChapterHubPage() {
     quizzes: artifacts?.quiz?.length ?? 0,
     cards: artifacts?.swipe_card?.length ?? 0,
     summary: artifacts?.summary?.length ?? 0,
+    steps: artifacts?.learning_path_step?.length ?? 0,
   }), [artifacts]);
+
+  const conceptIndex: ConceptIndex = useMemo(() => {
+    const idx: ConceptIndex = {};
+    for (const m of mastery) {
+      idx[m.concept_id] = { name: m.name, mastery: m.score };
+    }
+    // Fall back to artifact rows so steps with no quiz history still get
+    // some concept label (the row carries concept_id even when mastery is 0).
+    const all = ([] as ArtifactRow[]).concat(
+      artifacts?.flashcard ?? [],
+      artifacts?.quiz ?? [],
+      artifacts?.swipe_card ?? [],
+    );
+    for (const r of all) {
+      if (r.concept_id && !idx[r.concept_id]) {
+        idx[r.concept_id] = { name: extractConceptName(r), mastery: 0 };
+      }
+    }
+    return idx;
+  }, [mastery, artifacts]);
 
   if (err) return <Empty msg={err} />;
   if (!doc || !artifacts) return <Empty msg="Loading…" />;
@@ -115,6 +139,7 @@ export default function ChapterHubPage() {
           <span>· {counts.flashcards} flashcards</span>
           <span>· {counts.quizzes} quizzes</span>
           <span>· {counts.cards} cards</span>
+          {counts.steps > 0 && <span>· {counts.steps} path steps</span>}
         </div>
         {doc.error && (
           <p className="mt-2 rounded-lg border border-rose-400/30 bg-rose-500/10 p-2 text-xs text-rose-200">
@@ -150,6 +175,20 @@ export default function ChapterHubPage() {
             onJump={setActive}
           />
         )}
+        {active === 'path' && (
+          <LearningPath
+            docId={doc.id}
+            docTitle={doc.title}
+            steps={artifacts.learning_path_step ?? []}
+            conceptIndex={conceptIndex}
+            onOpenReel={() => setActive('reels')}
+            onOpenStory={() => setActive('reels')}
+            onOpenQuiz={() => setActive('quiz')}
+            onOpenFlashcards={() => setActive('flashcards')}
+            onOpenTutor={() => setActive('tutor')}
+            onGenerateNotes={() => setActive('tutor')}
+          />
+        )}
         {active === 'reels' && (
           <ReelsSection rows={artifacts.reel_script ?? []} docId={doc.id} />
         )}
@@ -174,12 +213,29 @@ export default function ChapterHubPage() {
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
+  { id: 'path', label: 'Learning Path' },
   { id: 'reels', label: 'Reels' },
   { id: 'flashcards', label: 'Flashcards' },
   { id: 'quiz', label: 'Quiz' },
   { id: 'tutor', label: 'AI Tutor' },
   { id: 'progress', label: 'Progress' },
 ];
+
+// Try to pull a human-readable concept name out of an artifact payload. Each
+// artifact type stores it under different keys, so we look in a few places
+// before falling back to a slice of the id.
+function extractConceptName(row: ArtifactRow): string {
+  const p = row.payload as Record<string, unknown> | undefined;
+  if (!p) return row.concept_id?.slice(0, 6) ?? '';
+  const candidates = ['name', 'title', 'topic', 'question', 'stem', 'concept'];
+  for (const k of candidates) {
+    const v = p[k];
+    if (typeof v === 'string' && v.trim()) {
+      return v.length > 60 ? `${v.slice(0, 57)}…` : v;
+    }
+  }
+  return row.concept_id?.slice(0, 6) ?? '';
+}
 
 function StatusPill({ status }: { status: string }) {
   const tone =
@@ -199,7 +255,7 @@ function OverviewSection({
   summary, counts, mastery, onJump,
 }: {
   summary: ArtifactRow<Summary> | null;
-  counts: { reels: number; flashcards: number; quizzes: number; cards: number };
+  counts: { reels: number; flashcards: number; quizzes: number; cards: number; steps: number };
   mastery: MasteryRow[];
   onJump: (s: SectionId) => void;
 }) {
@@ -222,7 +278,8 @@ function OverviewSection({
         <p className="text-sm text-white/55">No summary generated yet.</p>
       )}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <JumpTile glyph="🗺" label="Path" sub={counts.steps ? `${counts.steps} steps` : 'Not built'} onClick={() => onJump('path')} />
         <JumpTile glyph="🎬" label="Reels" sub={`${counts.reels} items`} onClick={() => onJump('reels')} />
         <JumpTile glyph="🎴" label="Flashcards" sub={`${counts.flashcards} cards`} onClick={() => onJump('flashcards')} />
         <JumpTile glyph="❓" label="Quiz" sub={`${counts.quizzes} questions`} onClick={() => onJump('quiz')} />

@@ -5,13 +5,18 @@ interface Tab {
   to: string;
   label: string;
   Icon: (p: SVGProps<SVGSVGElement>) => JSX.Element;
+  // Returns true when the current location should highlight this tab — used
+  // for routes whose canonical href doesn't appear in pathname (e.g. /paths
+  // counts as part of the Learn cluster).
+  matches?: (pathname: string) => boolean;
 }
 
 const TABS: Tab[] = [
-  { to: '/', label: 'Feed', Icon: FeedIcon },
-  { to: '/upload', label: 'Upload', Icon: UploadIcon },
-  { to: '/tutor', label: 'Tutor', Icon: TutorIcon },
-  { to: '/dashboard', label: 'You', Icon: YouIcon },
+  { to: '/', label: 'Feed', Icon: FeedIcon, matches: (p) => p === '/' },
+  { to: '/paths', label: 'Learn', Icon: PathIcon, matches: (p) => p.startsWith('/paths') || p.startsWith('/doc') },
+  { to: '/upload', label: 'Upload', Icon: UploadIcon, matches: (p) => p.startsWith('/upload') },
+  { to: '/discover', label: 'Social', Icon: SocialIcon, matches: (p) => isSocial(p) },
+  { to: '/profile', label: 'You', Icon: YouIcon, matches: (p) => p.startsWith('/profile') || p.startsWith('/u/') || p.startsWith('/dashboard') || p.startsWith('/settings') },
 ];
 
 export function BottomNav() {
@@ -27,7 +32,7 @@ export function BottomNav() {
       >
         <div className="glass-strong flex items-center justify-between gap-1 rounded-full p-1 shadow-soft-lg sm:p-1.5">
           {TABS.map((t) => {
-            const active = isActive(pathname, t.to);
+            const active = t.matches ? t.matches(pathname) : isActive(pathname, t.to);
             return (
               <Link
                 key={t.to}
@@ -45,8 +50,6 @@ export function BottomNav() {
                     active ? 'scale-105' : 'group-hover:scale-105'
                   }`}
                 />
-                {/* Labels show only when active on phone (mirrors Instagram /
-                    TikTok) and inline on tablet+ widths. */}
                 <span
                   className={`hidden overflow-hidden transition-[max-width,opacity] duration-300 sm:inline ${
                     active ? 'max-w-[5rem] opacity-100' : 'max-w-0 opacity-0 sm:max-w-[5rem] sm:opacity-100'
@@ -68,6 +71,17 @@ function isActive(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
+function isSocial(p: string): boolean {
+  return (
+    p.startsWith('/discover') ||
+    p.startsWith('/friends') ||
+    p.startsWith('/activity') ||
+    p.startsWith('/leaderboard') ||
+    p.startsWith('/badges') ||
+    p.startsWith('/challenge')
+  );
+}
+
 function FeedIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -76,6 +90,17 @@ function FeedIcon(props: SVGProps<SVGSVGElement>) {
       <path d="M4 18h10" />
       <circle cx="19" cy="6" r="1.5" fill="currentColor" />
       <circle cx="19" cy="18" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PathIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 19c0-3 3-4 7-4s7-1 7-4" />
+      <circle cx="5" cy="19" r="2" />
+      <circle cx="19" cy="11" r="2" />
+      <circle cx="12" cy="5" r="2" />
     </svg>
   );
 }
@@ -90,13 +115,13 @@ function UploadIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function TutorIcon(props: SVGProps<SVGSVGElement>) {
+function SocialIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12a8 8 0 0 1-12.1 6.86L4 20l1.2-4.4A8 8 0 1 1 21 12Z" />
-      <path d="M9 11h.01" />
-      <path d="M13 11h.01" />
-      <path d="M17 11h.01" />
+      <circle cx="9" cy="9" r="3.5" />
+      <circle cx="17" cy="7" r="2.5" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <path d="M14 17a4 4 0 0 1 7 0" />
     </svg>
   );
 }

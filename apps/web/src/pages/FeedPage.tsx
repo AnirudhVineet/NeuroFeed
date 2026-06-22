@@ -9,6 +9,7 @@ import {
   type FeedFilters,
 } from '@/components/feed/FilterSheet';
 import { FlashcardCard } from '@/components/feed/FlashcardCard';
+import { PathStepCard } from '@/components/feed/PathStepCard';
 import { QuizCard } from '@/components/feed/QuizCard';
 import { ReelCard } from '@/components/feed/ReelCard';
 import { SwipeCard } from '@/components/feed/SwipeCard';
@@ -24,6 +25,7 @@ import { inferSubject } from '@/lib/subjects';
 import { useGamify } from '@/state/gamify';
 import type {
   Flashcard,
+  LearningPathStep,
   QuizItem,
   ReelScript,
   SwipeCard as SwipeCardData,
@@ -397,6 +399,16 @@ function CardBody({
           onComplete={onComplete}
         />
       );
+    case 'learning_path_step':
+      return (
+        <PathStepCard
+          data={item.payload as unknown as LearningPathStep}
+          documentId={item.document_id}
+          documentTitle={item.document_title}
+        />
+      );
+    case 'summary':
+      return <SummaryFeedCard payload={item.payload as { tldr?: string; bullets?: string[] }} documentTitle={item.document_title} />;
     default:
       return (
         <div className="h-full flex items-center justify-center text-muted">
@@ -404,6 +416,41 @@ function CardBody({
         </div>
       );
   }
+}
+
+function SummaryFeedCard({
+  payload,
+  documentTitle,
+}: {
+  payload: { tldr?: string; bullets?: string[] };
+  documentTitle?: string | null;
+}) {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-indigo-500/20 via-primary/15 to-accent/20">
+      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-gradient opacity-30 blur-3xl" />
+      <div className="relative flex h-full w-full flex-col px-6 pt-24 pb-32">
+        <span className="self-start rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-glow">
+          Summary
+        </span>
+        {documentTitle && (
+          <p className="mt-3 line-clamp-1 text-[11px] uppercase tracking-widest text-white/55">{documentTitle}</p>
+        )}
+        <div className="mt-6 flex flex-1 flex-col justify-center">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-white/55">TL;DR</p>
+          <p className="mt-3 text-balance text-2xl font-bold leading-snug text-white">
+            {payload.tldr ?? 'No summary available.'}
+          </p>
+          {payload.bullets?.length ? (
+            <ul className="mt-5 space-y-2 text-sm text-white/85">
+              {payload.bullets.slice(0, 5).map((b, i) => (
+                <li key={i} className="flex gap-2"><span className="text-accent">•</span><span>{b}</span></li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 class CardErrorBoundary extends Component<

@@ -18,7 +18,9 @@ import PrivacySettingsPage from './pages/PrivacySettingsPage';
 import { TopHud } from '@/components/gamify/TopHud';
 import { AchievementToast } from '@/components/gamify/AchievementToast';
 import { BottomNav } from '@/components/BottomNav';
+import { ToastHost } from '@/components/social/ToastHost';
 import { useSocialBootstrap } from '@/lib/social';
+import '@/lib/notifications';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -52,6 +54,7 @@ export default function App() {
         </Routes>
       </main>
       <AchievementToast />
+      {showChrome && <ToastHost />}
       {showChrome && <BottomNav />}
     </div>
   );

@@ -53,6 +53,10 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 /** Pretty user-facing message for any error returned by `api()` (or
  * thrown anywhere else). Never returns the raw "Failed to fetch" string. */
 export function friendlyError(e: unknown): string {
+  const raw = e instanceof Error ? e.message : '';
+  if (/cannot (?:follow|friend|challenge) yourself/i.test(raw)) {
+    return "Looks like you're targeting your own account — both browsers seem signed in as the same user. Open an incognito window and sign in as a different account.";
+  }
   if (e instanceof ApiError) return e.message;
   if (e instanceof Error) {
     if (/failed to fetch|networkerror|load failed/i.test(e.message)) {

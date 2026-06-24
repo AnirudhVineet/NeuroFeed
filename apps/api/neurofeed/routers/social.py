@@ -9,6 +9,8 @@ ownership is enforced in Python before any mutation.
 """
 from __future__ import annotations
 
+import logging
+import random
 from functools import wraps
 from typing import Any, Callable, Literal, Optional
 
@@ -17,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from ..deps import get_supabase_admin
 
+log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["social"])
 
 Visibility = Literal["private", "friends", "public"]
@@ -32,12 +35,24 @@ def _sb():
 
 
 def _is_missing_schema(exc: Exception) -> bool:
-    """True when the supabase error indicates a missing table/column
-    (Postgres SQLSTATE 42P01 = undefined_table, 42703 = undefined_column).
-    The social layer requires the 2026-06-22_social.sql migration; when it
-    hasn't been applied yet we want to return empty data instead of 500."""
-    s = str(exc)
-    return "42P01" in s or "42703" in s or "does not exist" in s.lower()
+    """True when the supabase error indicates a missing table/column.
+    Catches:
+      - Postgres SQLSTATE 42P01 (undefined_table) / 42703 (undefined_column)
+      - PostgREST PGRST204 / PGRST205 (column/table not found in schema cache)
+      - Plain "does not exist" / "could not find" messages
+    The social + multiplayer migrations are gated behind manual application;
+    when they haven't been applied yet we want to degrade to empty data
+    instead of returning 500."""
+    s = str(exc).lower()
+    return (
+        "42p01" in s
+        or "42703" in s
+        or "pgrst204" in s
+        or "pgrst205" in s
+        or "does not exist" in s
+        or "could not find" in s
+        or "schema cache" in s
+    )
 
 
 def safe_read(default_factory: Callable[[], Any]):
@@ -446,6 +461,100 @@ async def suggested_users(
 
 
 # ============================================================
+# Notifications
+# ============================================================
+
+NotificationKind = Literal[
+    "follow",
+    "friend_request",
+    "friend_accept",
+    "challenge_request",
+    "challenge_accepted",
+    "challenge_declined",
+    "challenge_finished",
+]
+
+
+def _notify(
+    user_id: str,
+    actor_id: Optional[str],
+    kind: str,
+    challenge_id: Optional[str] = None,
+    payload: Optional[dict[str, Any]] = None,
+) -> None:
+    """Insert a notification row. Self-targeting is skipped. Missing-schema
+    errors are swallowed so the feature degrades gracefully when the
+    multiplayer migration hasn't been applied."""
+    if not user_id or user_id == actor_id:
+        return
+    sb = _sb()
+    try:
+        sb.table("notifications").insert({
+            "user_id": user_id,
+            "actor_id": actor_id,
+            "kind": kind,
+            "challenge_id": challenge_id,
+            "payload": payload or {},
+        }).execute()
+    except Exception:
+        # Non-fatal: don't break the underlying action because the notification
+        # table is missing or RLS got in the way.
+        pass
+
+
+@router.get("/notifications")
+@safe_read(lambda: {"items": [], "unread": 0})
+async def list_notifications(
+    user_id: str = Query(...),
+    limit: int = Query(50, ge=1, le=100),
+    since: Optional[str] = Query(None, description="ISO timestamp — only return notifications created strictly after this"),
+) -> dict[str, Any]:
+    sb = _sb()
+    q = (
+        sb.table("notifications").select("*")
+        .eq("user_id", user_id).order("created_at", desc=True).limit(limit)
+    )
+    if since:
+        q = q.gt("created_at", since)
+    res = q.execute()
+    rows = getattr(res, "data", None) or []
+    actor_ids = [r["actor_id"] for r in rows if r.get("actor_id")]
+    profs = _profile_lite_map(actor_ids)
+    items = [
+        {**r, "actor": _profile_lite_from(profs.get(r["actor_id"], {}), r["actor_id"]) if r.get("actor_id") else None}
+        for r in rows
+    ]
+    unread_res = (
+        sb.table("notifications").select("id", count="exact")
+        .eq("user_id", user_id).eq("read", False).execute()
+    )
+    unread = getattr(unread_res, "count", 0) or 0
+    return {"items": items, "unread": unread}
+
+
+@router.post("/notifications/{nid}/read")
+async def mark_notification_read(nid: str, user_id: str = Query(...)) -> dict[str, str]:
+    sb = _sb()
+    try:
+        sb.table("notifications").update({"read": True}).eq("id", nid).eq("user_id", user_id).execute()
+    except Exception as exc:
+        if not _is_missing_schema(exc):
+            raise
+    return {"ok": "true"}
+
+
+@router.post("/notifications/read-all")
+async def mark_all_notifications_read(user_id: str = Query(...)) -> dict[str, str]:
+    sb = _sb()
+    try:
+        sb.table("notifications").update({"read": True}).eq("user_id", user_id).eq("read", False).execute()
+    except Exception as exc:
+        if not _is_missing_schema(exc):
+            raise
+    return {"ok": "true"}
+
+
+# ============================================================
 # Follows
 # ============================================================
 
@@ -467,6 +576,7 @@ async def follow_user(body: FollowIn, user_id: str = Query(...)) -> dict[str, st
         on_conflict="follower,followee",
     ).execute()
     _push_activity(user_id, "started following", f"@{target['username']}")
+    _notify(user_id=target["user_id"], actor_id=user_id, kind="follow", payload={})
     return {"ok": "true"}
 
 
@@ -543,7 +653,12 @@ async def send_friend_request(body: FriendRequestIn, user_id: str = Query(...)) 
     ins = sb.table("friend_requests").insert({
         "from_user": user_id, "to_user": target["user_id"], "status": "pending",
     }).execute()
-    return {"ok": "true", "request": (getattr(ins, "data", None) or [{}])[0]}
+    req_row = (getattr(ins, "data", None) or [{}])[0]
+    _notify(
+        user_id=target["user_id"], actor_id=user_id, kind="friend_request",
+        payload={"request_id": req_row.get("id")},
+    )
+    return {"ok": "true", "request": req_row}
 
 
 @router.post("/friends/requests/{req_id}/accept")
@@ -562,6 +677,7 @@ async def accept_friend_request(req_id: str, user_id: str = Query(...)) -> dict[
     other_name = (getattr(other, "data", None) or {}).get("username")
     if other_name:
         _push_activity(user_id, "became friends with", f"@{other_name}")
+    _notify(user_id=req["from_user"], actor_id=user_id, kind="friend_accept", payload={})
     return {"ok": "true"}
 
 
@@ -626,8 +742,21 @@ async def list_friend_requests(user_id: str = Query(...)) -> dict[str, dict[str,
 
 
 # ============================================================
-# Challenges
+# Challenges — multiplayer (server-owned questions + scores)
 # ============================================================
+
+QUESTION_COUNT = 5
+TIME_LIMIT_S = 15
+DEFAULT_PROGRESS = {
+    "answers": [],
+    "correct": 0,
+    "wrong": 0,
+    "completed": 0,
+    "time_taken_ms": 0,
+    "score": 0,
+    "done": False,
+}
+
 
 class ChallengeIn(BaseModel):
     to_username: str
@@ -636,8 +765,129 @@ class ChallengeIn(BaseModel):
     chapter: Optional[str] = None
 
 
+def _challenge_progress_key(row: dict[str, Any], user_id: str) -> str:
+    return "progress_from" if row["from_user"] == user_id else "progress_to"
+
+
+def _frozen_quiz_items(
+    document_id: Optional[str],
+    fallback_user_ids: Optional[list[str]] = None,
+    count: int = QUESTION_COUNT,
+) -> list[dict[str, Any]]:
+    """Pull quiz artifacts for a document, shuffle once, and freeze a fixed
+    subset that BOTH players will play. The returned list is the source of
+    truth for the entire battle — never regenerated.
+
+    If `document_id` is missing or that document has no quizzes, fall back to
+    any quiz artifacts from the documents owned by `fallback_user_ids` (the
+    two players of the challenge) so non-doc modes like 1v1/random can still
+    produce a playable question set."""
+    sb = _sb()
+    rows: list[dict[str, Any]] = []
+    if document_id:
+        try:
+            res = (
+                sb.table("artifacts").select("id,payload")
+                .eq("document_id", document_id).eq("type", "quiz").execute()
+            )
+            rows = getattr(res, "data", None) or []
+        except Exception:
+            rows = []
+    if not rows and fallback_user_ids:
+        try:
+            doc_res = (
+                sb.table("documents").select("id")
+                .in_("user_id", fallback_user_ids).limit(50).execute()
+            )
+            doc_ids = [d["id"] for d in (getattr(doc_res, "data", None) or [])]
+            if doc_ids:
+                # We only need `count` items; pull a small pool (3× target) for
+                # variety and shuffle. Heavy payloads + huge limits made the
+                # accept handshake slow enough that the client poll could time
+                # out before the server finished.
+                pool_size = max(count * 3, 15)
+                art_res = (
+                    sb.table("artifacts").select("id,payload")
+                    .in_("document_id", doc_ids).eq("type", "quiz").limit(pool_size).execute()
+                )
+                rows = getattr(art_res, "data", None) or []
+        except Exception:
+            pass
+    random.shuffle(rows)
+    return rows[:count]
+
+
+def _doc_subject(document_id: Optional[str]) -> Optional[str]:
+    if not document_id:
+        return None
+    sb = _sb()
+    try:
+        res = sb.table("documents").select("title").eq("id", document_id).maybe_single().execute()
+        title = (getattr(res, "data", None) or {}).get("title")
+        return title
+    except Exception:
+        return None
+
+
+def _profile_lite(user_id: str) -> dict[str, Any]:
+    p = _profile_by_user_id(user_id) or {}
+    return _profile_lite_from(p, fallback_user_id=user_id)
+
+
+def _profile_lite_from(p: dict[str, Any], fallback_user_id: str = "") -> dict[str, Any]:
+    return {
+        "user_id": p.get("user_id", fallback_user_id),
+        "username": p.get("username") or "unknown",
+        "display_name": p.get("display_name") or p.get("username") or "unknown",
+        "avatar_seed": p.get("avatar_seed") or fallback_user_id,
+    }
+
+
+def _profile_lite_map(user_ids: list[str]) -> dict[str, dict[str, Any]]:
+    """Batch-fetch profile lites for several user_ids in one query."""
+    sb = _sb()
+    unique = list({u for u in user_ids if u})
+    if not unique:
+        return {}
+    try:
+        res = (
+            sb.table("profiles").select("user_id,username,display_name,avatar_seed")
+            .in_("user_id", unique).execute()
+        )
+        rows = getattr(res, "data", None) or []
+    except Exception as exc:
+        if _is_missing_schema(exc):
+            return {}
+        raise
+    return {r["user_id"]: r for r in rows}
+
+
+def _decorate_challenge(row: dict[str, Any], requester_id: Optional[str] = None) -> dict[str, Any]:
+    """Attach `from` / `to` profile lites and fill in default shapes for any
+    multiplayer columns that the migration hasn't yet added (so the frontend
+    can always render a full row). Withhold quiz_items while still pending."""
+    profs = _profile_lite_map([row["from_user"], row["to_user"]])
+    out = {
+        **row,
+        "from": _profile_lite_from(profs.get(row["from_user"], {}), row["from_user"]),
+        "to": _profile_lite_from(profs.get(row["to_user"], {}), row["to_user"]),
+    }
+    out.setdefault("progress_from", dict(DEFAULT_PROGRESS))
+    out.setdefault("progress_to", dict(DEFAULT_PROGRESS))
+    out.setdefault("question_count", QUESTION_COUNT)
+    out.setdefault("time_limit_s", TIME_LIMIT_S)
+    out.setdefault("subject", None)
+    out.setdefault("quiz_items", None)
+    if row.get("status") == "pending":
+        out["quiz_items"] = None
+    return out
+
+
 @router.post("/challenges")
 async def create_challenge(body: ChallengeIn, user_id: str = Query(...)) -> dict[str, Any]:
+    """Create a PENDING challenge — questions are not generated yet. The
+    recipient must accept before quiz_items are frozen and the room becomes
+    in_progress."""
     sb = _sb()
     _ensure_profile(user_id)
     target = _profile_by_username(body.to_username)
@@ -645,19 +895,220 @@ async def create_challenge(body: ChallengeIn, user_id: str = Query(...)) -> dict
         raise HTTPException(404, "user not found")
     if target["user_id"] == user_id:
         raise HTTPException(400, "cannot challenge yourself")
-    ins = sb.table("challenges").insert({
+    payload: dict[str, Any] = {
         "from_user": user_id,
         "to_user": target["user_id"],
         "mode": body.mode,
         "document_id": body.document_id,
         "chapter": body.chapter,
         "status": "pending",
-    }).execute()
+        "question_count": QUESTION_COUNT,
+        "time_limit_s": TIME_LIMIT_S,
+        "subject": _doc_subject(body.document_id),
+    }
+    ins = sb.table("challenges").insert(payload).execute()
     row = (getattr(ins, "data", None) or [{}])[0]
-    return {"ok": "true", "challenge": row}
+    _notify(
+        user_id=target["user_id"], actor_id=user_id, kind="challenge_request",
+        challenge_id=row.get("id"), payload={
+            "mode": body.mode, "subject": payload.get("subject"), "document_id": body.document_id,
+        },
+    )
+    return {"ok": "true", "challenge": _decorate_challenge(row, user_id)}
+
+
+@router.get("/challenges/{cid}")
+@safe_read(lambda: {})
+async def get_challenge(cid: str, user_id: str = Query(...)) -> dict[str, Any]:
+    sb = _sb()
+    res = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    row = getattr(res, "data", None)
+    if not row:
+        raise HTTPException(404, "challenge not found")
+    if user_id not in (row["from_user"], row["to_user"]):
+        raise HTTPException(403, "not a party to this challenge")
+    return _decorate_challenge(row, user_id)
+
+
+@router.post("/challenges/{cid}/accept")
+async def accept_challenge(cid: str, user_id: str = Query(...)) -> dict[str, Any]:
+    """Recipient accepts: freeze quiz_items (once), flip to in_progress, set
+    started_at. Subsequent calls are idempotent — quiz_items don't regenerate."""
+    sb = _sb()
+    res = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    row = getattr(res, "data", None)
+    if not row:
+        raise HTTPException(404, "challenge not found")
+    if row["to_user"] != user_id:
+        raise HTTPException(403, "only the recipient can accept")
+    if row.get("status") in ("declined", "cancelled", "expired"):
+        raise HTTPException(409, f"challenge is {row['status']}")
+    update: dict[str, Any] = {}
+    if not row.get("quiz_items"):
+        items = _frozen_quiz_items(
+            row.get("document_id"),
+            fallback_user_ids=[row["from_user"], row["to_user"]],
+        )
+        if not items:
+            raise HTTPException(
+                422,
+                "no quiz questions available — upload a document with quizzes first, then send the challenge again",
+            )
+        update["quiz_items"] = items
+    if row.get("status") in ("pending", "accepted"):
+        update["status"] = "in_progress"
+        update["accepted_at"] = "now()"
+        update["started_at"] = "now()"
+        # Reset progress in case of replay
+        update["progress_from"] = DEFAULT_PROGRESS
+        update["progress_to"] = DEFAULT_PROGRESS
+    if update:
+        sb.table("challenges").update(update).eq("id", cid).execute()
+    fresh = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    new_row = getattr(fresh, "data", None) or row
+    _notify(
+        user_id=row["from_user"], actor_id=user_id, kind="challenge_accepted",
+        challenge_id=cid, payload={"subject": row.get("subject")},
+    )
+    return {"ok": "true", "challenge": _decorate_challenge(new_row, user_id)}
+
+
+@router.post("/challenges/{cid}/decline")
+async def decline_challenge(cid: str, user_id: str = Query(...)) -> dict[str, str]:
+    sb = _sb()
+    res = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    row = getattr(res, "data", None)
+    if not row:
+        raise HTTPException(404, "challenge not found")
+    if user_id not in (row["from_user"], row["to_user"]):
+        raise HTTPException(403, "not a party to this challenge")
+    sb.table("challenges").update({
+        "status": "declined" if user_id == row["to_user"] else "cancelled",
+        "declined_at": "now()",
+    }).eq("id", cid).execute()
+    other = row["from_user"] if user_id == row["to_user"] else row["to_user"]
+    _notify(
+        user_id=other, actor_id=user_id,
+        kind="challenge_declined", challenge_id=cid, payload={},
+    )
+    return {"ok": "true"}
+
+
+class AnswerIn(BaseModel):
+    question_index: int = Field(..., ge=0)
+    option_index: int = Field(..., ge=0)
+    time_ms: int = Field(0, ge=0)
+
+
+@router.post("/challenges/{cid}/answer")
+async def submit_answer(cid: str, body: AnswerIn, user_id: str = Query(...)) -> dict[str, Any]:
+    """Server validates the answer against the frozen quiz_items and updates
+    only the calling player's progress. Returns the updated challenge so both
+    clients see identical numbers."""
+    sb = _sb()
+    res = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    row = getattr(res, "data", None)
+    if not row:
+        raise HTTPException(404, "challenge not found")
+    if user_id not in (row["from_user"], row["to_user"]):
+        raise HTTPException(403, "not a party to this challenge")
+    if row.get("status") != "in_progress":
+        raise HTTPException(409, f"challenge is {row.get('status')}")
+    items = row.get("quiz_items") or []
+    if body.question_index >= len(items):
+        raise HTTPException(422, "question index out of range")
+    key = _challenge_progress_key(row, user_id)
+    progress = dict(row.get(key) or DEFAULT_PROGRESS)
+    answers: list[dict[str, Any]] = list(progress.get("answers") or [])
+    # Reject duplicate submission for the same question
+    if any(a.get("q") == body.question_index for a in answers):
+        raise HTTPException(409, "already answered this question")
+    item = items[body.question_index]
+    correct_idx = ((item.get("payload") or {}).get("answer_index"))
+    is_correct = correct_idx is not None and body.option_index == correct_idx
+    answers.append({
+        "q": body.question_index, "pick": body.option_index,
+        "correct": is_correct, "time_ms": body.time_ms,
+    })
+    progress["answers"] = answers
+    progress["correct"] = int(progress.get("correct", 0)) + (1 if is_correct else 0)
+    progress["wrong"] = int(progress.get("wrong", 0)) + (0 if is_correct else 1)
+    progress["completed"] = len(answers)
+    progress["time_taken_ms"] = int(progress.get("time_taken_ms", 0)) + body.time_ms
+    progress["score"] = progress["correct"]  # 1pt per correct
+    progress["done"] = progress["completed"] >= len(items)
+    update: dict[str, Any] = {key: progress}
+    # If BOTH players are done, auto-finish.
+    other_key = "progress_to" if key == "progress_from" else "progress_from"
+    other = row.get(other_key) or DEFAULT_PROGRESS
+    if progress["done"] and other.get("done"):
+        # NOTE: the challenge_status enum has 'finished', not 'completed'.
+        # Writing 'completed' here used to make the UPDATE fail mid-transaction,
+        # which surfaced to the client as a network-level "Failed to fetch"
+        # because the 500 response had no CORS headers attached.
+        update["status"] = "finished"
+        update["finished_at"] = "now()"
+        update["wins_from"] = (row.get("progress_from") if key == "progress_to" else progress).get("score") or 0
+        update["wins_to"] = (row.get("progress_to") if key == "progress_from" else progress).get("score") or 0
+    sb.table("challenges").update(update).eq("id", cid).execute()
+    # Build the response row from the local update so we never depend on a
+    # second roundtrip for correctness. The fresh re-fetch is best-effort —
+    # if it fails we still return a valid, consistent row.
+    new_row = {**row, **update}
+    try:
+        fresh = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+        fetched = getattr(fresh, "data", None)
+        if fetched:
+            new_row = fetched
+    except Exception:
+        log.exception("submit_answer: fresh fetch failed; using local merge")
+    # Side effects after a finished match must NEVER crash the answer response —
+    # activity rows + notifications are decorative; the player needs their score
+    # update to land.
+    if update.get("status") == "finished":
+        try:
+            _on_challenge_finish(new_row)
+        except Exception:
+            log.exception("submit_answer: _on_challenge_finish failed")
+    try:
+        decorated = _decorate_challenge(new_row, user_id)
+    except Exception:
+        log.exception("submit_answer: _decorate_challenge failed; returning raw row")
+        decorated = new_row
+    return {"ok": "true", "challenge": decorated}
+
+
+def _on_challenge_finish(row: dict[str, Any]) -> None:
+    wins_from = int(row.get("wins_from") or 0)
+    wins_to = int(row.get("wins_to") or 0)
+    a, b = row["from_user"], row["to_user"]
+    # Profile lookups must never fail this routine — fall back to "opponent"
+    # so the activity feed still gets the win/loss/tie line.
+    def _name(uid: str) -> str:
+        try:
+            return (_profile_by_user_id(uid) or {}).get("username") or "opponent"
+        except Exception:
+            log.exception("_on_challenge_finish: profile lookup failed for %s", uid)
+            return "opponent"
+    from_name = _name(a)
+    to_name = _name(b)
+    if wins_from > wins_to:
+        _push_activity(a, "won a quiz battle vs", f"@{to_name}")
+        _push_activity(b, "lost a quiz battle vs", f"@{from_name}")
+    elif wins_to > wins_from:
+        _push_activity(b, "won a quiz battle vs", f"@{from_name}")
+        _push_activity(a, "lost a quiz battle vs", f"@{to_name}")
+    else:
+        _push_activity(a, "tied a quiz battle with", f"@{to_name}")
+        _push_activity(b, "tied a quiz battle with", f"@{from_name}")
+    payload = {"wins_from": wins_from, "wins_to": wins_to}
+    _notify(user_id=a, actor_id=b, kind="challenge_finished", challenge_id=row["id"], payload=payload)
+    _notify(user_id=b, actor_id=a, kind="challenge_finished", challenge_id=row["id"], payload=payload)
 
 
 class FinishChallengeIn(BaseModel):
+    """Legacy client-finish endpoint kept for backwards compat — preferred path
+    is per-answer submission which auto-finishes on the server."""
     wins_from: int = Field(..., ge=0)
     wins_to: int = Field(..., ge=0)
 
@@ -671,20 +1122,17 @@ async def finish_challenge(cid: str, body: FinishChallengeIn, user_id: str = Que
         raise HTTPException(404, "challenge not found")
     if user_id not in (row["from_user"], row["to_user"]):
         raise HTTPException(403, "not a party to this challenge")
+    if row.get("status") in ("finished", "declined", "cancelled", "expired"):
+        return {"ok": "true"}
     sb.table("challenges").update({
         "status": "finished",
         "wins_from": body.wins_from,
         "wins_to": body.wins_to,
         "finished_at": "now()",
     }).eq("id", cid).execute()
-    # Resolve usernames for activity row.
-    other_id = row["to_user"] if user_id == row["from_user"] else row["from_user"]
-    other = sb.table("profiles").select("username").eq("user_id", other_id).maybe_single().execute()
-    other_name = (getattr(other, "data", None) or {}).get("username") or "opponent"
-    you_wins = body.wins_from if user_id == row["from_user"] else body.wins_to
-    them_wins = body.wins_to if user_id == row["from_user"] else body.wins_from
-    verb = "won a quiz battle vs" if you_wins > them_wins else "lost a quiz battle vs" if you_wins < them_wins else "tied a quiz battle with"
-    _push_activity(user_id, verb, f"@{other_name}")
+    fresh = sb.table("challenges").select("*").eq("id", cid).maybe_single().execute()
+    new_row = getattr(fresh, "data", None) or row
+    _on_challenge_finish(new_row)
     return {"ok": "true"}
 
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '@/components/social/Avatar';
+import { ChallengeDialog } from '@/components/social/ChallengeDialog';
 import { ErrorState } from '@/components/social/SocialStates';
 import { fetchAnalytics, type AnalyticsPayload } from '@/lib/analytics';
 import { fetchDocuments, type DocSummary } from '@/lib/dashboard';
@@ -9,7 +10,6 @@ import { BADGE_CATALOG } from '@/lib/roster';
 import { friendlyError } from '@/lib/api';
 import {
   bootstrap as bootstrapSocial,
-  challenge,
   fetchFollowers,
   fetchProfileByUsername,
   isFollowing,
@@ -412,6 +412,7 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [challengeOpen, setChallengeOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function onSignOut() {
@@ -430,24 +431,14 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
   async function onFollow() {
     setBusy(true);
     setErr(null);
-    try { await toggleFollow(view.username); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    try { await toggleFollow(view.username); } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   }
   async function onFriend() {
     setBusy(true);
     setErr(null);
-    try { await sendFriendRequest(view.username); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    try { await sendFriendRequest(view.username); } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
-  }
-  async function onChallenge() {
-    setBusy(true);
-    setErr(null);
-    try {
-      await challenge({ to: view.username, mode: '1v1' });
-      alert(`Challenge sent to @${view.username}!`);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(false); }
   }
 
   return (
@@ -529,8 +520,11 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
                   Add friend
                 </button>
               )}
-              <button onClick={onChallenge} disabled={busy} className="rounded-full border border-accent/40 bg-accent/15 px-4 py-2 text-xs font-semibold text-white hover:bg-accent/25 disabled:opacity-50">
-                Challenge to quiz
+              <button
+                onClick={() => setChallengeOpen(true)}
+                className="rounded-full border border-accent/40 bg-accent/15 px-4 py-2 text-xs font-semibold text-white hover:bg-accent/25"
+              >
+                ⚔ Challenge to quiz
               </button>
               <button
                 onClick={() => {
@@ -547,6 +541,15 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
         </div>
       </div>
       {isSelf && editing && <EditProfileForm />}
+      <ChallengeDialog
+        open={challengeOpen}
+        onClose={() => setChallengeOpen(false)}
+        opponent={{
+          username: view.username,
+          display_name: view.display_name,
+          avatar_seed: view.avatar_seed,
+        }}
+      />
     </header>
   );
 }

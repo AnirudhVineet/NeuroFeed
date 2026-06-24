@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useGamify } from '@/state/gamify';
+import { NotificationBell } from '@/components/social/NotificationBell';
 
 // Sticky status bar with goal ring, XP progress, and streak.
 // Sits at the very top with safe-area padding so it never overlaps the
@@ -54,6 +55,7 @@ export function TopHud() {
             <span aria-hidden className="text-base leading-none">🔥</span>
             <span className="font-bold tabular-nums text-white">{state.streak}</span>
           </div>
+          <NotificationBell />
         </div>
       </div>
     </div>

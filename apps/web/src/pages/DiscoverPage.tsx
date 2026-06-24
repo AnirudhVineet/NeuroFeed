@@ -61,8 +61,9 @@ export default function DiscoverPage() {
   }, []);
 
   useEffect(() => {
+    if (!social.user_id) return;
     void loadSuggested();
-  }, [loadSuggested]);
+  }, [loadSuggested, social.user_id]);
 
   // -------- Search --------
   // Track the latest in-flight query so out-of-order responses don't clobber.
@@ -98,7 +99,10 @@ export default function DiscoverPage() {
   );
 
   // Fire a search whenever the debounced query / subject changes (but only
-  // when there is something to search; otherwise show suggestions).
+  // when there is something to search; otherwise show suggestions). Gate on
+  // social.user_id so the request always passes the requester id — otherwise
+  // the backend can't exclude the requester from results and the user ends up
+  // trying to follow themselves.
   useEffect(() => {
     if (!isSearching) {
       setResults([]);
@@ -107,8 +111,9 @@ export default function DiscoverPage() {
       setSearchErr(null);
       return;
     }
+    if (!social.user_id) return;
     void runSearch(debouncedQ, subject, 0, false);
-  }, [debouncedQ, subject, isSearching, runSearch]);
+  }, [debouncedQ, subject, isSearching, runSearch, social.user_id]);
 
   const onRetrySearch = () => {
     void runSearch(debouncedQ, subject, 0, false);

@@ -543,7 +543,8 @@ export async function searchUsers(opts: {
   params.set('limit', String(opts.limit ?? 20));
   params.set('offset', String(opts.offset ?? 0));
   const r = await api<{ items: UserSearchHit[] }>(`/api/users/search?${params.toString()}`);
-  return r.items;
+  // Belt-and-suspenders: never include the requester in results.
+  return state.user_id ? r.items.filter((u) => u.user_id !== state.user_id) : r.items;
 }
 
 export interface SuggestedBuckets {
@@ -557,7 +558,15 @@ export async function fetchSuggested(limit = 8): Promise<SuggestedBuckets> {
   const params = new URLSearchParams();
   if (state.user_id) params.set('user_id', state.user_id);
   params.set('limit', String(limit));
-  return api<SuggestedBuckets>(`/api/users/suggested?${params.toString()}`);
+  const r = await api<SuggestedBuckets>(`/api/users/suggested?${params.toString()}`);
+  if (!state.user_id) return r;
+  const notMe = (u: UserSearchHit) => u.user_id !== state.user_id;
+  return {
+    trending: r.trending.filter(notMe),
+    top_streaks: r.top_streaks.filter(notMe),
+    recent_uploaders: r.recent_uploaders.filter(notMe),
+    mutual_interests: r.mutual_interests.filter(notMe),
+  };
 }
 
 export async function fetchLeaderboard(opts: {

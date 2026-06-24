@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '@/components/social/Avatar';
+import { ChallengeDialog } from '@/components/social/ChallengeDialog';
 import { SocialChips } from '@/components/social/SocialChips';
 import { RosterSkeleton } from '@/components/social/SocialStates';
 import { friendlyError } from '@/lib/api';
 import {
   acceptFriendRequest,
-  challenge,
   declineFriendRequest,
   sendFriendRequest,
   useSocial,
@@ -183,6 +183,7 @@ function AcceptDeclineButtons({ id }: { id: string }) {
 }
 
 function FriendRow({ user }: { user: ProfileLite }) {
+  const [open, setOpen] = useState(false);
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
       <Avatar seed={user.avatar_seed || user.user_id} username={user.username} size={44} />
@@ -193,18 +194,21 @@ function FriendRow({ user }: { user: ProfileLite }) {
         <p className="truncate text-[11px] text-white/55">@{user.username}{user.college ? ` · ${user.college}` : ''}</p>
       </div>
       <button
-        onClick={async () => {
-          try {
-            await challenge({ to: user.username, mode: 'random' });
-            alert(`Challenge sent to @${user.username}`);
-          } catch (e) {
-            alert(e instanceof Error ? e.message : String(e));
-          }
-        }}
+        onClick={() => setOpen(true)}
         className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-white"
       >
-        Challenge
+        ⚔ Challenge
       </button>
+      <ChallengeDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        opponent={{
+          username: user.username,
+          display_name: user.display_name,
+          avatar_seed: user.avatar_seed,
+          user_id: user.user_id,
+        }}
+      />
     </div>
   );
 }

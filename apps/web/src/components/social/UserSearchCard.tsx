@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from './Avatar';
+import { ChallengeDialog } from './ChallengeDialog';
 import {
-  challenge,
   isFollowing,
   isFriend,
   sendFriendRequest,
@@ -17,9 +17,10 @@ interface Props {
 }
 
 export function UserSearchCard({ user, variant = 'row' }: Props) {
-  const [busy, setBusy] = useState<'follow' | 'friend' | 'challenge' | null>(null);
+  const [busy, setBusy] = useState<'follow' | 'friend' | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [challengeOpen, setChallengeOpen] = useState(false);
   const following = isFollowing(user.username);
   const friend = isFriend(user.username);
 
@@ -49,18 +50,9 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
     }
   };
 
-  const handleChallenge = async () => {
-    setBusy('challenge');
+  const openChallenge = () => {
     setErr(null);
-    try {
-      await challenge({ to: user.username, mode: '1v1' });
-      setFlash(`Challenge sent to @${user.username}`);
-      setTimeout(() => setFlash(null), 1800);
-    } catch (e) {
-      setErr(friendlyError(e));
-    } finally {
-      setBusy(null);
-    }
+    setChallengeOpen(true);
   };
 
   if (variant === 'compact') {
@@ -163,11 +155,10 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
           </button>
         )}
         <button
-          onClick={handleChallenge}
-          disabled={busy !== null}
-          className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+          onClick={openChallenge}
+          className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-white"
         >
-          {busy === 'challenge' ? '…' : '⚔ Challenge'}
+          ⚔ Challenge
         </button>
         <Link
           to={`/u/${user.username}`}
@@ -192,6 +183,17 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
           {err ?? flash}
         </p>
       )}
+
+      <ChallengeDialog
+        open={challengeOpen}
+        onClose={() => setChallengeOpen(false)}
+        opponent={{
+          username: user.username,
+          display_name: user.display_name,
+          avatar_seed: user.avatar_seed,
+          user_id: user.user_id,
+        }}
+      />
     </li>
   );
 }

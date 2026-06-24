@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Explore Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#006a61",
+                    "outline": "#6d7a77",
+                    "primary-fixed": "#85f5e7",
+                    "on-surface-variant": "#3d4947",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "tertiary-container": "#aec3f5",
+                    "primary": "#006a61",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "secondary": "#006a66",
+                    "on-surface": "#171d1c",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#67d9cb",
+                    "on-tertiary-container": "#3b507b",
+                    "on-primary-container": "#005a53",
+                    "secondary-fixed": "#8ff3ed",
+                    "surface-variant": "#dee4e1",
+                    "primary-fixed-dim": "#67d9cb",
+                    "surface-container-highest": "#dee4e1",
+                    "on-primary-fixed": "#00201d",
+                    "secondary-container": "#8cf1ea",
+                    "primary-container": "#63d5c7",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "inverse-on-surface": "#edf2f0",
+                    "surface-container": "#eaefed",
+                    "on-primary-fixed-variant": "#005049",
+                    "background": "#f5faf8",
+                    "surface-bright": "#f5faf8",
+                    "tertiary-fixed": "#d8e2ff",
+                    "tertiary": "#495e8a",
+                    "surface-container-low": "#eff5f2",
+                    "on-secondary-fixed": "#00201e",
+                    "on-secondary-container": "#006f6a",
+                    "surface-container-high": "#e4e9e7",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d6dbd9",
+                    "inverse-surface": "#2c3230",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#001a42",
+                    "surface": "#f5faf8",
+                    "on-background": "#171d1c",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "container-max": "1280px",
+                    "sm": "12px",
+                    "lg": "48px",
+                    "xl": "80px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f8f8f8;
+            color: #171d1c;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .masonry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-auto-rows: 200px;
+            gap: 16px;
+        }
+        .grid-span-2 { grid-row: span 2; }
+        .grid-span-3 { grid-row: span 3; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            background: rgba(245, 250, 248, 0.8);
+        }
+        
+        .hover-stats {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .card-container:hover .hover-stats {
+            opacity: 1;
+        }
+        .card-container:hover img {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-background">
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface hidden md:flex flex-col py-md z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary px-md py-lg mb-4">EduGram</div>
+<nav class="flex-1 space-y-2 px-md">
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<!-- ACTIVE STATE: Explore -->
+<a class="flex items-center gap-base px-md py-sm text-primary font-bold bg-primary-container/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md text-label-md">Create</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md text-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-md border-t border-outline-variant">
+<div class="flex items-center gap-sm p-sm rounded-xl hover:bg-surface-container cursor-pointer transition-all">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a young medical student with a warm smile, wearing a modern minimalist aesthetic navy blue scrub, soft cinematic lighting, clinical modern background with teal accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnndOgxGRqthetK7boNwjODDFDrMHINHd61KTkPXsqeZBDTOHCKfG-MYe-WZcW1Li594LCyp7-1GISiSG6nWO5UDk166bA7lvGOPwFTxFqCW6MDvgSax_CJxFXo-UVSQB4nd7bvGzzJE5PlO7TRsZlXrShK81OY16LqbuwlhD5sXpznn5dDigDEO973GQ9AgpSj4ejh5nogUky8ivE2TfsSQN98hdVEE1tlwwVrKuBVf3vtOCHlM54pmyYJBsLHKDU8Do7nyTdZIGf"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Dr. Alex Chen</span>
+<span class="text-[10px] font-label-sm text-outline">Neuroscience Fellow</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-64 min-h-screen relative">
+<!-- Top Search Bar -->
+<header class="sticky top-0 z-40 w-full glass-nav border-b border-outline-variant/30">
+<div class="flex justify-between items-center h-16 px-md max-w-container-max mx-auto gap-md">
+<div class="relative flex-1 max-w-xl group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full pl-12 pr-4 py-2 bg-surface-container border-none rounded-full focus:ring-2 focus:ring-primary/20 font-body-sm text-body-sm placeholder:text-outline transition-all" placeholder="Search topics, creators, or study reels..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+</div>
+</header>
+<div class="max-w-6xl mx-auto px-md py-base space-y-lg">
+<!-- Trending Topics Section -->
+<section class="mt-4">
+<div class="flex items-center gap-sm overflow-x-auto no-scrollbar py-2">
+<span class="font-label-md text-label-md text-primary font-bold whitespace-nowrap">Trending:</span>
+<div class="flex gap-2">
+<button class="px-4 py-1.5 rounded-full bg-primary/10 text-primary font-label-md text-label-md hover:bg-primary/20 transition-all">#AIinMedicine</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all">#CyberSecurity</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all">#Neuroplasticity</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all">#DataScience</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all">#BioTech</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all">#Ethics</button>
+</div>
+</div>
+</section>
+<!-- Suggested Creators -->
+<section class="space-y-md">
+<div class="flex justify-between items-center px-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Rising Educators</h2>
+<button class="text-primary font-label-md text-label-md hover:underline">See all</button>
+</div>
+<div class="flex gap-md overflow-x-auto no-scrollbar px-2 pb-4">
+<!-- Creator Item -->
+<div class="flex flex-col items-center gap-2 min-w-[100px]">
+<div class="w-16 h-16 rounded-full p-[2px] border-2 border-primary ring-2 ring-offset-2 ring-transparent transition-all cursor-pointer">
+<img class="w-full h-full object-cover rounded-full" data-alt="Close up portrait of a tech expert woman with glasses, soft studio lighting with subtle teal neon highlights, minimalist futuristic background, highly detailed digital photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOVcbNE24BycCrsolojTMuvaQDvyUsV3wyxFVXbeq7DLJoa_bFe4Dbovp65xLfIPOJ9ET0-cv-WG9emjn4pyi44isajVH16eMG_IpwSaBBJTqLOH5vzchhYED-CVsQOkbqZ3X5DLkoCIzNBlPmUq1_ZV4kqAd5XAj5D5PIiZ-i3Cs2dOOHNnvYDXEjh5mSg1KHD8_6-2lLScfF1t1xAaCDsZ0Y2UDYRpFWqo0SLvZHx39kVx1KtgjIHgDNSbzzXEJyF0XuKnfrM78z"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface truncate w-full text-center">TechSavant</span>
+</div>
+<!-- Creator Item -->
+<div class="flex flex-col items-center gap-2 min-w-[100px]">
+<div class="w-16 h-16 rounded-full p-[2px] border-2 border-primary">
+<img class="w-full h-full object-cover rounded-full" data-alt="Portrait of a young scientist in a modern laboratory setting, soft natural lighting through a window, clinical teal aesthetic, blurred microscopes in the background, sharp focus on subject." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmPrZMFNS4SOke_OujN7iFr9o140nAj3M7MsqKs2ikCMp5_F7FiWpW8ytVZm086bijt24cFSTyXm0PZFZDeea7NnS-FKsP7EJ0bl6mVU9wHdKZjtzR-FL3SrikD89yBK3VOfeY4zDFhkKDZB1l3sLmft7cEnvlN08oCRBbMFfzJUWj22-LIdvZTvn8CvtO9-W_DPpJBPgSBjAPwxUT_5dED5FkTxdTXKuP_cZnDZmPizQ_oJOnJEke8heDwGorT-rr2jInHZ1cbX6f"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface truncate w-full text-center">LabNotes</span>
+</div>
+<!-- Creator Item -->
+<div class="flex flex-col items-center gap-2 min-w-[100px]">
+<div class="w-16 h-16 rounded-full p-[2px] border-2 border-primary">
+<img class="w-full h-full object-cover rounded-full" data-alt="A digital artist with a creative aesthetic, cinematic rim lighting in shades of cool teal and white, minimalist workspace background, 8k resolution detailed character portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBD5F1GRMAlQrLvyEM5gIINBzaJjfNqcAdK4i4hlnWBaw9UmZf6rQcFaG0154pvIpaFR8H4G28A1qbjhZTGmtivJ0YVHb2RfqFRemhTPe0Ss1Xgx67oZgPTN_S8WCVr7EOzEUiAKQH_rkKEZmH8dWcilOXuH7o6VJnh0NikF4s5pJdCuGyUt5Y7_o_0YpsbAvw1V4ISxVqzgBevGEyCmD096XghVkqP1ZuRteJ8cScGdo8-NGd-JigJ7yB0Gq-WgwLqPsvdcfjfpdF"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface truncate w-full text-center">PixelStudy</span>
+</div>
+<!-- Creator Item -->
+<div class="flex flex-col items-center gap-2 min-w-[100px]">
+<div class="w-16 h-16 rounded-full p-[2px] border-2 border-primary">
+<img class="w-full h-full object-cover rounded-full" data-alt="Modern educator portrait with a friendly expression, professional bokeh background of a university library, high key lighting, clean aesthetic with soft teal color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp-cTSrVOV3jo9o6B0fhv3xzid3_yBM1c5SetAweZoqVKKz7Kzpo2yEjTrAq5Dt-Ywyi5R7PotSdre5yxOE_Zwf-HczR279fKrDciSBpaiDRjqlJEvYzadfAFhf6iq90ATpRzyWZNEJ8qTz6kYqKNWKxVtY1JI7-11xhHiXiJ4VnOZe_YUVwS1oo71MU-Mu6fluWfMDd-4hTTZkJZ74i0AsFhVOj32RFXiP0Qlf_fJJBu-JQYX3Qg8JAUUS8lZqGXNRe-VZDKdwMxR"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface truncate w-full text-center">Prof.Hills</span>
+</div>
+<!-- Creator Item -->
+<div class="flex flex-col items-center gap-2 min-w-[100px]">
+<div class="w-16 h-16 rounded-full p-[2px] border-2 border-primary">
+<img class="w-full h-full object-cover rounded-full" data-alt="Close-up profile of a male researcher, thoughtful gaze, futuristic clinical environment with floating UI elements, soft blue and teal lighting, hyper-realistic detail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFlfidCgZVRtfGJxU-Q4dRhlR6MCvYQPunYytJzmxNMewq0o8FYJiXqtywbtmyrg5b3Sxl6wGpa-roQ-ruwq99FbUphJqNYU4gncpx8R5wJDvMvqyZx-M2bl2BjHjqjSsmdHGPt5UAoG5v4_6HZt-GBSgSXsCczqiWgdN_7YMrnfRM3J9pj0bMUgzbxIcM2j8tQZLOO0jIHKLo4vKT7g--8kq1yeR2_7TvdbZH-8mNj_zUjBCTaLk04mgPL5xDVv4eZnF_N9QFsdLi"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface truncate w-full text-center">NeuralMind</span>
+</div>
+</div>
+</section>
+<!-- Discovery Grid (Instagram-style Masonry) -->
+<section class="space-y-md">
+<div class="flex items-center gap-md border-b border-outline-variant/30 pb-2 mb-md">
+<button class="font-label-md text-label-md text-primary border-b-2 border-primary pb-2">For You</button>
+<button class="font-label-md text-label-md text-outline hover:text-on-surface-variant transition-all pb-2">Top Learning</button>
+<button class="font-label-md text-label-md text-outline hover:text-on-surface-variant transition-all pb-2">Reels</button>
+</div>
+<div class="masonry-grid pb-20">
+<!-- Grid Item 1: Large Featured Reel -->
+<div class="card-container grid-span-2 relative overflow-hidden rounded-xl border border-outline-variant bg-surface group cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700" data-alt="A visually stunning close-up of a human brain model glowing with teal electrical currents representing neural pathways, dark navy background with clinical precision, cinematic 3D rendering style, vibrant and focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyAMPkp7OM3HKxnfLFie8yg3ZZqXzqWiJ-fN7fS2iYfUXW6xm2K59_GMWIcdVXWk1wH29oHc6uKD2FmPmFj7FcH3N4260fnFdrLTXcvyjAyZ4H__Uwov2y4egjHSiw_DZ9TsV9ea5dXZZUi_P9dJ5O56U2_rEi68lAJ522ROtZl6q7WdYK8vJAy1rk6OwXZc8yeKwgTlOI1e8Ti74aM62aYY3BWdjz9JDvVlNnVzhdRuHY6Ksn13YTiX3w5t7dx6TAMrqzqPzpcw3s"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute top-4 right-4 text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-label-sm text-label-sm opacity-80 uppercase tracking-widest">Featured Reel</p>
+<h3 class="font-headline-sm text-headline-sm">Neuroplasticity 101</h3>
+</div>
+<!-- Hover Stats -->
+<div class="hover-stats absolute inset-0 bg-black/40 flex items-center justify-center gap-lg text-white">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-label-md">12.4k</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">comment</span>
+<span class="font-label-md text-label-md">842</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 2: Subject Category -->
+<div class="card-container relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low group cursor-pointer p-md flex flex-col justify-between">
+<div class="z-10">
+<span class="material-symbols-outlined text-primary mb-2">database</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Data Science</h3>
+<p class="font-body-sm text-body-sm text-outline">450+ Active Modules</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 scale-150 rotate-12 transition-transform group-hover:rotate-0 duration-500">
+<span class="material-symbols-outlined text-[120px]">science</span>
+</div>
+<div class="hover-stats absolute inset-0 bg-primary/90 flex items-center justify-center text-white">
+<span class="font-label-md text-label-md">Explore Category</span>
+</div>
+</div>
+<!-- Grid Item 3: Popular Document -->
+<div class="card-container grid-span-2 relative overflow-hidden rounded-xl border border-outline-variant bg-surface group cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700" data-alt="A flat-lay of professional medical research documents, high-resolution textures, clean white paper with teal highlighter marks and annotations, high-key photography, minimalist workspace aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFsdwe5Pr9HDZNt425sppaIumou4J6izJfRqJUk44VXWkx0Wz22tMkOv_yh8HTmxawafB4KQ5bnuAtTlkOG4UyDKxWUy25O69WI6xTrlBz7qYWSAsdWw1VkVuoomXxIXzEA25-IsvQOOrZQHopfayhmDjSmBPTDj8MWiwcgfY_rCqoxkxX_otN8hWOqmKJfPzmsezwQBmHK65JMLtqQpX63xln40j2i3WeLkBozrPBWTVOI8j7bT-i6ZdQmc08tYaHon05XVoixvoB"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<div class="flex items-center gap-xs mb-1">
+<span class="material-symbols-outlined text-[16px]">description</span>
+<span class="font-label-sm text-label-sm">PDF • 12 Pages</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm">Cognitive Bias Masterlist</h3>
+</div>
+<div class="hover-stats absolute inset-0 bg-black/40 flex items-center justify-center gap-lg text-white">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">download</span>
+<span class="font-label-md text-label-md">4.2k</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 4: Regular Post -->
+<div class="card-container relative overflow-hidden rounded-xl border border-outline-variant bg-surface group cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700" data-alt="Detailed macro photograph of computer circuit boards with glowing teal light pulses, symbolizing high-speed data processing, futuristic and clinical modernist style, sharp focus, 8k resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIX9BPUHJT6nsvQickeFk7D3n6-wXD4eEhZ_bPMEJBzVHp7hau4ksTxx5cFpuZtrHC2KWSLW_hx8C5SLgr1HN5MzZ2UxLKKDQ21I-PjevbG1s9WmSSU_fMWW8HHRcdQbwO4rnvLO8MMvErAD-sz7utIUcz0HxLwAF2nhZzk5ofpvs2izVi7pyZ7FxneldF9awBvGNJL5ijXXI1du0vDIqxk6Kx1RYmzkJILta7sa2tyheiBI2hJsoNDbOykfNrj1LUCYoUF2YG3N5g"/>
+<div class="hover-stats absolute inset-0 bg-black/40 flex items-center justify-center gap-md text-white">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-label-md">2.1k</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 5: Vertical Reel -->
+<div class="card-container grid-span-3 relative overflow-hidden rounded-xl border border-outline-variant bg-surface group cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700" data-alt="A dynamic vertical composition of a robotic hand delicately holding a single glowing neuron fiber, sleek chrome and white materials, teal accent lighting, high-end medical tech visualization, cinematic depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWbOGNDhr5DTUqzEzcSX8gPlyt2sIW6OWyVfY6_EC3MIPWacWjRIlguS18TKwexQTEL_1LHaNJFfh2d9q-2QP7Nr2ytzAuu4f0Cy3tpV7A1732v81AL6RH8QcGjHbyBTFrJyYYCw13tda6oVcae6zSNLzmuSA0JIcRKJYtHiP5B0rxPQf5Y3SVnvEdSIJgsca4DiCUEuixKdOkvMq6Jtx58VcgSEEvUHE_pdwvW-9WIMtydGrhmmnCpaU7vP-JE6rbI2I5BjdfoTdO"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+<div class="absolute top-4 right-4 text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+<div class="absolute bottom-6 left-6 text-white max-w-[80%]">
+<p class="font-label-sm text-label-sm text-primary-container mb-2">TRENDING NOW</p>
+<h3 class="font-headline-md text-headline-md leading-tight">The Future of Neural Interfacing</h3>
+<div class="flex items-center gap-2 mt-4">
+<div class="w-8 h-8 rounded-full border border-white/40 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional avatar of a male tech educator, modern minimalist headshot, warm lighting, clinical office background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYHZCfbzqK0nySSQSec5OuklZfBb2nTaHeZdcEPOfv9LnfIUKQKVOYhXe58T3snsN8zoRNL36SeuUfbSKDkLfYwJrE2_hXS8O0KK9WfkpE4WWgbvtSUan0FAK6Qq_4ApyHxjfQyeonjsPoiE-0vplDaa0a3ygsMvy-sNF1GEXY53EErtEZ0hFMXJ52_8dlHnHbTf88vrn0hCBAikIgsu0a0QoNRBYU7YXneqr7QQjVotWPX29WAdsbxx0JqrPmRL9jtPzX-7Uh3ga3"/>
+</div>
+<span class="font-label-md text-label-md">@CyberDocs</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 6: Small Info Card -->
+<div class="card-container relative overflow-hidden rounded-xl border border-outline-variant bg-primary text-white group cursor-pointer p-md flex flex-col justify-center text-center">
+<span class="material-symbols-outlined text-[48px] mb-4">psychology</span>
+<h3 class="font-headline-sm text-headline-sm">Daily Challenge</h3>
+<p class="font-body-sm text-body-sm opacity-80">Test your memory on "Synaptic Pruning"</p>
+<button class="mt-4 px-4 py-2 bg-white text-primary rounded-lg font-label-md text-label-md font-bold">Start Now</button>
+</div>
+<!-- Grid Item 7: Regular Image -->
+<div class="card-container relative overflow-hidden rounded-xl border border-outline-variant bg-surface group cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700" data-alt="A minimalist architectural shot of a modern library with clean white lines, large glass walls, and subtle teal furniture accents, airy and bright clinical aesthetic, high-key photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-Ed56qio4Wnr1USYmhj1goA6Bmgf8C4OYvkIwNq6Yj-Mi2lpRri-7Cdamb89JEBumrM0oAGCqMP7yB7rZ2Y8ntt3mCwO9UhaK9K8uhf8BG4Z-70c4lt-yCrR-pZYlMBFDW8tPPIBs05vUwxnz6CXW5GoHpOmWmgKrTs5WMTKd3cOcgwsRFtLcHTSWQqipMain0TTjcn3xfC5oOIWpI82GitMa9Q9Ank6TTAzliIYGn059Q17nqnMwomaUVR3Mwzr49RzLYn2opRj6"/>
+<div class="hover-stats absolute inset-0 bg-black/40 flex items-center justify-center gap-md text-white">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-label-md">5.5k</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Floating Action Button (FAB) - Suppression Logic applied: Visible on Home/Explore -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-50">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- Bottom Navigation (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant px-md py-sm flex justify-around items-center glass-nav z-50">
+<a class="text-on-surface-variant flex flex-col items-center gap-xs" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-label-sm">Home</span>
+</a>
+<a class="text-primary flex flex-col items-center gap-xs" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
+<span class="text-[10px] font-label-sm">Explore</span>
+</a>
+<a class="text-on-surface-variant flex flex-col items-center gap-xs" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="text-[10px] font-label-sm">Create</span>
+</a>
+<a class="text-on-surface-variant flex flex-col items-center gap-xs" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-[10px] font-label-sm">Events</span>
+</a>
+<a class="text-on-surface-variant flex flex-col items-center gap-xs" href="#">
+<div class="w-6 h-6 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Small thumbnail of a user profile picture, professional medical student." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIiUNzCq5f46SDHZ4VEQfEMv3RMaWme49sKsg-sPCq4R6yB8VWEOBJFleki_kVkcjtYO_BbycQIUSrqxfmDy3TGQecw4SphZd6KrKkN7aE9xn7ftYVG5bnxR5dM9V-Ay2dbP2CimE66JrCy56Tf4-KbT8Cuh6KZJlEUgqGMrrZ2YyBKFrcX0Me7vYRGgO_s9v0mAz1vqiwtpDkbczGYOfV2bqzP6dIz1Ox2ltcMK1wR4rw-Dz1imXgmVj-6Qr52N-eaO1ylXBH1dYA"/>
+</div>
+<span class="text-[10px] font-label-sm">Profile</span>
+</a>
+</nav>
+</main>
+<script>
+        // Simple search interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            console.log('Search focused - showing recent history...');
+        });
+
+        // Hover effect for creators
+        const creators = document.querySelectorAll('.flex-col.items-center');
+        creators.forEach(creator => {
+            creator.addEventListener('mouseenter', () => {
+                creator.querySelector('.w-16').style.transform = 'translateY(-4px)';
+            });
+            creator.addEventListener('mouseleave', () => {
+                creator.querySelector('.w-16').style.transform = 'translateY(0)';
+            });
+        });
+
+        // Interactive masonry - staggered entrance
+        const cards = document.querySelectorAll('.card-container');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+    </script>
+</body></html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Instagram for Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#006a61",
+                    "outline": "#6d7a77",
+                    "primary-fixed": "#85f5e7",
+                    "on-surface-variant": "#3d4947",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "tertiary-container": "#aec3f5",
+                    "primary": "#006a61",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "secondary": "#006a66",
+                    "on-surface": "#171d1c",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#67d9cb",
+                    "on-tertiary-container": "#3b507b",
+                    "on-primary-container": "#005a53",
+                    "secondary-fixed": "#8ff3ed",
+                    "surface-variant": "#dee4e1",
+                    "primary-fixed-dim": "#67d9cb",
+                    "surface-container-highest": "#dee4e1",
+                    "on-primary-fixed": "#00201d",
+                    "secondary-container": "#8cf1ea",
+                    "primary-container": "#63d5c7",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "inverse-on-surface": "#edf2f0",
+                    "surface-container": "#eaefed",
+                    "on-primary-fixed-variant": "#005049",
+                    "background": "#f5faf8",
+                    "surface-bright": "#f5faf8",
+                    "tertiary-fixed": "#d8e2ff",
+                    "tertiary": "#495e8a",
+                    "surface-container-low": "#eff5f2",
+                    "on-secondary-fixed": "#00201e",
+                    "on-secondary-container": "#006f6a",
+                    "surface-container-high": "#e4e9e7",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d6dbd9",
+                    "inverse-surface": "#2c3230",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#001a42",
+                    "surface": "#f5faf8",
+                    "on-background": "#171d1c",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "container-max": "1280px",
+                    "sm": "12px",
+                    "lg": "48px",
+                    "xl": "80px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f5faf8;
+            font-family: 'Inter', sans-serif;
+            color: #171d1c;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .story-ring {
+            background: linear-gradient(45deg, #63d5c7, #006a61);
+            padding: 3px;
+        }
+        .custom-shadow {
+            box-shadow: 0 8px 30px rgba(0, 27, 68, 0.05);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bcc9c6;
+            border-radius: 10px;
+        }
+        .feed-container {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body class="flex">
+<!-- Left Side Navigation (NeuroFeed Shell) -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-md z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary px-md py-lg mb-4">
+            NeuroFeed
+        </div>
+<nav class="flex-1 space-y-2 px-sm">
+<a class="flex items-center gap-base px-md py-sm text-primary font-bold bg-surface-container rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-label-md text-label-md">Create</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+<span class="font-label-md text-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-md border-t border-outline-variant">
+<div class="flex items-center gap-base p-sm rounded-lg bg-tertiary-fixed text-on-tertiary-fixed">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<div class="overflow-hidden">
+<p class="font-label-sm text-label-sm truncate font-bold">Clinical Learning</p>
+<p class="text-[10px] opacity-70">EduGram Premium</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex justify-center min-h-screen">
+<div class="feed-container w-full py-md px-md">
+<!-- Study Stories Row -->
+<section class="mb-xl">
+<div class="flex overflow-x-auto gap-md pb-4 no-scrollbar">
+<!-- Story Item 1 -->
+<div class="flex flex-col items-center gap-xs flex-shrink-0 cursor-pointer">
+<div class="story-ring rounded-full">
+<div class="bg-surface p-0.5 rounded-full">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-surface">
+<img class="w-full h-full object-cover" data-alt="A macro shot of a sleek circuit board with glowing teal data paths, styled as a minimalist icon representing Computer Science Operating Systems in a modern light-mode learning app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwB-n640qnNzgO3N2CBsu7BrSN5oA9DCKNvtQwgLiHt3eoBUqvCCBil9OzGynfN21pZ_VVmmXDHiIYO0PsSA9EDr0SNNnpR4p0ih3gVnUNgYpPHIqXjOgl4iPzm15b5FVlP3yEW_wTu-MJGvMl6eIWGzKAYGQl_bIwUaznxXEXzzyIj9v_9aq_keJ_j4xHKqwZf_v1n9DDh-gfi-OuEWB5FZq5sNAOqFx9ohv71pODhWxTJCAEUuvvhtOO-83YM62dGBkGxsJfkv4S"/>
+</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm">OS</span>
+</div>
+<!-- Story Item 2 -->
+<div class="flex flex-col items-center gap-xs flex-shrink-0 cursor-pointer">
+<div class="story-ring rounded-full">
+<div class="bg-surface p-0.5 rounded-full">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-surface">
+<img class="w-full h-full object-cover" data-alt="A clean, isometric 3D illustration of a database storage rack with teal and navy blue accents, glowing with soft light, representing a DBMS study module for a high-end educational platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlDXRiulU_TNVy_bjkXPBCqtkuhBFps8PNYRcsqIRFUqDmAJXUcoDQvMSnzBhOnz-BR02QDVA15t1sJ_T8BcOvgWZbLZ8F3ykCCERGczndMFdhbEsFoMY4Ih_sauOwZHP7upiJ4x-OTlq9GdmpRUF5o-m5oy_AJlAjBVwMhaUGDQyFMIroYNAwzTjmcjGpmKSUoTc5eqls6oUtHxAuSFzeX79d2KH-I3nLmR9sICJe6gKMpztGV3b32tp-1bzeAxtRjrA7qk1NBvzc"/>
+</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm">DBMS</span>
+</div>
+<!-- Story Item 3 -->
+<div class="flex flex-col items-center gap-xs flex-shrink-0 cursor-pointer">
+<div class="story-ring rounded-full opacity-50">
+<div class="bg-surface p-0.5 rounded-full">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-surface grayscale">
+<img class="w-full h-full object-cover" data-alt="A minimalist artistic representation of a neural network with glowing teal nodes and thin navy connecting lines, designed as a premium educational icon for Machine Learning on a clean white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCGm-u2RaIc0WTQeGzSorwv0S45JtPddzpHEaoHEGMSNh9tVHg1UZcTIsxucJ5xjGKHEH7aNm1IbGJPKYH_UOBPUSYWkH87nWzZcg0OyJB3R8Z460FhkuY-0WR-8xACjQk88tpLr5EsXpwGjibgggzkLoy9Jt9-cNUTo9LrZf13qS8xXltfQuwbdw_RUIlW9LVRinGEdG3B5RM9W0XmiaibNccSDF8wmkVa8fJo-t-FPaoCc4BJ6Biao_NIPXsRqVCiPXIFO45L16v"/>
+</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm">AI</span>
+</div>
+<!-- Story Item 4 -->
+<div class="flex flex-col items-center gap-xs flex-shrink-0 cursor-pointer">
+<div class="story-ring rounded-full">
+<div class="bg-surface p-0.5 rounded-full">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-surface">
+<img class="w-full h-full object-cover" data-alt="Stylized geometric symbols representing advanced Calculus formulas in a premium teal and navy blue aesthetic, set against a soft white background for a modern student interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-s0n2yCSeFfq-aBCHWn_wrpvRqUImmrv0zhuyFwQQ9SS-EhrOAIWtI2NmgxiclJI2aWqnaBJXfRkBh6CDrhFy3fgDFI8bMcuaWey-DE9y-R6_HeZ_mBqUQsdO8KJ3sPmHf0OIbxTskqtRxZF104QbSYmfwuzwVwTFjyZnHdIKTVjotQ3NPlif0xMyvNrajDiRimiE474Ud4MKXx-bjj816b42EEr_gVTl8uiD080q9NTfBniqG5k7BH_qVzvu2MC3A0J-7qwbYj83"/>
+</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm">Calculus</span>
+</div>
+<!-- Story Item 5 -->
+<div class="flex flex-col items-center gap-xs flex-shrink-0 cursor-pointer">
+<div class="story-ring rounded-full">
+<div class="bg-surface p-0.5 rounded-full">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-surface">
+<img class="w-full h-full object-cover" data-alt="A 3D rendering of a double helix DNA strand with vibrant teal and navy components, designed as a high-clarity icon for Biology studies on a clinical modernist learning platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-YIO5bTN76kMq1J08NujJUCAOpVAyzDOiyKCm1hZ0bwgm0TsIVLn-MdLPJqpttZagehgsyCSWlquob79A2QZypneIEA2t-w8k9J67CdYEdtQi_dnUxQpEVL757z9bkhPP7DxmVIGmWryTA0-vtie_BXHGQoxG2rhhkwGElCkk3vP4cBlQ2kyZSSNGDG0-a_Vl0y0SoB8gKdQfmcuPuPiiZNIawE6xSwIxnBppHAY6M67Mpv9Ln-c1PnCq4dKc15jWJjHJKM_XGUdM"/>
+</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm">Bio</span>
+</div>
+</div>
+</section>
+<!-- Vertical Feed of Study Reels -->
+<div class="space-y-lg">
+<!-- Reel Card 1 -->
+<article class="bg-surface border border-outline-variant rounded-xl overflow-hidden custom-shadow">
+<!-- Header -->
+<div class="p-md flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a young medical student in a clean clinical environment, soft natural lighting, high-end photography style consistent with a modern educational brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1JtYgUaXrtkbueCDQaBte4UUa9elVq0Lxjl95gkhYzliiGo51c2S3B_CD6YvM8erRvKixrXspRx8xGSDvKB4xenv5ZuoaBP9n_HIoPjEDnBsbNDbe5lvuvp7YhC8DiCu07UNwPiOT2cOeJTB99FF5ltJXhgTfbHFvS91O7nF90LS424Qg5nM3s_VNh0UYtgz_erFMbvE3ZdxDpUXxGopyCtvsYdAJCg9OUuwRI9gx-efDNcQk2hs5spDodUSVjITv6Pu_MzF4cfJ-"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">alex_medstudies</h3>
+<p class="text-[12px] text-on-surface-variant">Neural Pathways Explained</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-on-primary-container transition-colors">Follow</button>
+</div>
+<!-- Video Placeholder/Thumbnail -->
+<div class="relative aspect-[4/5] bg-surface-dim group cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A high-resolution, stunning cinematic shot of a clean study desk featuring a high-end tablet displaying a complex neurological diagram of brain synapses. The room is softly lit with clinical white and teal ambient lighting, creating a focused, premium academic atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAU_5NM2f1d5grCDHlJsRUq2CdxMAzec_V7OfJgWRPVokvH88J_ONCjDYlxmWxDRNreFlfAhHuNGkePFjrDbBCDRdgtc5IH2KGix91qeEOlGZVr024mUMsp8kxXCspOIb2XKMV0z3K5jlnWoeE5463Aq2Qok_p4sYuBaOMEsVTBCN-zCG1Q9jFKz661WCieafPkNFV74wKAvDC-_ktG92kOTQtto36nrN6_fD_fp9DpnR04c3ngjbdtvw94OVfdmDFqECcRnbKnOOzn"/>
+<div class="absolute top-md left-md">
+<span class="bg-surface/80 backdrop-blur-md text-primary font-label-sm text-label-sm px-sm py-1 rounded-full">#MachineLearning</span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
+<span class="material-symbols-outlined text-white text-6xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+<!-- Action Bar & CTA -->
+<div class="p-md">
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-md">
+<button class="hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-label-sm text-label-sm">2.4k</span>
+</button>
+<button class="hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label-sm text-label-sm">128</span>
+</button>
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+<!-- CTA Buttons -->
+<div class="grid grid-cols-2 gap-sm">
+<button class="flex items-center justify-center gap-xs bg-primary-container text-on-primary-container font-label-md text-label-md py-sm rounded-lg hover:brightness-95 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="quiz">quiz</span>
+                                Quiz Me
+                            </button>
+<button class="flex items-center justify-center gap-xs border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+                                View Notes
+                            </button>
+</div>
+</div>
+</article>
+<!-- Reel Card 2 -->
+<article class="bg-surface border border-outline-variant rounded-xl overflow-hidden custom-shadow">
+<div class="p-md flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A focused portrait of an engineering student in a minimalist library workspace, wearing sleek headphones, bathed in soft afternoon light, emphasizing the calm focus brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYecdi5ZdQdsRkxiMeNarB7JeTyEegJmt0_IP-lV_vFDt__VLR_ocvIHr7oilV_tuR9Lh91WaOLNlJgQZ26q1j1iq79RMlynfnrflwXOYjdk0cTq29vTz412ddyrOTMqUTAvcqOHX4S3ZXDYsWjUjubqMUoyPx45ZUKj1mJVZkqUkdxxqxStfi_Q0TYkqwZKX_ZF57H-jUoP4mg5rSPq2M3eBptY4G4vfxRO37tyRimI_hUOcg5l6rBOjt9vtUBo1f3fAA6BMFps17"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">dev_jenna</h3>
+<p class="text-[12px] text-on-surface-variant">Clean Architecture Principles</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-on-primary-container transition-colors">Follow</button>
+</div>
+<div class="relative aspect-[4/5] bg-surface-dim group cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A minimalist desktop setup with a large curved monitor showing a clean codebase in a dark theme with teal highlights. The surroundings are pristine white with small potted succulents, creating a high-aesthetic, professional learning vibe for a student audience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADjbsrruodcLcTKH1roxl_QQEaaWZ2562xP9V28Aj0ZrJhOrPB0ONumvtTpn1P5_BEQknXF1msLfsCSm1Dnd-8IKaZjz2mPrgGuS5nUvES-u8HzFpVdbN4EC-YQfLkO6-PJkGRMmD5memZrXLY4JjoTayuflKYoP3BSnkRM6d6f9fyCcIYkkv_7erxBvTApQp9tAFzx9H0CaP74ArFqkdIZ--ZDuclP65lkenAlNNdF8J0o2XzP0avw9vDAKBLCrG5drKTAvkjGsKS"/>
+<div class="absolute top-md left-md">
+<span class="bg-surface/80 backdrop-blur-md text-primary font-label-sm text-label-sm px-sm py-1 rounded-full">#SoftwareDesign</span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
+<span class="material-symbols-outlined text-white text-6xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+<div class="p-md">
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-md">
+<button class="hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-label-sm text-label-sm">1.8k</span>
+</button>
+<button class="hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label-sm text-label-sm">56</span>
+</button>
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<button class="flex items-center justify-center gap-xs bg-primary-container text-on-primary-container font-label-md text-label-md py-sm rounded-lg hover:brightness-95 transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="quiz">quiz</span>
+                                Quiz Me
+                            </button>
+<button class="flex items-center justify-center gap-xs border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+                                View Notes
+                            </button>
+</div>
+</div>
+</article>
+</div>
+</div>
+</main>
+<!-- Right Side Sidebar -->
+<aside class="w-80 h-screen sticky top-0 p-md hidden xl:block">
+<div class="space-y-lg">
+<!-- User Stats Summary Card -->
+<section class="bg-surface border border-outline-variant rounded-xl p-md custom-shadow">
+<div class="flex items-center justify-between mb-md">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Your Progress</h4>
+<span class="material-symbols-outlined text-primary" data-icon="insights">insights</span>
+</div>
+<div class="space-y-md">
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-xs">
+<span>Weekly Goal</span>
+<span class="text-primary font-bold">85%</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 85%;"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<div class="bg-surface-container-low p-sm rounded-lg border border-outline-variant/30">
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Daily Streak</p>
+<p class="font-headline-sm text-headline-sm text-primary">12 🔥</p>
+</div>
+<div class="bg-surface-container-low p-sm rounded-lg border border-outline-variant/30">
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Knowledge</p>
+<p class="font-headline-sm text-headline-sm text-primary">+240</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Suggested for You -->
+<section>
+<div class="flex items-center justify-between mb-md">
+<h4 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Suggested for you</h4>
+<button class="text-primary font-label-sm text-label-sm hover:underline">See All</button>
+</div>
+<div class="space-y-md">
+<!-- Suggestion 1 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A portrait of an educator with a warm smile, wearing a clean charcoal sweater, in a modern home office with bookshelves, perfect for a trustworthy learning companion avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0SVwSoclWXtLMrLepILMLZu8zCPz2oz57F_kDLl4ZqR5XQHiu8A3dRDEWsZkmVI5w5eVAGS5L70LO1DfOcLYytTj3rAjnqXbzoFMf3jILVLFdLle7d9m-5mOrAyZopJJ2YuJMnrd8PrXZAHC7Ohgdap657wRETE_afRQrz5gzoA4Wm9NxtGcu1KdN06bbmDUbuj-g05IwKADDX4LjJ9tBbaJ9L9qtSIG6OLFAcKIyz_AeFTNMI-UBkCEjDufymgVugEEDbIni6MpV"/>
+</div>
+<div>
+<p class="font-label-md text-label-md">dr_watson_bio</p>
+<p class="text-[11px] text-on-surface-variant">Followed by alex_medstudies</p>
+</div>
+</div>
+<button class="text-primary font-label-sm text-label-sm font-bold">Follow</button>
+</div>
+<!-- Suggestion 2 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A minimalist avatar of a creative digital designer, aesthetic glasses, soft lighting, vibrant teal and dark navy brand-aligned background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZMj775wKulyPY2sb8QwO7IPZAyBlOlDdM-1JL7GcbAwN57aPQ2ks2Pa-9ySzutD7VfypXS12IBsKZbIUvcNYaxamng2D7sHcDRrlqbwDTjeZpZ0IJ02BKMPbIyfohP3LQrOH-v_4Hsf7Z1uqlk9ZNSi-EkqKVOuk7pgKJmFP8HpspAX-ReU3owCOpaPrZLeVG2GBJinmRZhOiOWJsxi5SqYTM65H-q4SCNAWB2AyPWcE5VhjQyXEEc9Makwj-SmeeB3ZNrucOASF4"/>
+</div>
+<div>
+<p class="font-label-md text-label-md">ux_university</p>
+<p class="text-[11px] text-on-surface-variant">New study path available</p>
+</div>
+</div>
+<button class="text-primary font-label-sm text-label-sm font-bold">Follow</button>
+</div>
+<!-- Suggestion 3 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A portrait of a mathematician, bright and clinical setting, neutral colors, reflecting academic excellence and high-clarity information architecture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDoRRHM6eIetZDIXVtWK2muwlQq6YpgMlEU2aflmZ5Jubv8247BG4CU4oSdQUeU2qUAC6LxRQlWxIoC1cNDzhMwYWhks_lGKfGMXb148ckWsgmIwr6EHf-NwMSO7mRZzmxXbKjJTEkVzKmzkrLGdOFIkxGpycVIOZPi4ss0iVhBdB3n3gnNJ8SGt0CRtTt4pQbjxvKWU4WwDWCTPR-9bXfcWEEk9D0iRHl1gqx-OicKkb6rNOCVNRlvc82mMK_rpDiTcq6ejzS-NZf"/>
+</div>
+<div>
+<p class="font-label-md text-label-md">math_wizard_88</p>
+<p class="text-[11px] text-on-surface-variant">Trending in Calculus</p>
+</div>
+</div>
+<button class="text-primary font-label-sm text-label-sm font-bold">Follow</button>
+</div>
+</div>
+</section>
+<!-- Footer Links -->
+<footer class="text-on-surface-variant/40 text-[11px] leading-relaxed">
+<div class="flex flex-wrap gap-x-sm mb-md">
+<a class="hover:underline" href="#">About</a>
+<a class="hover:underline" href="#">Help</a>
+<a class="hover:underline" href="#">Press</a>
+<a class="hover:underline" href="#">API</a>
+<a class="hover:underline" href="#">Jobs</a>
+<a class="hover:underline" href="#">Privacy</a>
+<a class="hover:underline" href="#">Terms</a>
+</div>
+<p>© 2024 NEUROFEED FROM EDUGRAM</p>
+</footer>
+</div>
+</aside>
+<script>
+        // Micro-interactions for Reel actions
+        document.querySelectorAll('[data-icon="favorite"]').forEach(btn => {
+            btn.parentElement.addEventListener('click', function() {
+                const icon = this.querySelector('.material-symbols-outlined');
+                const isFilled = icon.style.fontVariationSettings.includes("'FILL' 1");
+                
+                if (isFilled) {
+                    icon.style.fontVariationSettings = "'FILL' 0";
+                    icon.classList.remove('text-red-500');
+                } else {
+                    icon.style.fontVariationSettings = "'FILL' 1";
+                    icon.classList.add('text-red-500');
+                    
+                    // Simple pop effect
+                    icon.animate([
+                        { transform: 'scale(1)' },
+                        { transform: 'scale(1.4)' },
+                        { transform: 'scale(1)' }
+                    ], { duration: 200 });
+                }
+            });
+        });
+
+        // Hover animation for story rings
+        document.querySelectorAll('.story-ring').forEach(ring => {
+            ring.addEventListener('mouseenter', () => {
+                ring.animate([
+                    { transform: 'rotate(0deg)' },
+                    { transform: 'rotate(180deg)' }
+                ], { duration: 1000, iterations: 1, easing: 'ease-in-out' });
+            });
+        });
+    </script>
+</body></html>

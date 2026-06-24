@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Profile Uploads</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#006a61",
+                    "inverse-surface": "#2c3230",
+                    "secondary": "#006a66",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "on-secondary-fixed": "#00201e",
+                    "tertiary": "#495e8a",
+                    "primary-fixed-dim": "#67d9cb",
+                    "outline-variant": "#bcc9c6",
+                    "inverse-on-surface": "#edf2f0",
+                    "primary": "#006a61",
+                    "tertiary-container": "#aec3f5",
+                    "surface-bright": "#f5faf8",
+                    "on-primary-fixed": "#00201d",
+                    "surface": "#f5faf8",
+                    "background": "#f5faf8",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "on-primary-container": "#005a53",
+                    "surface-variant": "#dee4e1",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#67d9cb",
+                    "primary-fixed": "#85f5e7",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff5f2",
+                    "surface-container-highest": "#dee4e1",
+                    "secondary-container": "#8cf1ea",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#3d4947",
+                    "on-background": "#171d1c",
+                    "surface-dim": "#d6dbd9",
+                    "primary-container": "#63d5c7",
+                    "on-tertiary-container": "#3b507b",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#171d1c",
+                    "on-tertiary-fixed": "#001a42",
+                    "on-primary-fixed-variant": "#005049",
+                    "tertiary-fixed": "#d8e2ff",
+                    "surface-container-high": "#e4e9e7",
+                    "outline": "#6d7a77",
+                    "on-secondary-container": "#006f6a",
+                    "surface-container": "#eaefed",
+                    "secondary-fixed": "#8ff3ed"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "md": "24px",
+                    "sm": "12px",
+                    "gutter": "24px",
+                    "xl": "80px",
+                    "lg": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5faf8; color: #171d1c; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid #E8EAF0; }
+        .tab-active { border-bottom: 2px solid #006a61; color: #006a61; font-weight: 600; }
+        .nav-rail-item:hover .icon-box { background-color: #e4e9e7; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- Side Navigation Rail -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-8 px-4 z-50">
+<div class="mb-12 px-4">
+<span class="font-headline-md font-bold text-primary tracking-tight">NeuroFeed</span>
+<p class="text-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Clinical Learning</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md">Create</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-primary font-bold bg-surface-container-high transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-label-md">Profile</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-2 pt-8 border-t border-outline-variant">
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-label-md font-bold transition-transform active:scale-95 mb-4">
+                Upgrade to Pro
+            </button>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant h-16 flex items-center justify-between px-8">
+<div class="flex items-center gap-4 w-96">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-sm focus:outline-none focus:border-primary" placeholder="Search your library..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a professional medical student in a modern library setting, soft natural lighting, high-end commercial photography style, clean teal and white aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVG4psfTT9cRWhKmtbWy4A1oLSxosQ7pW9YAQkPLLRLyN3wmTO_9b7fecTVCxCjiMHgQbtkG4n6BIU2gMCHoGUUqqa2cGMF963uJVd6QBqBU2eV5j-aKC4qvxI3K6noEem2JRq97Sob6001SHyLUjGMixbhg2WkH6P6r9pnlYOXMewPAwBfWH0qoC4bQ78xDCTla23todhzJIYHLawVES4vPKtRUI8LEi3lQjz_Jaz7OyHnWeG3UBmHgxcGFKR0x5B9S6OyA9JrctF"/>
+</div>
+</div>
+</header>
+<!-- Profile Header Section -->
+<section class="mt-16 pt-12 pb-6 px-12 bg-white">
+<div class="max-w-[1280px] mx-auto">
+<div class="flex items-end gap-8 mb-8">
+<div class="relative group">
+<div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-surface shadow-lg">
+<img class="w-full h-full object-cover" data-alt="High-resolution professional headshot of a female doctor against a clinical but warm background. The lighting is bright and optimistic, reflecting a high-quality educational SaaS environment. Deep teal and soft mint color accents throughout the image." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlJTuXC_RCzf7NVm0Rr17RV8riny_saJ2hoqYNPjQN-Sgw2WLH_FBSuKOMbW9nPbEkmKx8n3-XEJUDTXgAJqReWZVEE0eP5pYDhEwila9RBb3df9LzROX7xDKr72hZsVxu-8lOubDwn81iZlWcJsBa3bSqEGoi_gVlvxtazkmM7Q8FKAUrckpXTvm3DDJ_JT7B4iCaxQTalda4YRYfcoFMUnmUR_G6cTdWrVlXBle-Fg9etJ_-rR5kBMhUzvahaKmNE9uBrUnlf8D2"/>
+</div>
+<button class="absolute -bottom-2 -right-2 bg-primary text-on-primary p-2 rounded-lg shadow-md hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="flex-1 pb-2">
+<h1 class="font-headline-lg text-on-background">Dr. Elena Rodriguez</h1>
+<p class="text-body-md text-on-surface-variant mb-4">Senior Neuro-Radiology Resident • Stanford University</p>
+<div class="flex gap-6">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">124</span>
+<span class="text-label-sm text-on-surface-variant">Uploads</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">8.2k</span>
+<span class="text-label-sm text-on-surface-variant">Points</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">42</span>
+<span class="text-label-sm text-on-surface-variant">Study Paths</span>
+</div>
+</div>
+</div>
+<div class="pb-2">
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-xl font-label-md font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">cloud_upload</span>
+                            Upload Material
+                        </button>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex gap-8 border-b border-outline-variant">
+<button class="px-4 py-4 text-on-surface-variant font-label-md hover:text-primary transition-colors">Overview</button>
+<button class="px-4 py-4 tab-active font-label-md">Uploads</button>
+<button class="px-4 py-4 text-on-surface-variant font-label-md hover:text-primary transition-colors">Study Paths</button>
+<button class="px-4 py-4 text-on-surface-variant font-label-md hover:text-primary transition-colors">Collections</button>
+<button class="px-4 py-4 text-on-surface-variant font-label-md hover:text-primary transition-colors">Flashcards</button>
+</div>
+</div>
+</section>
+<!-- Library Grid Section -->
+<section class="p-12 max-w-[1280px] mx-auto">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="font-headline-sm text-on-background">Content Library</h2>
+<p class="text-body-sm text-on-surface-variant">Manage and track your AI-processed clinical materials.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant rounded-lg font-label-sm text-on-surface-variant hover:bg-surface-variant/50 transition-colors">
+<span class="material-symbols-outlined text-base">filter_list</span>
+                        Filter
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant rounded-lg font-label-sm text-on-surface-variant hover:bg-surface-variant/50 transition-colors">
+<span class="material-symbols-outlined text-base">sort</span>
+                        Latest First
+                    </button>
+</div>
+</div>
+<!-- Bento Grid of Uploads -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1: Completed Processing -->
+<div class="bg-white rounded-2xl border border-outline-variant p-6 hover:shadow-[0_8px_30px_rgba(0,27,68,0.05)] transition-all group flex flex-col h-full">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 bg-secondary-container rounded-xl text-on-secondary-container">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex gap-1">
+<span class="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Analysis Complete</span>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<h3 class="font-headline-sm text-on-background group-hover:text-primary transition-colors mb-1 truncate">Advanced Neuro-Oncology Protocols 2024</h3>
+<p class="text-label-sm text-on-surface-variant mb-6">Uploaded Oct 12, 2023</p>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">8</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Reels</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">45</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Cards</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">5</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Quizzes</p>
+</div>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between text-label-sm mb-2">
+<span class="text-on-surface-variant">Processing Progress</span>
+<span class="text-primary font-bold">100%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden mb-6">
+<div class="h-full bg-primary w-full"></div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-on-primary py-2.5 rounded-lg font-label-md font-bold transition-all hover:brightness-110">Open Hub</button>
+<button class="px-3 bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors"><span class="material-symbols-outlined">share</span></button>
+<button class="px-3 bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+</div>
+</div>
+<!-- Card 2: In Progress -->
+<div class="bg-white rounded-2xl border border-outline-variant p-6 hover:shadow-[0_8px_30px_rgba(0,27,68,0.05)] transition-all group flex flex-col h-full">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 bg-tertiary-container rounded-xl text-on-tertiary-container">
+<span class="material-symbols-outlined">present_to_all</span>
+</div>
+<div class="flex gap-1">
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse">Processing...</span>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<h3 class="font-headline-sm text-on-background group-hover:text-primary transition-colors mb-1 truncate">MRI Sequence Interpretation Workshop</h3>
+<p class="text-label-sm text-on-surface-variant mb-6">Uploaded Today, 10:45 AM</p>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-xl text-center opacity-50">
+<p class="text-headline-sm font-bold text-on-surface-variant">--</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Reels</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center opacity-50">
+<p class="text-headline-sm font-bold text-on-surface-variant">--</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Cards</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center opacity-50">
+<p class="text-headline-sm font-bold text-on-surface-variant">--</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Quizzes</p>
+</div>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between text-label-sm mb-2">
+<span class="text-on-surface-variant">Generating Insights</span>
+<span class="text-primary font-bold">64%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden mb-6">
+<div class="h-full bg-primary w-[64%] animate-[shimmer_2s_infinite]"></div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-surface-container text-on-surface-variant py-2.5 rounded-lg font-label-md font-bold cursor-not-allowed" disabled="">Processing...</button>
+<button class="px-3 bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+</div>
+</div>
+<!-- Card 3: Document Completed -->
+<div class="bg-white rounded-2xl border border-outline-variant p-6 hover:shadow-[0_8px_30px_rgba(0,27,68,0.05)] transition-all group flex flex-col h-full">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 bg-primary-container rounded-xl text-on-primary-container">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div class="flex gap-1">
+<span class="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Analysis Complete</span>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<h3 class="font-headline-sm text-on-background group-hover:text-primary transition-colors mb-1 truncate">Neuro-Vascular Case Study #412</h3>
+<p class="text-label-sm text-on-surface-variant mb-6">Uploaded Oct 08, 2023</p>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">3</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Reels</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">12</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Cards</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-xl text-center">
+<p class="text-headline-sm font-bold text-primary">2</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-semibold">Quizzes</p>
+</div>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between text-label-sm mb-2">
+<span class="text-on-surface-variant">Processing Progress</span>
+<span class="text-primary font-bold">100%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden mb-6">
+<div class="h-full bg-primary w-full"></div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-on-primary py-2.5 rounded-lg font-label-md font-bold transition-all hover:brightness-110">Open Hub</button>
+<button class="px-3 bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors"><span class="material-symbols-outlined">share</span></button>
+<button class="px-3 bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+</div>
+</div>
+<!-- Card 4: New Upload Placeholder -->
+<div class="border-2 border-dashed border-outline-variant rounded-2xl p-6 flex flex-col items-center justify-center text-center group hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-colors mb-4">
+<span class="material-symbols-outlined text-3xl">upload_file</span>
+</div>
+<h3 class="font-headline-sm text-on-surface-variant group-hover:text-primary transition-colors">Drop files to upload</h3>
+<p class="text-body-sm text-on-surface-variant px-8 mt-2">PDF, PowerPoint, or Word documents. AI will automatically generate learning materials.</p>
+<button class="mt-6 font-label-md text-primary font-bold border-b-2 border-transparent group-hover:border-primary">Select from computer</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button for Support/AI Chat -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-on-background text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-50">
+<span class="material-symbols-outlined">smart_toy</span>
+</button>
+<script>
+        // Micro-interaction for hover effects or progress bar animations could go here
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('NeuroFeed Profile UI Initialized');
+            
+            // Simple tab switcher logic
+            const tabs = document.querySelectorAll('.font-label-md.px-4.py-4');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('tab-active');
+                        if (!t.innerText.includes('Uploads')) {
+                            t.classList.add('text-on-surface-variant');
+                        }
+                    });
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('text-on-surface-variant');
+                });
+            });
+        });
+    </script>
+</body></html>

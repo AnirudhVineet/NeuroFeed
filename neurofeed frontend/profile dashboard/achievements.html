@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Profile Achievements</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#8cf1ea",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#67d9cb",
+                        "on-secondary-container": "#006f6a",
+                        "on-tertiary-container": "#3b507b",
+                        "primary": "#006a61",
+                        "inverse-on-surface": "#edf2f0",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#3d4947",
+                        "tertiary": "#495e8a",
+                        "on-secondary-fixed": "#00201e",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#005a53",
+                        "surface-dim": "#d6dbd9",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#dee4e1",
+                        "secondary-fixed": "#8ff3ed",
+                        "primary-fixed": "#85f5e7",
+                        "primary-container": "#63d5c7",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#bcc9c6",
+                        "on-background": "#171d1c",
+                        "inverse-surface": "#2c3230",
+                        "inverse-primary": "#67d9cb",
+                        "on-primary-fixed": "#00201d",
+                        "surface-container-high": "#e4e9e7",
+                        "secondary-fixed-dim": "#72d7d1",
+                        "surface-tint": "#006a61",
+                        "secondary": "#006a66",
+                        "tertiary-fixed-dim": "#b1c6f9",
+                        "on-surface": "#171d1c",
+                        "on-primary-fixed-variant": "#005049",
+                        "background": "#f5faf8",
+                        "surface-container-highest": "#dee4e1",
+                        "surface-container": "#eaefed",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#eff5f2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#aec3f5",
+                        "surface-bright": "#f5faf8",
+                        "tertiary-fixed": "#d8e2ff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface": "#f5faf8",
+                        "on-tertiary-fixed-variant": "#314671"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "container-max": "1280px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .achievement-card:hover .badge-glow {
+            opacity: 1;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Side Navigation (Authority Source: JSON) -->
+<nav class="fixed left-0 top-0 h-full w-20 md:w-64 flex flex-col py-lg px-md h-screen bg-surface-container-lowest border-r border-outline-variant z-50">
+<div class="font-display text-display text-primary mb-lg">EduLearn</div>
+<div class="flex flex-col gap-sm flex-grow">
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">home</span>
+<span class="hidden md:block font-label-md text-label-md">Home</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">search</span>
+<span class="hidden md:block font-label-md text-label-md">Search</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">explore</span>
+<span class="hidden md:block font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">notifications</span>
+<span class="hidden md:block font-label-md text-label-md">Notifications</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">mail</span>
+<span class="hidden md:block font-label-md text-label-md">Messages</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-sm">
+<button class="hidden md:block bg-primary text-on-primary py-sm px-md rounded-full font-label-md mb-md hover:opacity-90 active:scale-95 transition-all">
+                Create Post
+            </button>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">settings</span>
+<span class="hidden md:block font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined group-active:scale-90 transition-transform">help_outline</span>
+<span class="hidden md:block font-label-md text-label-md">Help</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 min-h-screen">
+<!-- Profile Header (Authority Source: JSON TopNavBar variant) -->
+<header class="sticky top-0 z-40 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="max-w-container-max mx-auto px-gutter py-md">
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-md">
+<div class="relative group">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container p-0.5">
+<img class="w-full h-full object-cover rounded-full" data-alt="A professional close-up studio portrait of a young academic woman with a warm, confident expression. She is wearing modern glasses and professional clinical attire. The background is a soft, out-of-focus modern research laboratory with clinical teal and white lighting, creating a high-end educational atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYqCugOgSjRKzQCNEIpHQXwJCQWQxqgLoFrk9C475tAQprvSM6mLj3HA1dFAeUd-nA_Heqh9pdciXSJSSeSOH4HMH21HVcSp8cvxKib5Au7DORA0_TEuAd4-YhoMD5ST3XLEwkt-xx3jwrb4N6JgyZNsIRvMlwbWSo1J4qZ1A3g_R2yKaPlOez0FO11E4HtNlNgE60pVPA3vABGdMum5ir4AdIDtA77ugdPakvKWsKWIP0Mi82dcqtkdJqvwC-77GfIqzi23UTOf1r"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full p-1 border-2 border-surface">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-on-surface">Dr. Elena Vance</h1>
+<div class="flex gap-md text-on-surface-variant">
+<span class="font-label-md text-label-md"><strong>1.2k</strong> Uploads</span>
+<span class="font-label-md text-label-md"><strong>4.8k</strong> Following</span>
+<span class="font-label-md text-label-md"><strong>12.5k</strong> Followers</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="bg-secondary-container text-on-secondary-container px-md py-sm rounded-full font-label-md hover:opacity-80 transition-opacity">Share</button>
+<button class="bg-primary text-on-primary px-md py-sm rounded-full font-label-md hover:opacity-90 transition-opacity">Edit Profile</button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Navigation Links (Authority Source: JSON) -->
+<nav class="flex gap-md overflow-x-auto no-scrollbar pb-1">
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Overview</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Uploads</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Paths</a>
+<a class="text-primary border-b-2 border-primary font-bold font-label-md text-label-md pb-1" href="#">Achievements</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Bookmarks</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Activity</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Stats</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Following</a>
+<a class="text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors pb-1" href="#">Followers</a>
+</nav>
+</div>
+</header>
+<!-- Achievements Content -->
+<div class="max-w-container-max mx-auto px-gutter py-lg">
+<!-- Earned Achievements Section -->
+<section class="mb-xl">
+<div class="flex items-center justify-between mb-md">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Earned Achievements</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">You've unlocked 14 of 42 milestones in the NeuroFeed ecosystem.</p>
+</div>
+<div class="bg-primary-container/10 px-md py-sm rounded-full">
+<span class="font-label-md text-label-md text-primary">Rank: Scholar III</span>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Achievement Card 1 -->
+<div class="achievement-card relative p-md bg-surface-container-lowest border border-outline-variant rounded-xl group hover:shadow-lg transition-all duration-300">
+<div class="badge-glow absolute inset-0 bg-primary-container/5 opacity-0 rounded-xl transition-opacity"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mb-sm shadow-md">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-xs">Early Adopter</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Joined NeuroFeed during the clinical beta phase.</p>
+<span class="text-xs text-primary font-semibold tracking-wider uppercase">Unlocked Dec 2023</span>
+</div>
+</div>
+<!-- Achievement Card 2 -->
+<div class="achievement-card relative p-md bg-surface-container-lowest border border-outline-variant rounded-xl group hover:shadow-lg transition-all duration-300">
+<div class="badge-glow absolute inset-0 bg-secondary-container/5 opacity-0 rounded-xl transition-opacity"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-secondary text-on-secondary rounded-full flex items-center justify-center mb-sm shadow-md">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">quiz</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-xs">Quiz Master</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Scored 100% on 5 consecutive clinical pathways.</p>
+<span class="text-xs text-primary font-semibold tracking-wider uppercase">Unlocked 2 days ago</span>
+</div>
+</div>
+<!-- Achievement Card 3 -->
+<div class="achievement-card relative p-md bg-surface-container-lowest border border-outline-variant rounded-xl group hover:shadow-lg transition-all duration-300">
+<div class="badge-glow absolute inset-0 bg-tertiary-container/5 opacity-0 rounded-xl transition-opacity"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-tertiary text-on-tertiary rounded-full flex items-center justify-center mb-sm shadow-md">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-xs">30 Day Streak</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Engaged with research feeds for 30 consecutive days.</p>
+<span class="text-xs text-primary font-semibold tracking-wider uppercase">Active Streak</span>
+</div>
+</div>
+<!-- Achievement Card 4 -->
+<div class="achievement-card relative p-md bg-surface-container-lowest border border-outline-variant rounded-xl group hover:shadow-lg transition-all duration-300">
+<div class="badge-glow absolute inset-0 bg-primary-container/5 opacity-0 rounded-xl transition-opacity"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-primary-fixed-dim text-on-primary-fixed-variant rounded-full flex items-center justify-center mb-sm shadow-md">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-xs">CME Architect</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Contributed 3 certified educational paths.</p>
+<span class="text-xs text-primary font-semibold tracking-wider uppercase">Unlocked Jan 2024</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Locked Achievements Section -->
+<section>
+<div class="mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Locked Achievements</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Continue your journey to unlock these prestigious rewards.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Locked Achievement 1 -->
+<div class="flex gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-xl grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+<div class="w-20 h-20 bg-surface-container flex-shrink-0 rounded-full flex items-center justify-center border-2 border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">psychology</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Neural Networker</h3>
+<span class="font-label-sm text-label-sm text-primary">+500 XP</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Help 50 users complete their first path by providing clinical feedback.</p>
+<div class="w-full bg-surface-container rounded-full h-2 mb-xs">
+<div class="bg-primary h-full rounded-full" style="width: 64%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Unlock Requirement: 32/50 Feedbacks</span>
+<span class="text-primary">64%</span>
+</div>
+</div>
+</div>
+<!-- Locked Achievement 2 -->
+<div class="flex gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-xl grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+<div class="w-20 h-20 bg-surface-container flex-shrink-0 rounded-full flex items-center justify-center border-2 border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">verified_user</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Precision Peer</h3>
+<span class="font-label-sm text-label-sm text-primary">+1200 XP</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Verify 10 high-impact research papers with zero reported errors.</p>
+<div class="w-full bg-surface-container rounded-full h-2 mb-xs">
+<div class="bg-primary h-full rounded-full" style="width: 20%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Unlock Requirement: 2/10 Verifications</span>
+<span class="text-primary">20%</span>
+</div>
+</div>
+</div>
+<!-- Locked Achievement 3 -->
+<div class="flex gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-xl grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+<div class="w-20 h-20 bg-surface-container flex-shrink-0 rounded-full flex items-center justify-center border-2 border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">public</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Global Mentor</h3>
+<span class="font-label-sm text-label-sm text-primary">+2500 XP</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Have your research paths shared in over 15 different medical institutions.</p>
+<div class="w-full bg-surface-container rounded-full h-2 mb-xs">
+<div class="bg-primary h-full rounded-full" style="width: 86%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Unlock Requirement: 13/15 Institutions</span>
+<span class="text-primary">86%</span>
+</div>
+</div>
+</div>
+<!-- Locked Achievement 4 -->
+<div class="flex gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-xl grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+<div class="w-20 h-20 bg-surface-container flex-shrink-0 rounded-full flex items-center justify-center border-2 border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">auto_awesome</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Centurion Focus</h3>
+<span class="font-label-sm text-label-sm text-primary">+5000 XP</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Maintain a 100-day engagement streak without interruption.</p>
+<div class="w-full bg-surface-container rounded-full h-2 mb-xs">
+<div class="bg-primary h-full rounded-full" style="width: 48%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Unlock Requirement: 48/100 Days</span>
+<span class="text-primary">48%</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script>
+        // Micro-interaction for achievement card floating effect
+        document.querySelectorAll('.achievement-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+            });
+        });
+    </script>
+</body></html>

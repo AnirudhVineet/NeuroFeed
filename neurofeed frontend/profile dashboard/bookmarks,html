@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Saved Bookmarks</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            background-color: #f5faf8;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better clinical aesthetic */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5faf8;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bcc9c6;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6d7a77;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed-dim": "#b1c6f9",
+                      "on-secondary-fixed-variant": "#00504d",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-tint": "#006a61",
+                      "inverse-surface": "#2c3230",
+                      "secondary": "#006a66",
+                      "secondary-fixed-dim": "#72d7d1",
+                      "on-secondary-fixed": "#00201e",
+                      "tertiary": "#495e8a",
+                      "primary-fixed-dim": "#67d9cb",
+                      "outline-variant": "#bcc9c6",
+                      "inverse-on-surface": "#edf2f0",
+                      "primary": "#006a61",
+                      "tertiary-container": "#aec3f5",
+                      "surface-bright": "#f5faf8",
+                      "on-primary-fixed": "#00201d",
+                      "surface": "#f5faf8",
+                      "background": "#f5faf8",
+                      "error": "#ba1a1a",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#314671",
+                      "on-primary-container": "#005a53",
+                      "surface-variant": "#dee4e1",
+                      "on-error": "#ffffff",
+                      "inverse-primary": "#67d9cb",
+                      "primary-fixed": "#85f5e7",
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#eff5f2",
+                      "surface-container-highest": "#dee4e1",
+                      "secondary-container": "#8cf1ea",
+                      "error-container": "#ffdad6",
+                      "on-surface-variant": "#3d4947",
+                      "on-background": "#171d1c",
+                      "surface-dim": "#d6dbd9",
+                      "primary-container": "#63d5c7",
+                      "on-tertiary-container": "#3b507b",
+                      "on-tertiary": "#ffffff",
+                      "on-surface": "#171d1c",
+                      "on-tertiary-fixed": "#001a42",
+                      "on-primary-fixed-variant": "#005049",
+                      "tertiary-fixed": "#d8e2ff",
+                      "surface-container-high": "#e4e9e7",
+                      "outline": "#6d7a77",
+                      "on-secondary-container": "#006f6a",
+                      "surface-container": "#eaefed",
+                      "secondary-fixed": "#8ff3ed"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1280px",
+                      "base": "8px",
+                      "xs": "4px",
+                      "md": "24px",
+                      "sm": "12px",
+                      "gutter": "24px",
+                      "xl": "80px",
+                      "lg": "48px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "display": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-sm": ["Inter"],
+                      "label-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-8 px-4 z-50">
+<div class="mb-10 px-4">
+<span class="font-headline-md font-bold text-primary tracking-tight">NeuroFeed</span>
+<p class="font-label-sm text-on-surface-variant">Clinical Learning</p>
+</div>
+<nav class="flex flex-col gap-1 flex-grow">
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md">Create</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-primary font-bold bg-surface-container-high rounded-lg group" href="#">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-label-md">Profile</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-1">
+<button class="mb-4 mx-4 py-3 px-4 bg-primary text-on-primary rounded-xl font-label-md font-bold shadow-md hover:opacity-90 transition-opacity">
+                Upgrade to Pro
+            </button>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md">Help</span>
+</a>
+</div>
+</aside>
+<!-- Top App Bar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 border-b border-outline-variant bg-surface/80 backdrop-blur-md">
+<div class="flex justify-between items-center h-full px-8 max-w-[1280px] mx-auto">
+<div class="flex items-center flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full py-1.5 pl-10 pr-4 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="Search clinical research..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="p-2 text-primary font-bold bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<img class="w-8 h-8 rounded-full border border-primary/20" data-alt="A professional headshot of a female medical researcher with a warm smile, wearing a modern lab coat in a bright, clinical office setting with soft sunlight streaming through the windows. The image has a clean, high-key lighting style and uses a palette of soft teals and crisp whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWec-9Y1hD1OVf-dlK6C-rzUU9q5RjWvRGcvI-f6pp6A0IMVOrtOSZirYvANQ-OUlbWZYg7jqdv9ltGB2UW65nkQPRlNMofJvdjJ4tY7jyBAyFQgBizvQRlAdmd4t25Dbi2tqGYF_BZ8A28nI1a1WoJ-bT8sf1HViCddrA43wxKq1WQc1tt0H1C3FBOMrKAu4ain9T2tKL-1gBGwzvS8floq66tneRaK6L9vRVHX2EQm43Vj2L4yMIz90wdmEpkG5hR1V8nbzqdDLT"/>
+<span class="font-label-md text-on-surface font-semibold group-hover:text-primary transition-colors">Dr. Elena Rossi</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen">
+<div class="max-w-[1280px] mx-auto px-8 py-10">
+<!-- Profile Header -->
+<section class="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12 animate-fade-in">
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-full blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+<img class="relative w-36 h-36 rounded-full border-4 border-surface object-cover" data-alt="A professional portrait of Dr. Elena Rossi, a cognitive neuroscientist, set against a blurred background of a modern medical library. She is smiling warmly at the camera, wearing professional business attire. The lighting is soft and flattering, emphasizing a clean, clinical yet approachable aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPfHs27xuc2O9Va1qlctrbosE18-jQ6QHkf5BgQwbiZFDNQ-d9fgXmRRJtwNv53tHz_mF0CgtzhHayF6rxC9c98vWDI7ELnio9dDkOH-wboT9cyyjepRlLQBMIm8x7EVFt9QqSD44S_tVHkVPb01VwZPR_LtmSP_wTh-BMq-NjM_TBuu4r2dvUAu7AcMBWsljeV6-ZuAcB8n83JqF0apwkSjMDLwYhN-r2-6vqowzCR5MAlwY3CXierv_wRUeh6cCDv6HB2ctSBc1t"/>
+</div>
+<div class="flex-1 text-center md:text-left">
+<div class="flex flex-col md:flex-row items-center md:items-end gap-4 mb-4">
+<h1 class="font-headline-lg text-on-surface">Elena Rossi, Ph.D.</h1>
+<div class="flex gap-2">
+<button class="px-6 py-2 bg-surface border border-outline-variant rounded-lg font-label-md font-bold hover:bg-surface-container transition-colors">Edit Profile</button>
+<button class="p-2 bg-surface border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+</div>
+<div class="flex justify-center md:justify-start gap-8 mb-4">
+<div class="text-center md:text-left">
+<span class="block font-headline-sm text-primary">124</span>
+<span class="text-on-surface-variant font-label-sm">Publications</span>
+</div>
+<div class="text-center md:text-left">
+<span class="block font-headline-sm text-primary">8.2k</span>
+<span class="text-on-surface-variant font-label-sm">Followers</span>
+</div>
+<div class="text-center md:text-left">
+<span class="block font-headline-sm text-primary">412</span>
+<span class="text-on-surface-variant font-label-sm">Following</span>
+</div>
+</div>
+<p class="max-w-2xl font-body-md text-on-surface-variant">
+                        Cognitive Neuroscientist specializing in neuroplasticity and educational psychology. Curating the best clinical research for the NeuroFeed community. Based in Zurich.
+                    </p>
+</div>
+</section>
+<!-- Navigation Tabs -->
+<div class="sticky top-[64px] bg-background/80 backdrop-blur-sm z-30 border-b border-outline-variant mb-8">
+<div class="flex justify-center gap-12">
+<button class="py-4 px-2 flex items-center gap-2 border-b-2 border-primary text-primary font-bold transition-all" id="tab-reels" onclick="switchTab('reels')">
+<span class="material-symbols-outlined text-md">play_circle</span>
+<span class="font-label-md tracking-wider uppercase">Saved Reels</span>
+</button>
+<button class="py-4 px-2 flex items-center gap-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary transition-all" id="tab-docs" onclick="switchTab('docs')">
+<span class="material-symbols-outlined text-md">description</span>
+<span class="font-label-md tracking-wider uppercase">Saved Documents</span>
+</button>
+<button class="py-4 px-2 flex items-center gap-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary transition-all" id="tab-paths" onclick="switchTab('paths')">
+<span class="material-symbols-outlined text-md">route</span>
+<span class="font-label-md tracking-wider uppercase">Saved Paths</span>
+</button>
+</div>
+</div>
+<!-- Content Grid: Saved Reels (Active) -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500" id="content-reels">
+<!-- Reel Item -->
+<div class="relative aspect-[9/16] bg-surface-container rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/30">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A high-quality medical animation still showing the firing of neural synapses in the human brain. The scene is illuminated in vibrant teals and electric blues against a dark, clinical background. Soft glow effects highlight the connectivity pathways, conveying a sense of deep focus and advanced learning." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDti7_P6OR94qpe3GdeWsx35X-g3ieZQrZH1SvHdbh19swT7TYO6LYxb4wH2U3civdzaYYD3XNpf2S2qXDxqwNohY73odkom2gYO4DqOTjKyQigoqGWYX2hFNm4nKopTDY7Kv8M0u7pNegYapxXYTp8D_ARnhROSNkLK-2t78kPLsZGjyzJ5cWgKuwgXa91XSmqZPN972HZxeRoySxMbibC7YTZDrU60TzH37sic5MCIzWWddd9f-jNFacXZpS7nFOn4H2gonqL_jVq')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="w-10 h-10 bg-surface/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all active:scale-90" title="Unbookmark">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4 right-4">
+<p class="font-label-md text-white font-semibold line-clamp-2">Neural Pathway Activation in Learning</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-white/80">play_arrow</span>
+<span class="text-xs text-white/80">42.1k views</span>
+</div>
+</div>
+</div>
+<!-- Repeat Reel Item (Manual variants for unique prompts) -->
+<div class="relative aspect-[9/16] bg-surface-container rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/30">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A microscopic view of brain cells interacting, rendered in a sophisticated 3D clinical style. The color palette features deep navy backgrounds with bright cyan and teal accents representing synaptic neurotransmitters. The mood is calm, focused, and high-tech, perfect for a clinical educational platform." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCfjojJDCk7VeMrGNqeGINjTab3o8CThPCa89NDSDNSQejvGQHN3Q3BIWVxxbpd42mnqMPZfankqH5JgZE85310qlU2F4FteUp2_uWTP0ZcetcldH2qGDUHtby06xE-3nraAl7C1g0NVZ6fztqWqPgfyot95jqRdykrzz7ouFLD0mrXhRcrk4NUKcsSaoNa6tldG1g9_76dxZeXt82ekV8V8wgWJ_YwPuu_7vUtbp38yUjZ1YJ1wQVsD97e1kGOCTlqJKQpsYTEtUN-')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="w-10 h-10 bg-surface/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all active:scale-90" title="Unbookmark">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4 right-4">
+<p class="font-label-md text-white font-semibold line-clamp-2">The Chemistry of Focus: Dopamine Flow</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-white/80">play_arrow</span>
+<span class="text-xs text-white/80">15.8k views</span>
+</div>
+</div>
+</div>
+<div class="relative aspect-[9/16] bg-surface-container rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/30">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A minimalist abstract visualization of brain waves represented by flowing, rhythmic teal lines against a clean, off-white background. The design is airy and modern, following the clinical modernist aesthetic. The lighting is bright and even, evoking a state of calm intellectual pursuit." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDjVGcYmNvruZNMhZgZW8rqiyqgTqLEkSGQui_4WI_RgNOFVyLzSPeSOgIatJmhtM7YlXsE7K496W16tBcPWfBRjzISNu9do2vlMB7qrRXvUH4fT5Hr_EDgnKsCfTxFFAK6lcprZ5DU6Uu7m4lzoYF8JeeQZLOcwYjdcx2XU5V8X05BgoC004u7KxAmfKq5bmkJTruaLW8CunpjJ8ATahQ2Eig3XbLC5d8T-w2Zcgz5JVMa7TcZePncfTDXbpNrWLcex56sPiBqtDOI')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="w-10 h-10 bg-surface/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all active:scale-90" title="Unbookmark">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4 right-4">
+<p class="font-label-md text-white font-semibold line-clamp-2">Alpha Waves and Deep Meditation Study</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-white/80">play_arrow</span>
+<span class="text-xs text-white/80">28.4k views</span>
+</div>
+</div>
+</div>
+<div class="relative aspect-[9/16] bg-surface-container rounded-xl overflow-hidden group cursor-pointer border border-outline-variant/30">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A close-up of a high-resolution MRI brain scan being analyzed on a transparent glass display. The interface shows glowing teal data points and neural mapping. The setting is a dimly lit, high-end laboratory with a professional, scientific atmosphere. The colors are dominated by cool blues and crisp whites." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD4WFZwwb-BJphYi7IkrdVDc9WT-WT32IAJz6f_1PJeGqT1GpIKaxoFyz1pH2Q09N5DtkKfWZkrgLCsxdg51hy0lMb_Gm7XfJtGZfeVUWZTPE6ScP_2QdmHGJAwfn88QpaZm5W43_VZnOsl2s_q3-zLA3bU1bEBw9HgmEowl6CrXwnKjHXTdAp2VFLQYTF8AQ9aUuUq8I0aVVQ-BJ3wqqCkuVJR8QO8qmdrX-7tM88tV-vW2JCAVTGrmK2R-W2dB-VzNwQ2VoKJnKVs')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent opacity-60"></div>
+<div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="w-10 h-10 bg-surface/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all active:scale-90" title="Unbookmark">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-4 right-4">
+<p class="font-label-md text-white font-semibold line-clamp-2">Functional MRI: Real-time Analysis</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-sm text-white/80">play_arrow</span>
+<span class="text-xs text-white/80">8.9k views</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Content Grid: Saved Documents (Hidden by default) -->
+<div class="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500" id="content-docs">
+<div class="bg-surface border border-outline-variant p-6 rounded-xl hover:shadow-lg transition-all group flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-lg text-on-secondary-container">
+<span class="material-symbols-outlined">description</span>
+</div>
+<button class="text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-on-surface mb-2">Neuroplasticity in Adult Learners</h3>
+<p class="text-on-surface-variant font-body-sm line-clamp-3 mb-4">Comprehensive white paper exploring the mechanisms of synaptic remodeling in individuals over the age of 25. Includes 12 clinical case studies and peer reviews.</p>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm">PDF · 4.2 MB</span>
+<span class="text-on-surface-variant font-label-sm">Saved 2 days ago</span>
+</div>
+</div>
+<!-- Repeat Doc -->
+<div class="bg-surface border border-outline-variant p-6 rounded-xl hover:shadow-lg transition-all group flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-tertiary-container flex items-center justify-center rounded-lg text-on-tertiary-container">
+<span class="material-symbols-outlined">data_thresholding</span>
+</div>
+<button class="text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-on-surface mb-2">Sleep Architecture Data Set</h3>
+<p class="text-on-surface-variant font-body-sm line-clamp-3 mb-4">Raw telemetry data from 100 participants during 8-hour sleep cycles. Analyzed for REM latency and Stage 4 duration. Essential for circadian research.</p>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/30">
+<span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full font-label-sm">CSV · 18.5 MB</span>
+<span class="text-on-surface-variant font-label-sm">Saved 5 days ago</span>
+</div>
+</div>
+</div>
+<!-- Content Grid: Saved Paths (Hidden by default) -->
+<div class="hidden grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500" id="content-paths">
+<div class="flex flex-col md:flex-row bg-surface border border-outline-variant rounded-xl overflow-hidden group">
+<div class="w-full md:w-48 aspect-video md:aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A conceptual digital illustration of a glowing maze that transforms into a neural network, symbolizing a learning path. The style is ultra-clean with a high-key light mode background. Vibrant teal and navy blue light ribbons weave through the structure, representing progress and knowledge acquisition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARpckibgwXJ-CzjBM5CQhrU4WcFw7Upl3FZXgjTU-c40-3qjlyQIiLI29jvvEbIn7ZoU6KsP8FszDLcS8Ud8StT5YHNUI8SDo63jL-bgGByR-eieVXpY1rZ52r63QIwtzbysVxMZbflPdm516WTVJU0awakBRIRWW8yu4KAT9dHzTCaxKUscXCO1DRAPRodTN99za10bpxOqcH86Vj4v6k5WgsQerWGP0eaLeYZ5aIs-fcGOPtfBCNtvmbID7oc7i6g-MHri60mPKe"/>
+<div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+</div>
+<div class="p-6 flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-sm text-primary font-bold uppercase tracking-widest">Learning Path</span>
+<button class="text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-on-surface mb-1">Fundamentals of Cognitive Rehab</h3>
+<p class="text-on-surface-variant font-body-sm">A 12-module journey covering traumatic brain injury recovery protocols and assessment tools.</p>
+</div>
+<div class="mt-6">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-sm text-on-surface-variant">Progress: 45%</span>
+<span class="font-label-sm text-on-surface-variant">5/12 Modules</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 45%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col md:flex-row bg-surface border border-outline-variant rounded-xl overflow-hidden group">
+<div class="w-full md:w-48 aspect-video md:aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A stylized 3D render of chemical structures and laboratory glassware floating in a clean, minimalist space. The aesthetic follows the clinical modernist design system with soft teal highlights and deep navy shadows. The lighting is diffused and bright, creating an atmosphere of sophisticated academic research." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRvn3TsGsUu0XtF1d-1ekwXZAMZIKa1NlM-IoHattaGrQT5udyygTLwH5R5JIF5Iy_ihbSKOgpPjXx9_ppxOmW6-20WA-9tbEV68MjxNVIT3Fnfoww83rj2Hl3DEVs84UVy05BEDiObg0U6wtvez4JXnqQC_a9UHWMm2zH8y9O4vkPGjNyMBTn9H_bUBhmIYcO6xRltP2JQlRIWRyuso48zKU9S-67FkwluYUT_Wy3oW7bmrjy1LAFXlT744CKR5ndH5qjRyYzRB0W"/>
+<div class="absolute inset-0 bg-secondary/20 mix-blend-overlay"></div>
+</div>
+<div class="p-6 flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-sm text-secondary font-bold uppercase tracking-widest">Specialization</span>
+<button class="text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined fill-icon" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-on-surface mb-1">Advanced Psychopharmacology</h3>
+<p class="text-on-surface-variant font-body-sm">Deep dive into neurotransmitter modulation and the latest pharmacological breakthroughs in psychiatry.</p>
+</div>
+<div class="mt-6">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-sm text-on-surface-variant">Progress: 100%</span>
+<span class="font-label-sm text-secondary font-bold">COMPLETED</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-1000" style="width: 100%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        function switchTab(tab) {
+            // Content divs
+            const reels = document.getElementById('content-reels');
+            const docs = document.getElementById('content-docs');
+            const paths = document.getElementById('content-paths');
+            
+            // Buttons
+            const btnReels = document.getElementById('tab-reels');
+            const btnDocs = document.getElementById('tab-docs');
+            const btnPaths = document.getElementById('tab-paths');
+
+            // Reset all
+            reels.classList.add('hidden');
+            reels.classList.remove('grid');
+            docs.classList.add('hidden');
+            docs.classList.remove('grid');
+            paths.classList.add('hidden');
+            paths.classList.remove('grid');
+
+            btnReels.classList.remove('border-primary', 'text-primary', 'font-bold');
+            btnReels.classList.add('border-transparent', 'text-on-surface-variant');
+            btnDocs.classList.remove('border-primary', 'text-primary', 'font-bold');
+            btnDocs.classList.add('border-transparent', 'text-on-surface-variant');
+            btnPaths.classList.remove('border-primary', 'text-primary', 'font-bold');
+            btnPaths.classList.add('border-transparent', 'text-on-surface-variant');
+
+            // Activate specific
+            if (tab === 'reels') {
+                reels.classList.remove('hidden');
+                reels.classList.add('grid');
+                btnReels.classList.add('border-primary', 'text-primary', 'font-bold');
+                btnReels.classList.remove('border-transparent', 'text-on-surface-variant');
+            } else if (tab === 'docs') {
+                docs.classList.remove('hidden');
+                docs.classList.add('grid');
+                btnDocs.classList.add('border-primary', 'text-primary', 'font-bold');
+                btnDocs.classList.remove('border-transparent', 'text-on-surface-variant');
+            } else if (tab === 'paths') {
+                paths.classList.remove('hidden');
+                paths.classList.add('grid');
+                btnPaths.classList.add('border-primary', 'text-primary', 'font-bold');
+                btnPaths.classList.remove('border-transparent', 'text-on-surface-variant');
+            }
+        }
+
+        // Add micro-interaction for bookmark buttons
+        document.querySelectorAll('button[title="Unbookmark"]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const icon = this.querySelector('.material-symbols-outlined');
+                if (icon.classList.contains('fill-icon')) {
+                    icon.classList.remove('fill-icon');
+                    icon.style.fontVariationSettings = "'FILL' 0";
+                    this.parentElement.parentElement.classList.add('opacity-40', 'grayscale');
+                    setTimeout(() => {
+                         // In a real app, this would remove the element or update DB
+                         console.log("Unbookmarked item");
+                    }, 300);
+                } else {
+                    icon.classList.add('fill-icon');
+                    icon.style.fontVariationSettings = "'FILL' 1";
+                    this.parentElement.parentElement.classList.remove('opacity-40', 'grayscale');
+                }
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Challenges &amp; Leaderboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#006a61",
+                        "outline": "#6d7a77",
+                        "primary-fixed": "#85f5e7",
+                        "on-surface-variant": "#3d4947",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#314671",
+                        "tertiary-container": "#aec3f5",
+                        "primary": "#006a61",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#72d7d1",
+                        "secondary": "#006a66",
+                        "on-surface": "#171d1c",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#67d9cb",
+                        "on-tertiary-container": "#3b507b",
+                        "on-primary-container": "#005a53",
+                        "secondary-fixed": "#8ff3ed",
+                        "surface-variant": "#dee4e1",
+                        "primary-fixed-dim": "#67d9cb",
+                        "surface-container-highest": "#dee4e1",
+                        "on-primary-fixed": "#00201d",
+                        "secondary-container": "#8cf1ea",
+                        "primary-container": "#63d5c7",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "tertiary-fixed-dim": "#b1c6f9",
+                        "inverse-on-surface": "#edf2f0",
+                        "surface-container": "#eaefed",
+                        "on-primary-fixed-variant": "#005049",
+                        "background": "#f5faf8",
+                        "surface-bright": "#f5faf8",
+                        "tertiary-fixed": "#d8e2ff",
+                        "tertiary": "#495e8a",
+                        "surface-container-low": "#eff5f2",
+                        "on-secondary-fixed": "#00201e",
+                        "on-secondary-container": "#006f6a",
+                        "surface-container-high": "#e4e9e7",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bcc9c6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d6dbd9",
+                        "inverse-surface": "#2c3230",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface": "#f5faf8",
+                        "on-background": "#171d1c",
+                        "on-tertiary": "#ffffff",
+                        "amber-medal": "#F4C98A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "24px",
+                        "container-max": "1280px",
+                        "sm": "12px",
+                        "lg": "48px",
+                        "xl": "80px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5faf8; color: #171d1c; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border: 1px solid #E8EAF0; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #bcc9c6; border-radius: 10px; }
+        .league-glow { box-shadow: 0 0 20px rgba(244, 201, 138, 0.3); }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-md z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary px-md py-lg mb-base flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-size: 32px;">psychology</span>
+<span>EduGram</span>
+</div>
+<nav class="flex-1 px-sm space-y-xs">
+<!-- Active: Challenges -->
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md text-label-md">Create</span>
+</a>
+<!-- ACTIVE TAB -->
+<a class="flex items-center gap-base px-md py-sm text-primary font-bold bg-primary/10 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+<span class="font-label-md text-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-md border-t border-outline-variant">
+<div class="flex items-center gap-sm p-sm rounded-xl bg-surface-container-low">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A professional portrait of a medical student in a modern clinical setting with soft natural light and blurred textbooks in the background. The aesthetic is clean, academic, and minimalist with a palette of soft teals and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWV8OAy2kQEZY3gVCZLNLQUuq5XoZE2xPITiGLoAkIsAODj1_VoHtkqxQYWzIyng-kTi5kz3aJRYt-IXmqWxG8DMIloQ8LvveZRlmQn86DwTC_-FdwP5qQyzfXXh35hmoLq1bgJ1ubRHeKQOKRT41MDFv1D5vg1IWC_mCWaqeq4b0yMHsYBglwJXH0CkUAhLExJvoIjIyipDfNNrcl6ZSHFJR1bYt2kSioL6fvUeXENbLqsGGhYg29cPV3_aOmxQCu1QsbsgiveWQx"/>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md truncate">Dr. Julianne</p>
+<p class="text-[10px] text-outline truncate uppercase tracking-widest">Resident Learner</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 ml-64 h-screen overflow-y-auto custom-scrollbar">
+<!-- TopNavBar (Execution from JSON) -->
+<header class="sticky top-0 z-40 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex justify-between items-center h-16 px-md max-w-container-max mx-auto">
+<div class="flex items-center gap-md flex-1">
+<span class="hidden md:block font-headline-sm text-headline-sm font-black text-primary">EduGram</span>
+<div class="relative w-full max-w-md focus-within:ring-2 focus-within:ring-primary/10 rounded-lg">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-sm focus:ring-primary" placeholder="Search challenges..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<div class="max-w-6xl mx-auto p-md space-y-md">
+<!-- Current League Banner -->
+<section class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary to-secondary p-md text-white shadow-lg league-glow">
+<div class="absolute top-0 right-0 p-lg opacity-10">
+<span class="material-symbols-outlined text-[120px]">military_tech</span>
+</div>
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-20 h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+<span class="material-symbols-outlined text-[48px] text-amber-medal" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold">Obsidian League</h2>
+<p class="font-body-md text-body-md text-white/80">3 days remaining • Keep up the focus!</p>
+</div>
+</div>
+<div class="flex gap-lg text-center bg-black/10 backdrop-blur-sm rounded-xl px-lg py-md border border-white/10">
+<div>
+<p class="text-white/70 text-[12px] font-bold uppercase tracking-widest mb-xs">Current Rank</p>
+<p class="text-headline-md font-black">#4</p>
+</div>
+<div class="w-[1px] bg-white/20"></div>
+<div>
+<p class="text-white/70 text-[12px] font-bold uppercase tracking-widest mb-xs">Total XP</p>
+<p class="text-headline-md font-black">12,450</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Grid Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-md items-start">
+<!-- Left: Quiz Battles & Leaderboard (Col 1-8) -->
+<div class="lg:col-span-8 space-y-md">
+<!-- Quiz Battles -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<div class="flex justify-between items-center mb-md">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary flex items-center gap-xs">
+<span class="material-symbols-outlined">bolt</span> Quiz Battles
+                                </h3>
+<p class="text-body-sm text-outline">Real-time clinical reasoning duals.</p>
+</div>
+<button class="bg-primary text-white px-md py-sm rounded-lg font-label-md text-label-md hover:bg-on-primary-container transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span> Join Match
+                            </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+<div class="p-sm bg-background border border-outline-variant rounded-lg flex items-center gap-sm">
+<div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">neurology</span>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-label-md">Neurology Sprint</p>
+<p class="text-[12px] text-outline">Active Now: 1,240 learners</p>
+</div>
+<span class="material-symbols-outlined text-secondary">chevron_right</span>
+</div>
+<div class="p-sm bg-background border border-outline-variant rounded-lg flex items-center gap-sm">
+<div class="w-12 h-12 bg-tertiary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container">cardiology</span>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-label-md">ECG Masterclass</p>
+<p class="text-[12px] text-outline">Starts in: 04m 22s</p>
+</div>
+<span class="material-symbols-outlined text-secondary">timer</span>
+</div>
+</div>
+</div>
+<!-- Leaderboard -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-md border-b border-outline-variant flex items-center justify-between">
+<div class="flex gap-md">
+<button class="font-label-md text-label-md text-primary border-b-2 border-primary pb-base px-base">Global</button>
+<button class="font-label-md text-label-md text-outline hover:text-primary pb-base px-base transition-colors">Friends</button>
+</div>
+<span class="text-[12px] text-outline flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">update</span> Reset in 3d 14h
+                            </span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-md py-sm font-label-sm text-label-sm text-outline uppercase tracking-wider">Rank</th>
+<th class="px-md py-sm font-label-sm text-label-sm text-outline uppercase tracking-wider">Learner</th>
+<th class="px-md py-sm font-label-sm text-label-sm text-outline uppercase tracking-wider text-right">XP</th>
+<th class="px-md py-sm font-label-sm text-label-sm text-outline uppercase tracking-wider text-right">Trend</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="bg-amber-medal/5">
+<td class="px-md py-md font-bold text-primary">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-amber-medal" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+                                                1
+                                            </div>
+</td>
+<td class="px-md py-md">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A focused young medical researcher with modern glasses, working in a high-tech lab illuminated by soft teal LED lighting. The style is professional and sophisticated with high clarity and a shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKMf_JWx3392tl-SCwMSn4mErcGVJV0j6ASh1dp-i_JUjHtdqCQgi_li9ddk057W1IvyxMKzsQL9EoxEzbKvIOvYA-XeBxXjW4ZFQy012LsVHXds6rv5iRZC_k7gTXbiUYkK1Yj_DdWOVnIBYfCLHMTIoaV5ldwtTMqDSYuyrbB8SQNpk-BApM9gz7JKJmHWPiYHztjB-K119D5_4vM7r0ak8aGH4mlGkL2VR0m3QX0Ud812Ljvxwz3M3bQ6mfCbj4Mq9QK6lGYptC"/>
+<span class="font-label-md">Marcus Holloway</span>
+</div>
+</td>
+<td class="px-md py-md font-bold text-right">24,800</td>
+<td class="px-md py-md text-right"><span class="material-symbols-outlined text-primary text-[18px]">trending_up</span></td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-background transition-colors">
+<td class="px-md py-md font-bold text-outline">2</td>
+<td class="px-md py-md">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="Close up portrait of a senior physician smiling, dressed in a white lab coat with a clean blue stethoscope around the neck. The background shows a modern hospital hallway with bright, sterile yet welcoming lighting and a minimalist teal-and-white color scheme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzpHXHnZcz01zml-C07NDHxJmP3BP7bKFKEP4hSCQGXoN9IG8oCS55x4KIPdUR1jTgTtm9KsttOgId_jSwJ94SgrT1la4S7G6I3cmGA6JXbpSLIv0vq-drdVjamJtyP9D2ag4a0_mRNWdBiySwM39Q-Rdv8iGlQHJTye_ExrYLsuX_w8ZYgV8ycYRVlNbsPiznsu__P_FYInWy1XoAS_3ZLjW5rN2EP_aEAuPsvpOswJ1OIgLo1qAK2UPIITjpj19ZgWBmPkMxZGv0"/>
+<span class="font-label-md">Dr. Sarah Chen</span>
+</div>
+</td>
+<td class="px-md py-md font-bold text-right">22,150</td>
+<td class="px-md py-md text-right"><span class="material-symbols-outlined text-primary text-[18px]">trending_up</span></td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-background transition-colors">
+<td class="px-md py-md font-bold text-outline">3</td>
+<td class="px-md py-md">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A portrait of a male nursing student with a warm expression, wearing dark blue scrubs in a brightly lit academic library. Soft white and teal tones dominate the scene, creating a calm, high-focus atmosphere suitable for a premium educational platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAewkc5E_c5aE5wZ7EgCpJVBOskp9Qeyl3rqMF6fF-c3x8c3fYcIc8jZ8Ootrf2VYXIbeoZqe8n8JIPFhbuzvrv25rR7wohSEpSVppt1fYEGkCbGjSpWPVjfI-WttnUyIb4zKkwfUeJZ0gx049DLuvetNCrxgYZQAgd1DDkVaWlhXhFlWKHNHmrLSJwXKylmWW7BpRXxGLL_Cw0ad7orVyWrBaU0OfoIfuYBsExRog7rE6lpTvhsXXNkzrfE1Lfg13ZsQnitq38QuZS"/>
+<span class="font-label-md">Kevin Zhang</span>
+</div>
+</td>
+<td class="px-md py-md font-bold text-right">18,900</td>
+<td class="px-md py-md text-right"><span class="material-symbols-outlined text-outline text-[18px]">horizontal_rule</span></td>
+</tr>
+<!-- User's Highlighted Row -->
+<tr class="bg-primary/5 ring-1 ring-inset ring-primary">
+<td class="px-md py-md font-bold text-primary">4</td>
+<td class="px-md py-md">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A professional portrait of a medical student in a modern clinical setting with soft natural light and blurred textbooks in the background. The aesthetic is clean, academic, and minimalist with a palette of soft teals and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClenisN5JiW1um2cIB0SMAB3nMz7q3TME3T1dav0_YnbS93ry6RXcrwWGh0jjQMgQ2Wxx3j5Dp3yQCmRgiIl1HXSNRVR4szIz6UH3DhZpEzqbxoOaqMMThG3eBRAAMxa-FH9j1ZmHHTN2jmdgz_wmqbhUg6PLFDzghYuMSf2oyA77nyu1KC9g22ILlRBZCHJvv-i5V1roJB8oJ7O6z84Fwwp4chTwholkKikygQAJvM74KhnOr90MW4OKPJ1xZOZEPas0rbcYjS6dz"/>
+<span class="font-label-md text-primary font-bold">Dr. Julianne (You)</span>
+</div>
+</td>
+<td class="px-md py-md font-bold text-right text-primary">12,450</td>
+<td class="px-md py-md text-right"><span class="material-symbols-outlined text-primary text-[18px]">trending_up</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right: Daily & Achievements (Col 9-12) -->
+<div class="lg:col-span-4 space-y-md">
+<!-- Daily Challenges -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined">checklist</span> Daily Goals
+                        </h3>
+<div class="space-y-md">
+<div class="space-y-base">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-label-md">Read 3 Case Studies</p>
+<p class="text-[12px] text-outline">+50 XP • 1 Streak Pt</p>
+</div>
+<span class="material-symbols-outlined text-secondary">check_circle</span>
+</div>
+<div class="w-full bg-background rounded-full h-2 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 100%"></div>
+</div>
+</div>
+<div class="space-y-base">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-label-md">Earn 200 Battle XP</p>
+<p class="text-[12px] text-outline">+100 XP • Treasure Box</p>
+</div>
+<p class="text-[12px] font-bold text-primary">150/200</p>
+</div>
+<div class="w-full bg-background rounded-full h-2 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<div class="space-y-base">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-label-md">No Mistakes Challenge</p>
+<p class="text-[12px] text-outline">+150 XP • Mastery Badge</p>
+</div>
+<span class="material-symbols-outlined text-outline">radio_button_unchecked</span>
+</div>
+<div class="w-full bg-background rounded-full h-2 overflow-hidden">
+<div class="bg-outline-variant h-full rounded-full" style="width: 0%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Achievements Gallery -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-sm text-headline-sm text-primary">Achievements</h3>
+<button class="text-primary font-label-sm text-label-sm hover:underline">View All</button>
+</div>
+<div class="grid grid-cols-3 gap-sm">
+<div class="flex flex-col items-center gap-xs">
+<div class="w-12 h-12 rounded-full bg-amber-medal/20 flex items-center justify-center border border-amber-medal/40">
+<span class="material-symbols-outlined text-amber-medal" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">10 Day<br/>Streak</span>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology_alt</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">Quick<br/>Thinker</span>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<div class="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center border border-secondary/40">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">Quiz<br/>Master</span>
+</div>
+<div class="flex flex-col items-center gap-xs opacity-40">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-outline">auto_awesome</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">Flawless<br/>Week</span>
+</div>
+<div class="flex flex-col items-center gap-xs opacity-40">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-outline">groups</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">Social<br/>Butterfly</span>
+</div>
+<div class="flex flex-col items-center gap-xs opacity-40">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-outline">diamond</span>
+</div>
+<span class="text-[10px] font-bold text-center leading-tight">Obsidian<br/>Hero</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                row.addEventListener('mouseenter', () => {
+                    row.style.transform = 'translateX(4px)';
+                });
+                row.addEventListener('mouseleave', () => {
+                    row.style.transform = 'translateX(0)';
+                });
+            });
+        });
+    </script>
+</body></html>

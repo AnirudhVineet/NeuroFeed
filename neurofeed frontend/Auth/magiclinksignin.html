@@ -1,0 +1,274 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Sign In | NeuroFeed</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#001a42",
+                    "primary-fixed": "#85f5e7",
+                    "tertiary-container": "#aec3f5",
+                    "on-error-container": "#93000a",
+                    "tertiary": "#495e8a",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#006f6a",
+                    "on-background": "#171d1c",
+                    "on-surface-variant": "#3d4947",
+                    "primary-container": "#63d5c7",
+                    "surface-dim": "#d6dbd9",
+                    "inverse-surface": "#2c3230",
+                    "on-primary-fixed-variant": "#005049",
+                    "surface-container": "#eaefed",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#dee4e1",
+                    "on-secondary": "#ffffff",
+                    "primary": "#006a61",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#8cf1ea",
+                    "on-surface": "#171d1c",
+                    "outline": "#6d7a77",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "on-tertiary-container": "#3b507b",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "primary-fixed-dim": "#67d9cb",
+                    "surface-tint": "#006a61",
+                    "background": "#f5faf8",
+                    "on-primary-fixed": "#00201d",
+                    "secondary": "#006a66",
+                    "inverse-on-surface": "#edf2f0",
+                    "surface-variant": "#dee4e1",
+                    "tertiary-fixed": "#d8e2ff",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-low": "#eff5f2",
+                    "surface-container-high": "#e4e9e7",
+                    "on-primary-container": "#005a53",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#f5faf8",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#00201e",
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "inverse-primary": "#67d9cb",
+                    "surface-bright": "#f5faf8",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#8ff3ed"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "24px",
+                    "xs": "4px",
+                    "xl": "80px",
+                    "lg": "48px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "sm": "12px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        /* Custom subtle interaction for the magic link card */
+        .auth-card {
+            box-shadow: 0 8px 30px rgba(0, 27, 68, 0.05);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .auth-card:focus-within {
+            transform: translateY(-4px);
+        }
+
+        .loading-dots:after {
+            content: ' .';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ' .'; }
+            40% { content: ' ..'; }
+            60% { content: ' ...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col font-body-md text-on-surface antialiased overflow-x-hidden">
+<!-- Background Decoration (Optional subtle aesthetic) -->
+<div class="fixed inset-0 pointer-events-none opacity-40">
+<div class="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary-fixed blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-tertiary-fixed blur-[120px] rounded-full"></div>
+</div>
+<main class="flex-grow flex items-center justify-center p-gutter relative z-10">
+<!-- Auth Container -->
+<div class="w-full max-w-[440px]" id="auth-container">
+<!-- Card -->
+<div class="auth-card bg-surface-container-lowest border border-outline-variant rounded-[16px] p-xl md:p-lg">
+<!-- Brand Anchor -->
+<div class="flex justify-center mb-md">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">NeuroFeed</span>
+</div>
+</div>
+<!-- Header Section -->
+<div class="text-center mb-lg">
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">Sign in with Magic Link</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">We'll send a secure login link to your inbox. No password required.</p>
+</div>
+<!-- Form Section -->
+<form class="space-y-md" id="magic-link-form" onsubmit="handleSignIn(event)">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant px-1" for="email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" style="font-size: 20px;">mail</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary-container focus:border-primary outline-none transition-all font-body-md text-on-surface placeholder:text-outline-variant" id="email" name="email" placeholder="you@gmail.com" required="" type="email">
+</div>
+</div>
+<button class="w-full py-3 px-6 bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-label-md text-label-md rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]" id="submit-btn" type="submit">
+<span class="">Send Sign-In Link</span>
+<span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+</button>
+</form>
+<!-- Alternative Link -->
+<div class="mt-md pt-md border-t border-outline-variant text-center">
+<a class="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant transition-colors inline-flex items-center gap-1 group" href="{{DATA:SCREEN:SCREEN_7}}">
+                        Switch to Email + Password
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size: 16px;">key</span>
+</a>
+</div>
+</div>
+<!-- Footer / Terms -->
+<div class="mt-md text-center px-md">
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed opacity-70">
+                    By signing in, you agree to NeuroFeed's 
+                    <a class="underline hover:text-primary transition-colors" href="#">Terms of Service</a> 
+                    and 
+                    <a class="underline hover:text-primary transition-colors" href="#">Privacy Policy</a>.
+                </p>
+</div>
+</div>
+<!-- Success State (Hidden by default) -->
+<div class="hidden w-full max-w-[440px]" id="success-container">
+<div class="auth-card bg-surface-container-lowest border border-outline-variant rounded-[16px] p-xl text-center">
+<div class="w-16 h-16 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center mx-auto mb-md">
+<span class="material-symbols-outlined" style="font-size: 32px; font-variation-settings: 'FILL' 1;">mark_email_read</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Check your email</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">
+                    We've sent a magic link to <strong class="text-on-surface" id="sent-email"></strong>. Click the link to sign in instantly.
+                </p>
+<div class="space-y-md">
+<button class="w-full py-3 px-6 bg-on-surface text-surface-container-lowest font-label-md text-label-md rounded-lg hover:opacity-90 transition-opacity" onclick="window.location.href='/home'">
+                        Back to Home
+                    </button>
+<p class="font-label-sm text-label-sm text-on-surface-variant">
+                        Didn't receive it? <button class="text-primary font-bold hover:underline" onclick="resetForm()">Try again</button>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Shared Footer -->
+<footer class="w-full py-md px-gutter max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
+<div class="font-label-sm text-label-sm text-on-surface-variant">
+            © 2024 NeuroFeed. All rights reserved.
+        </div>
+<div class="flex gap-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all duration-300" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all duration-300" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all duration-300" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        function handleSignIn(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('email');
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Loading State UI
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-dots">Sending</span>';
+            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            // Simulate API call
+            setTimeout(() => {
+                const email = emailInput.value;
+                document.getElementById('sent-email').textContent = email;
+                
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('success-container').classList.remove('hidden');
+                
+                // Add a simple entrance animation for success
+                const successCard = document.querySelector('#success-container .auth-card');
+                successCard.style.opacity = '0';
+                successCard.style.transform = 'translateY(20px)';
+                
+                requestAnimationFrame(() => {
+                    successCard.style.transition = 'all 0.5s ease-out';
+                    successCard.style.opacity = '1';
+                    successCard.style.transform = 'translateY(0)';
+                });
+
+            }, 1200);
+        }
+
+        function resetForm() {
+            document.getElementById('success-container').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Send Sign-In Link</span><span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>';
+            submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+        }
+    </script>
+
+
+</body></html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Sign Up | NeuroFeed</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#001a42",
+                    "primary-fixed": "#85f5e7",
+                    "tertiary-container": "#aec3f5",
+                    "on-error-container": "#93000a",
+                    "tertiary": "#495e8a",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#006f6a",
+                    "on-background": "#171d1c",
+                    "on-surface-variant": "#3d4947",
+                    "primary-container": "#63d5c7",
+                    "surface-dim": "#d6dbd9",
+                    "inverse-surface": "#2c3230",
+                    "on-primary-fixed-variant": "#005049",
+                    "surface-container": "#eaefed",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#dee4e1",
+                    "on-secondary": "#ffffff",
+                    "primary": "#006a61",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#8cf1ea",
+                    "on-surface": "#171d1c",
+                    "outline": "#6d7a77",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "on-tertiary-container": "#3b507b",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "primary-fixed-dim": "#67d9cb",
+                    "surface-tint": "#006a61",
+                    "background": "#f8f8f8",
+                    "on-primary-fixed": "#00201d",
+                    "secondary": "#006a66",
+                    "inverse-on-surface": "#edf2f0",
+                    "surface-variant": "#dee4e1",
+                    "tertiary-fixed": "#d8e2ff",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-low": "#eff5f2",
+                    "surface-container-high": "#e4e9e7",
+                    "on-primary-container": "#005a53",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#00201e",
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "inverse-primary": "#67d9cb",
+                    "surface-bright": "#f5faf8",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#8ff3ed"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "24px",
+                    "xs": "4px",
+                    "xl": "80px",
+                    "lg": "48px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "sm": "12px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: #F8F8F8;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 8px 30px rgba(0, 27, 68, 0.05);
+        }
+        .input-glow:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 213, 199, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center px-gutter py-xl">
+<!-- Auth Card Container -->
+<div class="w-full max-w-[440px] bg-surface-container-lowest border border-outline-variant rounded-xl card-shadow p-lg flex flex-col gap-md relative overflow-hidden">
+<!-- Atmospheric micro-interaction element -->
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+<!-- Brand Logo Header -->
+<div class="flex flex-col items-center gap-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">neurology</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">NeuroFeed</span>
+</div>
+</div>
+<!-- Header Text -->
+<div class="text-center space-y-xs">
+<h1 class="font-headline-md text-headline-md text-on-surface">Sign up with Magic Link</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">We'll send a secure, passwordless link to your inbox.</p>
+</div>
+<!-- Form -->
+<form class="flex flex-col gap-md" id="magicLinkForm" onsubmit="handleSignUp(event)">
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant px-xs" for="email">Email Address</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline text-[20px] transition-colors group-focus-within:text-primary">mail</span>
+<input class="w-full bg-surface border border-outline-variant rounded-lg py-sm pl-11 pr-sm font-body-md text-body-md text-on-surface placeholder:text-outline/60 transition-all input-glow focus:border-primary" id="email" name="email" placeholder="you@gmail.com" required="" type="email">
+</div>
+</div>
+<button class="w-full bg-primary-container hover:brightness-95 active:scale-[0.98] transition-all duration-200 text-on-primary-container font-label-md text-label-md py-sm rounded-lg flex justify-center items-center gap-xs group" type="submit">
+<span class="">Send Sign-Up Link</span>
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="flex items-center gap-sm py-xs">
+<div class="h-[1px] flex-grow bg-outline-variant"></div>
+<span class="font-label-sm text-label-sm text-outline-variant uppercase tracking-wider">or</span>
+<div class="h-[1px] flex-grow bg-outline-variant"></div>
+</div>
+<!-- Secondary Options -->
+<div class="flex flex-col items-center gap-sm">
+<a class="font-label-md text-label-md text-primary hover:underline transition-all" href="SCREEN_13.html">
+                    Switch to Email + Password
+                </a>
+<p class="text-center font-body-sm text-body-sm text-on-surface-variant px-md">
+                    Already have an account? <a class="text-primary font-medium hover:underline" href="SCREEN_7.html">Log in</a>
+</p>
+</div>
+<!-- Footer Terms -->
+<div class="pt-sm border-t border-outline-variant/30">
+<p class="text-center font-label-sm text-label-sm text-outline leading-relaxed">
+                    By continuing, you agree to NeuroFeed's 
+                    <a class="underline hover:text-on-surface-variant transition-colors" href="#">Terms of Service</a> and 
+                    <a class="underline hover:text-on-surface-variant transition-colors" href="#">Privacy Policy</a>.
+                </p>
+</div>
+</div>
+</main>
+<!-- Shared Component: Footer -->
+<footer class="w-full bg-transparent">
+<div class="flex flex-col md:flex-row justify-between items-center w-full py-md px-gutter max-w-container-max mx-auto gap-md">
+<div class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant">
+                © 2024 NeuroFeed. All rights reserved.
+            </div>
+<div class="flex gap-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed underline transition-all duration-300" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed underline transition-all duration-300" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed underline transition-all duration-300" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+<!-- Success Modal (Hidden by default) -->
+<div class="fixed inset-0 bg-on-background/20 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="successOverlay">
+<div class="bg-surface-container-lowest rounded-xl p-lg max-w-[360px] text-center card-shadow scale-95 transition-transform duration-300" id="successModal">
+<div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mx-auto mb-md">
+<span class="material-symbols-outlined text-on-secondary-container text-3xl">mark_email_read</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Check your email</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">We've sent a magic link to your inbox. Use it to complete your registration.</p>
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-sm rounded-lg hover:brightness-110 transition-all" onclick="window.location.href='/home'">
+                Go to Dashboard
+            </button>
+</div>
+</div>
+<script>
+        function handleSignUp(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button');
+            const originalContent = btn.innerHTML;
+            
+            // Interaction: Loading State
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span> <span>Sending...</span>`;
+            
+            // Simulate API delay
+            setTimeout(() => {
+                const overlay = document.getElementById('successOverlay');
+                const modal = document.getElementById('successModal');
+                
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.remove('scale-95');
+                modal.classList.add('scale-100');
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }, 1200);
+        }
+
+        // Lightweight atmospheric effect: Mouse parallax on card
+        const card = document.querySelector('.card-shadow');
+        document.addEventListener('mousemove', (e) => {
+            if (window.innerWidth > 768) {
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 100;
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 100;
+                card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+            }
+        });
+    </script>
+
+
+</body></html>

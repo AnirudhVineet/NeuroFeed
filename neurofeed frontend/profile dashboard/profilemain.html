@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | User Profile</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#006a61",
+                    "outline": "#6d7a77",
+                    "primary-fixed": "#85f5e7",
+                    "on-surface-variant": "#3d4947",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "tertiary-container": "#aec3f5",
+                    "primary": "#006a61",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "secondary": "#006a66",
+                    "on-surface": "#171d1c",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#67d9cb",
+                    "on-tertiary-container": "#3b507b",
+                    "on-primary-container": "#005a53",
+                    "secondary-fixed": "#8ff3ed",
+                    "surface-variant": "#dee4e1",
+                    "primary-fixed-dim": "#67d9cb",
+                    "surface-container-highest": "#dee4e1",
+                    "on-primary-fixed": "#00201d",
+                    "secondary-container": "#8cf1ea",
+                    "primary-container": "#63d5c7",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "inverse-on-surface": "#edf2f0",
+                    "surface-container": "#eaefed",
+                    "on-primary-fixed-variant": "#005049",
+                    "background": "#f5faf8",
+                    "surface-bright": "#f5faf8",
+                    "tertiary-fixed": "#d8e2ff",
+                    "tertiary": "#495e8a",
+                    "surface-container-low": "#eff5f2",
+                    "on-secondary-fixed": "#00201e",
+                    "on-secondary-container": "#006f6a",
+                    "surface-container-high": "#e4e9e7",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d6dbd9",
+                    "inverse-surface": "#2c3230",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#001a42",
+                    "surface": "#f5faf8",
+                    "on-background": "#171d1c",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "container-max": "1280px",
+                    "sm": "12px",
+                    "lg": "48px",
+                    "xl": "80px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f5faf8;
+            font-family: 'Inter', sans-serif;
+            color: #171d1c;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab {
+            border-top: 2px solid #001a42; /* Dark Navy active indicator */
+            color: #171d1c;
+            font-weight: 700;
+        }
+        .custom-shadow {
+            box-shadow: 0 8px 30px rgba(0, 27, 68, 0.05);
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .sidebar-item-active {
+            font-weight: 700;
+            color: #006a61;
+        }
+    </style>
+</head>
+<body class="bg-background">
+<!-- Sidebar Navigation (Predicted Shared Component: SideNavBar) -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-md z-50">
+<div class="px-md py-lg mb-xl">
+<h1 class="font-headline-md text-headline-md font-extrabold text-primary tracking-tight">EduGram</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Clinical Learning</p>
+</div>
+<nav class="flex-grow space-y-2 px-sm">
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-md text-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md text-label-md">Create</span>
+</a>
+<a class="flex items-center gap-base px-md py-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md text-label-md">Challenges</span>
+</a>
+<!-- Active State: Profile -->
+<a class="flex items-center gap-base px-md py-sm text-primary font-bold bg-primary-container/10 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-md border-t border-outline-variant">
+<div class="flex items-center gap-sm p-sm rounded-xl hover:bg-surface-container transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-tertiary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a medical student in a clean, brightly lit modern studio. The student wears a navy blue stethoscope around their neck and a crisp white coat. The background is a soft, out-of-focus clinical setting with muted teal accents, creating a calm and authoritative atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuXPpgg3rXtRUKTDo6tLByyvEvauqHipPnQMMRjZW94fT6tGwBf1iKyRUH7QGLVL7HtD3ET3dfC_NIBWccPvwrEyQkHIUI2CLbx_Q2Kq8lwJyZYnWoMC5tc8zt6ROSILEgSURQZBzTUjq8wkltvoAvTnsW6avL7xJ6CKVIifAqoxHsSw5yVCd_64NuiFPfuLUg4Y42T_qgmMhfOcsGrUOwH57M6UJB3VcbSgfeLxMdTLEbOWClOlP7hr-MWnxRoFYJiGaKN2mqz7a6"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Dr. Julian Vance</span>
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Neuro-Resident</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- Top Navigation (Contextual Actions) -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/50">
+<div class="flex justify-between items-center h-16 px-xl max-w-container-max mx-auto">
+<div class="flex items-center gap-md">
+<span class="font-headline-sm text-headline-sm font-black text-on-tertiary-fixed-variant">NeuroFeed</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer">settings</span>
+</div>
+</div>
+</header>
+<!-- Profile Header Section -->
+<section class="max-w-4xl mx-auto px-md py-xl">
+<div class="flex flex-col md:flex-row gap-xl items-start">
+<!-- Avatar Column -->
+<div class="relative group">
+<div class="w-40 h-40 md:w-48 md:h-48 rounded-full border-4 border-surface-container-highest p-1 bg-gradient-to-tr from-primary to-tertiary">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img class="w-full h-full object-cover" data-alt="A detailed, high-resolution portrait of a young medical professional looking confidently into the camera. The lighting is crisp and cool, typical of a high-end medical research facility. The color palette features deep navies and surgical teals, emphasizing clinical precision and academic prestige. The subject has a kind yet serious expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHGUoAVHNBUR1xhbZ0M7Ha4E1EY1aLhurQ_hER0VKwH64nRJvlsxXvEEJzdCJAqfEOD_K9Pf_3ZabReqaCswwsUb9NKMnnKub_RdWcYGQ5_pXE63kp0_ic8gUOc889H7Y88TS3SuDxj-YEf0MjPrHIbDTVV-1cJ7qIJ12o3DoygnRGa5PKVR6WDsgiE_rPPWgXzLaOkQWD1lhfSkW4zBz6LUMtmP4yqZv5ylDxOJbuXp4sDbinjq9lIUz0IOlDtO03sWOravcTMpwH"/>
+</div>
+</div>
+<div class="absolute bottom-4 right-4 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-surface text-white">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<!-- Bio Column -->
+<div class="flex-grow space-y-md">
+<div class="flex flex-wrap items-center gap-md">
+<h2 class="font-headline-md text-headline-md text-on-tertiary-fixed-variant">julian_neuro_vance</h2>
+<div class="flex gap-base">
+<button class="bg-primary hover:bg-on-primary-container text-white px-md py-base rounded-lg font-label-md text-label-md transition-colors shadow-sm">Edit Profile</button>
+<button class="bg-surface-container-high hover:bg-surface-dim px-md py-base rounded-lg font-label-md text-label-md transition-colors">Archive</button>
+<button class="bg-surface-container-high hover:bg-surface-dim px-base py-base rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="flex gap-lg border-y border-outline-variant/30 py-sm">
+<div class="text-center md:text-left">
+<span class="font-bold text-body-lg">128</span>
+<span class="text-on-surface-variant font-label-md text-label-md block md:inline md:ml-1">Contributions</span>
+</div>
+<div class="text-center md:text-left">
+<span class="font-bold text-body-lg">14.2k</span>
+<span class="text-on-surface-variant font-label-md text-label-md block md:inline md:ml-1">Followers</span>
+</div>
+<div class="text-center md:text-left">
+<span class="font-bold text-body-lg">842</span>
+<span class="text-on-surface-variant font-label-md text-label-md block md:inline md:ml-1">Following</span>
+</div>
+</div>
+<div class="space-y-xs">
+<h3 class="font-bold text-body-md text-on-tertiary-fixed-variant">Julian Vance, MD</h3>
+<p class="text-body-md text-on-surface-variant max-w-lg leading-relaxed">
+                            Neurology Resident @ Stanford Medicine. 🧠 <br/>
+                            Specializing in Neuroplasticity &amp; Deep Brain Stimulation. <br/>
+                            Educating through high-fidelity clinical reels. 🏥
+                        </p>
+<a class="text-primary font-bold text-label-md flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-sm">link</span>
+                            publications.neurofeed.edu/vance
+                        </a>
+</div>
+<!-- Gamification Badges -->
+<div class="flex gap-base flex-wrap pt-md">
+<div class="flex items-center gap-xs bg-secondary-container/30 text-on-secondary-container px-sm py-xs rounded-full border border-secondary-container">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-label-sm font-label-sm">42 Day Streak</span>
+</div>
+<div class="flex items-center gap-xs bg-tertiary-container/30 text-on-tertiary-container px-sm py-xs rounded-full border border-tertiary-container">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-label-sm font-label-sm">XP Level 84</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Highlights (Curated Guides) -->
+<section class="max-w-4xl mx-auto px-md mb-xl overflow-x-auto">
+<div class="flex gap-lg min-w-max pb-md">
+<div class="flex flex-col items-center gap-sm cursor-pointer group">
+<div class="w-16 h-16 rounded-full border-2 border-outline-variant p-0.5 group-hover:border-primary transition-colors">
+<div class="w-full h-full rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A micro-photography shot of neural pathways glowing in a deep indigo and electric teal light. The image captures the intricate, lace-like connections of neurons in a clean, clinical medical visualization style. Minimalist and professional, it represents academic depth and scientific discovery." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2RLzPhE8LzeeF3TI8ABjimrXgTf8ybNUlNNiM90vsKune_6IDO2Yy5J5LjAeup6AN7dHOQWcGFSoqcNa5neyaubrFP4EeSntjIP75aQqZCscBYB0HgvbQGIIhGIr4xtPxeuD7ZtY-VxvDREmPC_PYgEJl1EGa3LBhuFgvthUUrlagpgWSBg9OgrX8rrMJ4BoZ5RBnX-3RmeMwE76arOFV-CxwGkzpGdj8DMYLKkyQGDHRnFa0j5evcygF-f0uytEd5AM4g1pZZI7V"/>
+</div>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Anatomy</span>
+</div>
+<div class="flex flex-col items-center gap-sm cursor-pointer group">
+<div class="w-16 h-16 rounded-full border-2 border-outline-variant p-0.5 group-hover:border-primary transition-colors">
+<div class="w-full h-full rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, flat-lay arrangement of surgical instruments on a sterile teal cloth. Scalpels, forceps, and a stethoscope are arranged with geometric precision. The lighting is bright and high-key, emphasizing a clinical modern aesthetic. The atmosphere is one of preparedness and technical excellence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIyRTQ2iUqMEWJnALSD2AW_Itt0viWf0mQKUiJuOAwuQfsKsV10-jlv3wQ36QeYvfuTN-vKMMl5HbEJxZtpy8IPknKfyRXaybY6x3Dc-9Dz9AY5m8lwrqor3s95Uracu8AA1tu2yUlEvPCGVIG3l1rr8xxAFIdZjwhtcjNoKC_pMEKUerVmR3D2ekfeCIEo1n89t4xHdQKJJT7akt1IL0gdCeCrxtNDuifCB2Bgb99jvdke0xzoYc_bT2TXtGabG9oVPuJqG31DCJR"/>
+</div>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Surgery</span>
+</div>
+<div class="flex flex-col items-center gap-sm cursor-pointer group">
+<div class="w-16 h-16 rounded-full border-2 border-outline-variant p-0.5 group-hover:border-primary transition-colors">
+<div class="w-full h-full rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A high-contrast MRI scan of a human brain displayed on a modern, ultra-slim monitor. The screen glows with a soft cyan light in a dark, sophisticated research room. The scene is minimalist and authoritative, focusing on the intersection of medicine and advanced technology." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVVKxEr7vXAeYBL2lkTr_DQ3--NqMvGNMopoia7TkyAO9CQE9bAKt8XPSDG_MtzHNsdvhyXD2nGKb_COkz6DvOECp91pQDLL13lNJfrGHIlpIMpYml4XoZ5RNjni0n8RU73FlqT-NPJEGRMW-6-AoDCiY3W_TKaC0KhhhOo2I2Vnj-kd4lVdp6nQxjWiry3ww0L0e7tZwJ7vlbBr6i_yZp3PjhnmKeNQJ54qWpzOnd4M8j3OHnxwTRcnV_eQmWn9S6l1GiiWmgWg5m"/>
+</div>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Radiology</span>
+</div>
+<div class="flex flex-col items-center gap-sm cursor-pointer group">
+<div class="w-16 h-16 rounded-full border-2 border-outline-variant p-0.5 group-hover:border-primary transition-colors">
+<div class="w-full h-full rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">add</span>
+</div>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">New Guide</span>
+</div>
+</div>
+</section>
+<!-- Tabs Section -->
+<section class="max-w-container-max mx-auto px-md">
+<div class="flex justify-center border-t border-outline-variant/30">
+<nav class="flex gap-xl -mt-[1px]"><a class="active-tab py-md flex items-center gap-xs uppercase tracking-widest text-label-sm whitespace-nowrap" href="#">Overview</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Uploads</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Paths</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Achievements</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Bookmarks</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Activity</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Stats</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Following</a><a class="py-md flex items-center gap-xs text-on-surface-variant hover:text-primary uppercase tracking-widest text-label-sm transition-colors whitespace-nowrap" href="#">Followers</a></nav>
+</div>
+<!-- Content Grid (Asymmetric Bento-inspired layout) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter py-md mb-xl"><div class="md:col-span-4 clinical-card p-6 flex flex-col justify-between relative overflow-hidden group bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform"><span class="material-symbols-outlined !text-xl">bolt</span></div><div><span class="text-on-surface-variant font-label-md uppercase tracking-wider">Total Experience</span><div class="flex items-baseline gap-2 mt-2"><h2 class="text-display font-display text-primary">24,800</h2><span class="text-on-surface-variant font-label-sm">XP</span></div></div><div class="mt-4"><div class="w-full bg-background h-2 rounded-full overflow-hidden"><div class="bg-primary h-full w-[72%]"></div></div><div class="flex justify-between mt-2 font-label-sm text-on-surface-variant"><span>Level 24</span><span>Next: 2,200 XP</span></div></div></div><div class="md:col-span-4 clinical-card p-6 flex flex-col justify-between bg-tertiary text-on-tertiary rounded-xl"><div class="text-tertiary-fixed-dim font-label-md uppercase tracking-wider">Current Streak</div><div class="flex items-center gap-3 mt-2"><span class="material-symbols-outlined !text-4xl text-secondary-container" style="font-variation-settings: 'FILL' 1;">local_fire_department</span><h2 class="text-display font-display">42</h2><span class="text-tertiary-fixed-dim font-label-md">Days</span></div><div class="flex gap-1 mt-4"><div class="flex-1 h-1 bg-white/20 rounded-full"></div><div class="flex-1 h-1 bg-white/20 rounded-full"></div><div class="flex-1 h-1 bg-white/20 rounded-full"></div><div class="flex-1 h-1 bg-white/20 rounded-full"></div><div class="flex-1 h-1 bg-white rounded-full"></div><div class="flex-1 h-1 bg-white/20 rounded-full"></div><div class="flex-1 h-1 bg-white/20 rounded-full"></div></div></div><div class="md:col-span-4 clinical-card p-6 bg-surface-container rounded-xl"><h3 class="font-label-md text-on-surface-variant uppercase tracking-wider mb-4">Mastering Path</h3><div class="flex items-center gap-4"><div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm"><span class="material-symbols-outlined">neurology</span></div><div><p class="font-label-md text-on-surface">Synaptic Pruning</p><p class="text-on-surface-variant font-label-sm">Module 4 of 12</p></div></div><button class="w-full mt-6 bg-white border border-outline-variant py-2 rounded-lg font-label-md hover:bg-surface-container-lowest transition-all">Resume Learning</button></div><div class="md:col-span-12 grid grid-cols-2 md:grid-cols-5 gap-4"><div class="clinical-card p-4 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><span class="material-symbols-outlined text-primary mb-2">upload_file</span><div class="font-headline-sm text-on-surface">48</div><div class="text-on-surface-variant font-label-sm">Uploads</div></div><div class="clinical-card p-4 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><span class="material-symbols-outlined text-primary mb-2">smart_display</span><div class="font-headline-sm text-on-surface">1.2k</div><div class="text-on-surface-variant font-label-sm">Reels Watched</div></div><div class="clinical-card p-4 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><span class="material-symbols-outlined text-primary mb-2">quiz</span><div class="font-headline-sm text-on-surface">94%</div><div class="text-on-surface-variant font-label-sm">Avg. Score</div></div><div class="clinical-card p-4 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><span class="material-symbols-outlined text-primary mb-2">schedule</span><div class="font-headline-sm text-on-surface">342</div><div class="text-on-surface-variant font-label-sm">Hours</div></div><div class="clinical-card p-4 text-center col-span-2 md:col-span-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><span class="material-symbols-outlined text-primary mb-2">military_tech</span><div class="font-headline-sm text-on-surface">15 / 2</div><div class="text-on-surface-variant font-label-sm">Wins / Losses</div></div></div><div class="md:col-span-8 space-y-gutter"><div class="flex justify-between items-center"><h3 class="font-headline-sm text-headline-sm">Recent Uploads</h3><a class="text-primary font-label-md" href="#">View All</a></div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gutter"><div class="clinical-card overflow-hidden group cursor-pointer bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="h-32 bg-surface-container relative"><img class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3GDPij-OX2lJy0tY6o5ZtZ7uCqTWu6sOsQAlpwvduhwu43uPbgUMdOofb-hbBY0L7IFfW-7pyAKap1WS-iVQ-SnG4X9EJiys6Hzu6Na-fBD7tLQgJ0bOftt2SEgbMNaPqSTvihey3GxJ0wKzNd9vIU4AQUBZtEQSosKXVlujZSsLkpqna3OdQ_Fv5aI1Hfl92xQ6nNg6PLKzdmd8wXExbZqgYXfEszrFgYdPw9KvdFperew2xOn21slUaXAqGGGPCCvk0ZNA1CCJ9"/><span class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded font-label-sm text-on-surface shadow-sm">PDF</span></div><div class="p-4"><p class="font-label-md text-on-surface truncate">Cerebral Cortex Vol 1</p><p class="text-on-surface-variant font-label-sm">Shared 2 days ago</p></div></div><div class="clinical-card overflow-hidden group cursor-pointer bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="h-32 bg-surface-container relative"><img class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXTyxQIe3W7eSl0q0Z8eUZc3CZs9T33pnug4bKa8xxlpx-u0-lhLhy3OA5r6q2CLTZTFSGjO4P8_x5JVjar6z_iXyHUtAVuroyA-PMCJ_DKqu7GV0QauOzTO408Yt6_4AuaHUtqBoMYghhGxbLfjQqymgQHmpMv4X52zOlwvqSolhwYSkJq3m2C7YcvNIQVi4AlhegtHVPFTRZ-u2P7rdpzvdHJ7IMwyfl8QsXjNm6K5C9-TJtrdvagKuGVRXa8J63I6D8K1zbIJE-"/><span class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded font-label-sm text-on-surface shadow-sm">PPT</span></div><div class="p-4"><p class="font-label-md text-on-surface truncate">Synaptic Transmission</p><p class="text-on-surface-variant font-label-sm">Shared 1 week ago</p></div></div><div class="clinical-card overflow-hidden group cursor-pointer bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="h-32 bg-surface-container relative"><img class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBf3WNQCeFelsm2Vo5-RkEZLw_2HG65SmAWdiozCNZPVjJ88LOIF-_-NrgZZ7x403DFERWLxTzU3zEVnxgBvX6qDftfuzUdgGQ7y_DfErtqx9Q4IqghtsI0N6W8a7xFW4kJhmBCcNt7UGr8Wzbbnh1h9wy07X7S6XZtH-WKQtFdackMhgJV1fORWG1ltiTHvY5-WPaQ0GHQMNt2s3bfuThv8ZvBmN9vKyLC6cQO447NA-Gz2Dtalh5EOlb-DfiJv4tdbzT-NVQCFQKD"/><span class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded font-label-sm text-on-surface shadow-sm">PDF</span></div><div class="p-4"><p class="font-label-md text-on-surface truncate">The Myelin Theory</p><p class="text-on-surface-variant font-label-sm">Shared 2 weeks ago</p></div></div></div><div class="space-y-4"><h3 class="font-headline-sm text-headline-sm">Recent Activity</h3><div class="space-y-4"><div class="flex gap-4 items-start p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container"><span class="material-symbols-outlined">emoji_events</span></div><div class="flex-1"><p class="text-on-surface font-body-md"><span class="font-bold">You</span> earned the <span class="text-primary font-bold">Quiz Master</span> achievement in Neurology 101.</p><p class="text-on-surface-variant font-label-sm mt-1">4 hours ago</p></div></div><div class="flex gap-4 items-start p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl"><div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined">upload</span></div><div class="flex-1"><p class="text-on-surface font-body-md"><span class="font-bold">You</span> uploaded a new resource: <span class="italic text-tertiary">"Cortical Mapping Guide"</span>.</p><p class="text-on-surface-variant font-label-sm mt-1">Yesterday</p></div></div></div></div></div><div class="md:col-span-4 space-y-gutter"><h3 class="font-headline-sm text-headline-sm">Recently Earned</h3><div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 space-y-6"><div class="flex items-center gap-4 group cursor-pointer"><div class="w-14 h-14 rounded-full bg-surface-container border-2 border-primary-container p-1 group-hover:scale-105 transition-transform"><img class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYeaavyiByQ1D-iS3ryzZHZZ_WwhWncuukb80pUCjR1kyijzNI4C1Z7s_uh4zByooLu6MPEhOYc-ZEmrQEsvMnZ6GY2l9mImG-ZMTW0nDYVNyM0X3KaXlCKjRPvqjIY8hCJA-Bqp48ii3ZT7-muHzQG_R4zaKKA0CO8kdbfHS4IQvdd6_3GXZ1mm71yF38rBUTyGGvXBo6OeAxvemNzWGPKo3ynpTjCn2ftP-Q28rRgzTCxwvwGPIKQZYylNvn_BWoyCdSjnkMLzms"/></div><div><h4 class="font-label-md text-on-surface">Quiz Master</h4><p class="text-on-surface-variant font-label-sm">Perfect score on 10 quizzes</p></div></div><div class="flex items-center gap-4 group cursor-pointer"><div class="w-14 h-14 rounded-full bg-surface-container border-2 border-outline-variant p-1 group-hover:scale-105 transition-transform"><img class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdliDkDojG-p_AR-FsOK05R7YJsPJuwmPqdC67oeMCplNRHuLCrPwGqTqruvSA8lmri492C1OzDeAQnyhiAP8SHLdCmNU8UeObUCBsBOxGE3RUlXOT_i5goIp3sSSuQriLS7Dw_2se4iJBF_Al6IEaSM0rdAxN3-zp1hJbnnRhwlT_zqusa36zJP6IoE5rEm3WDgdj76l-4R-ihrrXA-j1a78hGKRfDJN0qEPm7U1BxCsCV4OAmlENV0es2VPxk6SCr-oyPPx6CXbB"/></div><div><h4 class="font-label-md text-on-surface">Early Adopter</h4><p class="text-on-surface-variant font-label-sm">Joined during Beta phase</p></div></div><div class="flex items-center gap-4 group cursor-pointer"><div class="w-14 h-14 rounded-full bg-surface-container border-2 border-outline-variant p-1 group-hover:scale-105 transition-transform"><img class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPT1AQVQmRcDfy5w_pK8XhWYH2q6Q3-HiPyM7L1_dkUK2fHIXOFkG7DCMJwF39xEuU36VSPRzM1dUcemCj-EdG0S-Fyp1olUKOU5VtP9VPFVViekM-5bZy7DJKKDHnSbrYxXCJIswl8jFPbj62nFA_c6WtBC-pLBuKj2fBfEfQ78gEryNkaeAfpkezydekOWnfOd8TQzkSedMawUuiDeCSjtN_WizHrFbW68mRUjjv92cO2wnY2OR4H4Nsth8HhMPP8vUvjyV2XvHW"/></div><div><h4 class="font-label-md text-on-surface">Social Scholar</h4><p class="text-on-surface-variant font-label-sm">Helped 50 other learners</p></div></div><button class="w-full text-primary font-label-md text-center py-2 hover:bg-surface-container rounded-lg transition-all">View Trophy Case</button></div><div class="bg-tertiary-container/10 border border-tertiary-container/30 rounded-xl p-6"><div class="flex items-center gap-2 mb-2 text-on-tertiary-container"><span class="material-symbols-outlined">info</span><span class="font-label-md">Privacy Status</span></div><p class="text-on-tertiary-fixed-variant font-label-sm mb-4">Your profile is currently visible to students in the Neuro-Specialty group.</p><button class="text-on-tertiary-fixed font-label-sm underline">Update Visibility</button></div></div></div>
+</section>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.querySelectorAll('nav button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('nav button').forEach(b => {
+                    b.classList.remove('active-tab');
+                    b.classList.add('text-on-surface-variant');
+                });
+                button.classList.add('active-tab');
+                button.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Simple Fade-in for the main content
+        window.addEventListener('DOMContentLoaded', () => {
+            const main = document.querySelector('main');
+            main.style.opacity = '0';
+            main.style.transition = 'opacity 0.8s ease-out';
+            setTimeout(() => {
+                main.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body></html>

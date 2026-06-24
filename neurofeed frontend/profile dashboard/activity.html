@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeuroFeed | Profile Activity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .activity-line::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            bottom: -20px;
+            width: 2px;
+            background: #bcc9c6; /* outline-variant */
+            opacity: 0.5;
+        }
+        .activity-item:last-child .activity-line::before {
+            display: none;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#b1c6f9",
+                    "on-secondary-fixed-variant": "#00504d",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#006a61",
+                    "inverse-surface": "#2c3230",
+                    "secondary": "#006a66",
+                    "secondary-fixed-dim": "#72d7d1",
+                    "on-secondary-fixed": "#00201e",
+                    "tertiary": "#495e8a",
+                    "primary-fixed-dim": "#67d9cb",
+                    "outline-variant": "#bcc9c6",
+                    "inverse-on-surface": "#edf2f0",
+                    "primary": "#006a61",
+                    "tertiary-container": "#aec3f5",
+                    "surface-bright": "#f5faf8",
+                    "on-primary-fixed": "#00201d",
+                    "surface": "#f5faf8",
+                    "background": "#f5faf8",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#314671",
+                    "on-primary-container": "#005a53",
+                    "surface-variant": "#dee4e1",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#67d9cb",
+                    "primary-fixed": "#85f5e7",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff5f2",
+                    "surface-container-highest": "#dee4e1",
+                    "secondary-container": "#8cf1ea",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#3d4947",
+                    "on-background": "#171d1c",
+                    "surface-dim": "#d6dbd9",
+                    "primary-container": "#63d5c7",
+                    "on-tertiary-container": "#3b507b",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#171d1c",
+                    "on-tertiary-fixed": "#001a42",
+                    "on-primary-fixed-variant": "#005049",
+                    "tertiary-fixed": "#d8e2ff",
+                    "surface-container-high": "#e4e9e7",
+                    "outline": "#6d7a77",
+                    "on-secondary-container": "#006f6a",
+                    "surface-container": "#eaefed",
+                    "secondary-fixed": "#8ff3ed"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "md": "24px",
+                    "sm": "12px",
+                    "gutter": "24px",
+                    "xl": "80px",
+                    "lg": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface flex flex-col py-8 px-4 z-50">
+<div class="mb-10 px-4">
+<h1 class="font-headline-md font-bold text-primary tracking-tight">NeuroFeed</h1>
+<p class="font-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Clinical Learning</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-md">Explore</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-md">Create</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md">Challenges</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-primary font-bold bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md">Profile</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1">
+<button class="w-full bg-primary text-on-primary font-label-md py-3 px-4 rounded-xl mb-4 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+                Upgrade to Pro
+            </button>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md">Help</span>
+</a>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant h-16 flex items-center justify-between px-8">
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-full px-4 py-1.5 w-96">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-full placeholder:text-on-surface-variant/60" placeholder="Search case studies..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A professional medical student headshot in a bright, airy clinic environment. The person is smiling warmly, wearing a white lab coat with a subtle teal stethoscope around their neck. High-key lighting highlights the clean, minimalist clinical setting with soft blurred backgrounds of medical equipment and glass partitions." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWNX2L0K6kjFcIaOjy7LAkBLTFjlMF-B3v5YD_lyLaJJ0yB4NDHfi8Vyu-TkVbmltD7fX9UvNcEzcRdRHoZl1A82UxrcKGuhBaHCwPQ6s0bRPzu-SWGRtRUTLgf_-8xqhZGnf06t-Y_rO-bA9hj88owDUqcMVF1QtNoQ4WC42VBCHMPi_-lNia2twfYAhmfmjU3mb06_Hc_uSJmbDsn7sGQl35H_JdQHZq_kICkljFqJm5SRJC7RNi798hN8z4oksn0gWecLoXKwLV"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 pt-16 min-h-screen">
+<div class="max-w-[900px] mx-auto px-8 py-12">
+<!-- Profile Header -->
+<section class="mb-12 flex items-start gap-10">
+<div class="relative group">
+<div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a neuroscientist in a modern laboratory. The lighting is crisp and clinical, featuring a sophisticated palette of deep navy and bright teal accents. In the background, glowing monitors display intricate 3D brain scans. The atmosphere is professional, focused, and calm, reflecting a high-end academic research environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQGKq2pJULuPcY4_DRUYzl3n-1pk_7A4uQi1ZXr7rz0Rn3Vk8h5MCM7WWNZS-hT3E2krs5fbS0hGY5EnJchO-f0Wk7R-NziD1Y-kBH7SR78_ikgQmqUfgNPxwCBNUpVnDxn37TunOVLn6eC_ymGgraVb4BYyGaPI-ROVKUpU5DqJCxw_IfPDJUMltVlrmt-5Rrs0pqyfY9zU-GAgFwzF1y_6EfDw2amVpaJuKYP6YaqjYHLx1uxY46BvfYIbtZUuN-CnpQubjsxPzR"/>
+</div>
+<button class="absolute -bottom-2 -right-2 bg-primary text-on-primary p-2 rounded-xl shadow-md transform hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h2 class="font-headline-lg text-on-surface">Alex Rivera, MD</h2>
+<p class="font-body-md text-on-surface-variant">Neurosurgery Resident • Stanford University</p>
+</div>
+<button class="bg-surface border border-outline-variant text-on-surface px-6 py-2 rounded-xl font-label-md hover:bg-surface-container-high transition-colors">
+                            Edit Profile
+                        </button>
+</div>
+<div class="flex gap-8 mb-6">
+<div class="text-center">
+<span class="block font-headline-sm text-primary">124</span>
+<span class="block font-label-sm text-on-surface-variant uppercase tracking-tighter">Contributions</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-sm text-primary">2.8k</span>
+<span class="block font-label-sm text-on-surface-variant uppercase tracking-tighter">Followers</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-sm text-primary">482</span>
+<span class="block font-label-sm text-on-surface-variant uppercase tracking-tighter">Following</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-sm text-secondary">A+</span>
+<span class="block font-label-sm text-on-surface-variant uppercase tracking-tighter">Current Rank</span>
+</div>
+</div>
+<p class="font-body-md text-on-surface-variant leading-relaxed max-w-2xl">
+                        Passionate about synaptic mapping and neuroplasticity in clinical settings. Dedicated to bridging the gap between academic research and surgical application.
+                    </p>
+</div>
+</section>
+<!-- Profile Tabs -->
+<div class="border-b border-outline-variant mb-8 overflow-hidden">
+<div class="flex gap-10">
+<button class="pb-4 font-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+                        Resources
+                    </button>
+<button class="pb-4 font-label-md text-primary border-b-2 border-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">history</span>
+                        Activity
+                    </button>
+<button class="pb-4 font-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">bookmarks</span>
+                        Saved
+                    </button>
+<button class="pb-4 font-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">group</span>
+                        Community
+                    </button>
+</div>
+</div>
+<!-- Activity Feed Timeline -->
+<div class="space-y-0">
+<!-- Entry 1 -->
+<div class="activity-item relative pb-10 flex gap-6">
+<div class="activity-line relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined">quiz</span>
+</div>
+</div>
+<div class="flex-1 pt-1">
+<div class="flex items-center justify-between mb-1">
+<h4 class="font-label-md text-on-surface">You completed the <span class="text-primary font-bold">Neurology 101 Quiz</span></h4>
+<span class="text-label-sm text-on-surface-variant">2 hours ago</span>
+</div>
+<div class="bg-white border border-outline-variant p-4 rounded-2xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-background rounded-lg flex items-center justify-center text-primary">
+<span class="font-headline-sm">98%</span>
+</div>
+<div>
+<p class="font-label-md">Exceptional Performance</p>
+<p class="font-body-sm text-on-surface-variant">+150 XP earned</p>
+</div>
+</div>
+<button class="text-primary font-label-md hover:underline">View Review</button>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="activity-item relative pb-10 flex gap-6">
+<div class="activity-line relative z-10">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined">upload_file</span>
+</div>
+</div>
+<div class="flex-1 pt-1">
+<div class="flex items-center justify-between mb-1">
+<h4 class="font-label-md text-on-surface">You uploaded <span class="italic font-medium">'Cerebral Cortex Vol 1'</span></h4>
+<span class="text-label-sm text-on-surface-variant">Yesterday, 4:30 PM</span>
+</div>
+<div class="bg-white border border-outline-variant p-4 rounded-2xl flex items-center gap-4">
+<div class="w-16 h-20 bg-surface-container rounded border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A minimalist medical textbook cover featuring a stylized, geometric illustration of a human brain in teal and navy blue. The design is clean and scholarly, with the title 'Cerebral Cortex' in a modern, sans-serif typeface. The background is a soft off-white, reflecting a professional academic resource." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2roklTKHbBEYhUKof1R1hSCnS1G1Ck7q92M0w3aghtvfEzw1FHlf5fB5NsWqkFQ6Ooh0uOMGkxAujC5-xPMLByFDMRMSTbjudInmjo4qtQHBhZhU-2Mb71EFUyiVTgLAzWP1F1A88Cw-h2fhL6GNHYcTzwgxnvl7eB8mBmGD9as7NXH3UZAiZzrKnuB2L8ZVc-aJeUE9VwnCelnpmELXeN2NU5Ua_ZodPuA9rgu8HUXvcaRLWX-rfSwYePiyBrCCXGkW95NvdGUmp"/>
+</div>
+<div class="flex-1">
+<p class="font-label-md">Study Guide • PDF (14.2 MB)</p>
+<div class="flex items-center gap-3 mt-1">
+<span class="flex items-center gap-1 text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[14px]">download</span> 12</span>
+<span class="flex items-center gap-1 text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[14px]">thumb_up</span> 4</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 3 -->
+<div class="activity-item relative pb-10 flex gap-6">
+<div class="activity-line relative z-10">
+<div class="w-10 h-10 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined">military_tech</span>
+</div>
+</div>
+<div class="flex-1 pt-1">
+<div class="flex items-center justify-between mb-1">
+<h4 class="font-label-md text-on-surface">You earned the <span class="font-bold text-tertiary">'Early Adopter'</span> badge</h4>
+<span class="text-label-sm text-on-surface-variant">Oct 12, 2023</span>
+</div>
+<div class="bg-tertiary/5 border border-tertiary-container p-6 rounded-2xl flex items-center gap-6 relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 text-tertiary/10 scale-150 rotate-12">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm border border-tertiary/20">
+<span class="material-symbols-outlined text-tertiary text-[32px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<div class="relative z-10">
+<p class="font-label-md text-tertiary">Rare Achievement Unlocked</p>
+<p class="font-body-sm text-on-surface-variant">Awarded for being among the first 500 members of NeuroFeed Clinical.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 4 -->
+<div class="activity-item relative pb-10 flex gap-6">
+<div class="activity-line relative z-10">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+</div>
+<div class="flex-1 pt-1">
+<div class="flex items-center justify-between mb-1">
+<h4 class="font-label-md text-on-surface">You followed <span class="font-bold">Dr. Elena Vance</span></h4>
+<span class="text-label-sm text-on-surface-variant">Oct 10, 2023</span>
+</div>
+<div class="bg-white border border-outline-variant p-4 rounded-2xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a senior neurologist, Dr. Elena Vance, in a high-tech medical office. She has silver hair and wears a sharp, dark navy blazer over a teal blouse. The lighting is balanced and modern, showing a professional and authoritative medical expert. Her expression is calm and confident, with soft-focus medical research awards and books in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALJUaaqTeyJBgN2u7Ac12NN8LabLXdMSw1bw3bkYD9Q7tD_jXg6P_NMxErnGUyWJFpdRFcAMLV4cZ8rzh9Fd06pOLp4Dg7taFlf8L6jw8whacrnnpnvv_hZ4fdh1I0qWwyEnAW0Pfu_BY_RfsZFDbvaA3NABvEpuf6lg6iqIEUUHdyxA38rplfEZdFfo1YF3JIX6Zklv8Wd5fGE32CHXK2EmkWnHsbwjHui6_Us3uDWYFwt28TRfeVZfyRfbCjiPjSLSEOlGtvab0-"/>
+</div>
+<div>
+<p class="font-label-md">Dr. Elena Vance</p>
+<p class="font-body-sm text-on-surface-variant">Chief of Neurosurgery • Mayo Clinic</p>
+</div>
+</div>
+<button class="bg-surface-container-low border border-outline-variant text-on-surface-variant px-4 py-1.5 rounded-lg text-label-sm hover:bg-surface-container-high transition-colors">
+                                View Profile
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Load More -->
+<div class="mt-8 text-center">
+<button class="px-8 py-3 border-2 border-outline-variant text-on-surface-variant font-label-md rounded-2xl hover:bg-surface-container-low hover:text-primary hover:border-primary transition-all duration-300">
+                    Load older activity
+                </button>
+</div>
+</div>
+</main>
+<!-- FAB (Suppressed on Profile Details page per mandate, but included here for "Home" context logic if navigated) -->
+<!-- The mandate says: "You MUST suppress the FAB on Settings, Profile, Details, and Transactional screens." -->
+<!-- So we do not render it here -->
+<script>
+        // Micro-interaction: Hover effects for activity items
+        document.querySelectorAll('.activity-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                const icon = item.querySelector('.activity-line div');
+                icon.style.transform = 'scale(1.1) translateY(-2px)';
+                icon.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            });
+            item.addEventListener('mouseleave', () => {
+                const icon = item.querySelector('.activity-line div');
+                icon.style.transform = 'scale(1) translateY(0)';
+            });
+        });
+
+        // Theme sync (Simple toggle logic if needed in future)
+        // For now, it stays in Clinical Light Mode as requested.
+    </script>
+</body></html>

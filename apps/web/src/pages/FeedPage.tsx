@@ -1,6 +1,5 @@
-import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Component, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { CardActions } from '@/components/feed/CardActions';
 import {
   countActive,
   emptyFilters,
@@ -11,9 +10,11 @@ import {
 import { FlashcardCard } from '@/components/feed/FlashcardCard';
 import { PathStepCard } from '@/components/feed/PathStepCard';
 import { QuizCard } from '@/components/feed/QuizCard';
-import { ReelCard } from '@/components/feed/ReelCard';
+import { ReelFeedCard } from '@/components/feed/ReelFeedCard';
+import { ReelOverlay } from '@/components/feed/ReelOverlay';
+import { StoriesRow, type StoryDoc } from '@/components/feed/StoriesRow';
 import { SwipeCard } from '@/components/feed/SwipeCard';
-import type { TutorContext } from '@/components/feed/TutorPanel';
+import { QuickLearningSheet } from '@/components/feed/QuickLearningSheet';
 import {
   explainSimpler,
   fetchFeed,
@@ -31,19 +32,25 @@ import type {
   SwipeCard as SwipeCardData,
 } from '../../../../packages/shared-types/artifacts';
 
+// Card-based home feed. Vertical scroll of 4:5 Instagram-style reel cards
+// interspersed with smaller cards for other artifact types. Reels open the
+// existing fullscreen ReelCard engine in an overlay so the visual_beats
+// engine + karaoke captions + tutor panel stay intact.
+
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-  const [overrides, setOverrides] = useState<Record<string, { title: string; body: string } | null>>({});
+  const [overrides, setOverrides] = useState<
+    Record<string, { title: string; body: string } | null>
+  >({});
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FeedFilters>(() => emptyFilters());
   const [filterOpen, setFilterOpen] = useState(false);
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => loadCompletedIds());
+  const [openedReel, setOpenedReel] = useState<FeedItem | null>(null);
+  const [quickLearning, setQuickLearning] = useState<FeedItem | null>(null);
   const refreshGamify = useGamify((s) => s.refreshAfter);
-  const feedRef = useRef<HTMLDivElement | null>(null);
 
-  // Documents represented in the feed, with an inferred subject. Used by both
-  // the filter sheet and the active-filter logic.
   const docOptions = useMemo<DocOption[]>(() => {
     const seen = new Map<string, DocOption>();
     for (const it of items) {
@@ -57,6 +64,11 @@ export default function FeedPage() {
     }
     return Array.from(seen.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [items]);
+
+  const storyDocs = useMemo<StoryDoc[]>(
+    () => docOptions.map((d) => ({ id: d.id, title: d.title })),
+    [docOptions],
+  );
 
   const visibleItems = useMemo(
     () => applyFilters(items, filters, completedIds),
@@ -79,27 +91,6 @@ export default function FeedPage() {
     })();
   }, []);
 
-  // Reel-to-reel keyboard / global nav. The CSS scroll-snap handles the actual
-  // motion; this just nudges by one page height for ↑ / ↓ / j / k / PgUp / PgDn.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const el = feedRef.current;
-      if (!el) return;
-      const t = e.target as HTMLElement | null;
-      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-      if (t && t.closest('[data-modal-root]')) return;
-      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === 'j') {
-        e.preventDefault();
-        el.scrollBy({ top: el.clientHeight, behavior: 'smooth' });
-      } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'k') {
-        e.preventDefault();
-        el.scrollBy({ top: -el.clientHeight, behavior: 'smooth' });
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
   function markCompleted(id: string) {
     setCompletedIds((prev) => {
       if (prev.has(id)) return prev;
@@ -110,86 +101,96 @@ export default function FeedPage() {
     });
   }
 
-  if (!userId)
+  if (!userId) {
     return (
       <EmptyState
-        glyph={<LockGlyph />}
+        icon="lock"
         message="Sign in to see your feed."
-        sub="Your personalized reels, quizzes, and flashcards live here."
+        sub="Your personalised reels, quizzes, and flashcards live here."
         cta={
           <Link
             to="/auth"
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
           >
-            Sign in →
+            Sign in
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
           </Link>
         }
       />
     );
-  if (error)
+  }
+  if (error) {
     return (
       <EmptyState
-        glyph={<WarnGlyph />}
+        icon="error"
         message="Something went wrong."
         sub={error}
       />
     );
-  if (!items.length)
+  }
+  if (items.length === 0) {
     return (
       <EmptyState
-        glyph={<SparkGlyph />}
+        icon="auto_awesome"
         message="Your feed is empty."
         sub="Upload a document and we'll turn it into reels, flashcards, and quizzes."
         cta={
           <Link
             to="/upload"
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
-            </svg>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload</span>
             Upload now
           </Link>
         }
       />
     );
+  }
 
   return (
     <>
-      <FilterPill
-        active={activeCount}
-        onClick={() => setFilterOpen(true)}
-      />
-      <FilterSheet
-        open={filterOpen}
-        filters={filters}
-        docs={docOptions}
-        onChange={setFilters}
-        onClose={() => setFilterOpen(false)}
-        onClear={() => setFilters(emptyFilters())}
-      />
-      <div ref={feedRef} className="feed">
+      <div className="mx-auto max-w-2xl px-md pt-md">
+        {storyDocs.length > 0 && <StoriesRow docs={storyDocs} />}
+
+        <div className="mb-md flex items-center justify-between gap-sm">
+          <h1 className="text-headline-sm text-on-surface">For you</h1>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
+            aria-label="Open filters"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_list</span>
+            <span>Filters</span>
+            {activeCount > 0 && (
+              <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-on-primary">
+                {activeCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         {visibleItems.length === 0 ? (
           <EmptyState
-            glyph={<FilterGlyph />}
+            icon="filter_alt"
             message="No items match these filters."
             sub="Try loosening a filter or clear them all to see your full feed."
             cta={
               <button
                 onClick={() => setFilters(emptyFilters())}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
+                className="rounded-lg bg-primary-container px-4 py-2 text-label-md font-bold text-on-primary-container hover:brightness-95"
               >
                 Clear filters
               </button>
             }
+            inline
           />
         ) : (
-          visibleItems.map((it) => {
-            const tutorContext = tutorContextFor(it);
-            return (
-              <section key={`${it.id}-${it.created_at}`} className="relative">
+          <ul className="space-y-md pb-md">
+            {visibleItems.map((it) => (
+              <li key={`${it.id}-${it.created_at}`}>
                 <CardErrorBoundary type={it.type}>
-                  <CardBody
+                  <FeedItemRender
                     item={it}
                     override={overrides[it.id] ?? null}
                     userId={userId}
@@ -199,53 +200,253 @@ export default function FeedPage() {
                       setOverrides((m) => ({ ...m, [it.id]: r }));
                       refreshGamify(userId);
                     }}
+                    onOpenReel={() => setOpenedReel(it)}
+                    onOpenQuickLearning={() => setQuickLearning(it)}
                   />
                 </CardErrorBoundary>
-                {it.type !== 'reel_script' && (
-                  <CardActions
-                    tutorContext={tutorContext}
-                    userId={userId}
-                    interestTarget={{
-                      artifactId: it.id,
-                      documentId: it.document_id,
-                      conceptId: it.concept_id,
-                    }}
-                    onShare={() =>
-                      navigator.share?.({ title: 'NeuroFeed', text: 'Check this out' })
-                    }
-                  />
-                )}
-              </section>
-            );
-          })
+              </li>
+            ))}
+          </ul>
         )}
       </div>
+
+      <FilterSheet
+        open={filterOpen}
+        filters={filters}
+        docs={docOptions}
+        onChange={setFilters}
+        onClose={() => setFilterOpen(false)}
+        onClear={() => setFilters(emptyFilters())}
+      />
+
+      {openedReel && openedReel.type === 'reel_script' && (
+        <ReelOverlay
+          reel={openedReel.payload as ReelScript}
+          documentId={openedReel.document_id}
+          conceptId={openedReel.concept_id}
+          artifactId={openedReel.id}
+          userId={userId}
+          onComplete={() => {
+            markCompleted(openedReel.id);
+            refreshGamify(userId);
+          }}
+          onClose={() => setOpenedReel(null)}
+        />
+      )}
+
+      {quickLearning && (
+        <QuickLearningSheet
+          open={true}
+          onClose={() => setQuickLearning(null)}
+          topic={topicFromItem(quickLearning)}
+          documentId={quickLearning.document_id}
+          conceptId={quickLearning.concept_id ?? null}
+          userId={userId}
+          onOpenTutor={() => {
+            // Tutor opens fullscreen inside the reel overlay; from the home
+            // feed we route the user there instead of mounting a second
+            // TutorPanel. If they opened Quick Learning without a reel
+            // context, the tutor tab in the sheet becomes a no-op for now.
+            if (quickLearning.type === 'reel_script') {
+              setQuickLearning(null);
+              setOpenedReel(quickLearning);
+            }
+          }}
+        />
+      )}
     </>
   );
 }
 
-function FilterPill({ active, onClick }: { active: number; onClick: () => void }) {
+function topicFromItem(it: FeedItem): string {
+  if (it.type === 'reel_script') return (it.payload as ReelScript).topic;
+  if (it.type === 'swipe_card') return (it.payload as SwipeCardData).title;
+  if (it.type === 'flashcard') return (it.payload as Flashcard).question;
+  if (it.type === 'quiz') return (it.payload as QuizItem).stem;
+  return it.document_title ?? it.type;
+}
+
+function FeedItemRender({
+  item,
+  override,
+  userId,
+  onComplete,
+  onExplainSimpler: _onExplainSimpler,
+  onOpenReel,
+  onOpenQuickLearning,
+}: {
+  item: FeedItem;
+  override: { title: string; body: string } | null;
+  userId: string;
+  onComplete: () => void;
+  onExplainSimpler: () => Promise<void>;
+  onOpenReel: () => void;
+  onOpenQuickLearning: () => void;
+}) {
+  const refreshGamify = useGamify((s) => s.refreshAfter);
+  switch (item.type) {
+    case 'reel_script':
+      return (
+        <ReelFeedCard
+          reel={item.payload as ReelScript}
+          documentTitle={item.document_title}
+          artifactId={item.id}
+          documentId={item.document_id}
+          conceptId={item.concept_id}
+          userId={userId}
+          onOpen={onOpenReel}
+          onQuickLearning={onOpenQuickLearning}
+        />
+      );
+    case 'swipe_card':
+      return <SwipeCard data={item.payload as SwipeCardData} override={override} />;
+    case 'flashcard':
+      return <FlashcardCard data={item.payload as Flashcard} />;
+    case 'quiz':
+      return (
+        <QuizCard
+          data={item.payload as QuizItem}
+          onAnswer={(chosen, correct) => {
+            void postEvent(userId, 'quiz_answer', {
+              artifact_id: item.id,
+              chosen,
+              correct,
+            });
+            onComplete();
+            refreshGamify(userId);
+          }}
+        />
+      );
+    case 'learning_path_step':
+      return (
+        <PathStepCard
+          data={item.payload as unknown as LearningPathStep}
+          documentId={item.document_id}
+          documentTitle={item.document_title}
+        />
+      );
+    case 'summary':
+      return (
+        <SummaryFeedCard
+          payload={item.payload as { tldr?: string; bullets?: string[] }}
+          documentTitle={item.document_title}
+        />
+      );
+    default:
+      return (
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-md text-center text-body-sm text-on-surface-variant">
+          {item.type} (no renderer yet)
+        </div>
+      );
+  }
+}
+
+function SummaryFeedCard({
+  payload,
+  documentTitle,
+}: {
+  payload: { tldr?: string; bullets?: string[] };
+  documentTitle?: string | null;
+}) {
   return (
-    <button
-      onClick={onClick}
-      className="glass-strong fixed right-3 z-30 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-soft transition-all hover:scale-[1.03] active:scale-95"
-      // Sits below the TopHud and the reel progress bars (which start at
-      // top-[4.5rem] inside the reel) so it never overlaps the topmost segment.
-      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 6.25rem)' }}
-      aria-label="Open filters"
+    <div className="rounded-xl border border-outline-variant bg-surface p-md">
+      <div className="mb-sm flex items-center gap-2">
+        <span
+          className="material-symbols-outlined text-primary"
+          style={{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}
+          aria-hidden
+        >
+          summarize
+        </span>
+        <span className="text-label-sm uppercase tracking-widest text-primary">Summary</span>
+        {documentTitle && (
+          <span className="ml-auto truncate text-[11px] text-on-surface-variant">
+            {documentTitle}
+          </span>
+        )}
+      </div>
+      <p className="mb-md text-headline-sm text-on-surface">
+        {payload.tldr ?? 'No summary available.'}
+      </p>
+      {payload.bullets?.length ? (
+        <ul className="space-y-2 text-body-md text-on-surface-variant">
+          {payload.bullets.slice(0, 5).map((b, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-primary">•</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+class CardErrorBoundary extends Component<
+  { children: ReactNode; type: string },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error) {
+    console.error('Card render failed:', this.props.type, error);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-error/30 bg-error-container/40 p-md text-center">
+          <span className="material-symbols-outlined text-error" style={{ fontSize: '28px' }}>
+            warning
+          </span>
+          <p className="text-label-md font-bold text-on-error-container">
+            This {this.props.type} couldn't load
+          </p>
+          <p className="max-w-xs text-body-sm text-on-error-container">
+            It may have been generated with an older format. Re-upload the document to refresh it.
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function EmptyState({
+  icon,
+  message,
+  sub,
+  cta,
+  inline,
+}: {
+  icon?: string;
+  message: string;
+  sub?: string;
+  cta?: ReactNode;
+  inline?: boolean;
+}) {
+  return (
+    <div
+      className={
+        inline
+          ? 'flex flex-col items-center justify-center rounded-xl border border-outline-variant bg-surface-container-low p-xl text-center'
+          : 'mx-auto flex max-w-md flex-col items-center justify-center px-md py-xl text-center'
+      }
     >
-      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 6h18" />
-        <path d="M7 12h10" />
-        <path d="M10 18h4" />
-      </svg>
-      <span>Filters</span>
-      {active > 0 && (
-        <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent px-1.5 text-[10px] font-bold tabular-nums shadow-glow">
-          {active}
+      {icon && (
+        <span
+          className="material-symbols-outlined mb-md text-primary"
+          style={{ fontSize: '48px' }}
+          aria-hidden
+        >
+          {icon}
         </span>
       )}
-    </button>
+      <p className="text-headline-sm text-on-surface">{message}</p>
+      {sub && <p className="mt-2 max-w-sm text-body-sm text-on-surface-variant">{sub}</p>}
+      {cta && <div className="mt-md">{cta}</div>}
+    </div>
   );
 }
 
@@ -257,7 +458,9 @@ function loadCompletedIds(): Set<string> {
     const raw = window.localStorage.getItem(COMPLETED_STORAGE_KEY);
     if (!raw) return new Set();
     const arr = JSON.parse(raw) as unknown;
-    return Array.isArray(arr) ? new Set(arr.filter((s): s is string => typeof s === 'string')) : new Set();
+    return Array.isArray(arr)
+      ? new Set(arr.filter((s): s is string => typeof s === 'string'))
+      : new Set();
   } catch {
     return new Set();
   }
@@ -268,7 +471,7 @@ function saveCompletedIds(ids: Set<string>) {
   try {
     window.localStorage.setItem(COMPLETED_STORAGE_KEY, JSON.stringify(Array.from(ids)));
   } catch {
-    // ignore quota errors
+    /* ignore quota errors */
   }
 }
 
@@ -296,270 +499,4 @@ function applyFilters(
     if (f.hideCompleted && completedIds.has(it.id)) return false;
     return true;
   });
-}
-
-function tutorContextFor(it: FeedItem): TutorContext {
-  if (it.type === 'reel_script') {
-    const r = it.payload as ReelScript;
-    return {
-      topic: r.topic,
-      subtitle: r.subtitle,
-      narration: r.narration,
-      timestampSec: 0,
-      documentId: it.document_id,
-      conceptId: it.concept_id,
-    };
-  }
-  if (it.type === 'swipe_card') {
-    const s = it.payload as SwipeCardData;
-    return {
-      topic: s.title,
-      subtitle: s.body,
-      timestampSec: 0,
-      documentId: it.document_id,
-      conceptId: it.concept_id,
-    };
-  }
-  if (it.type === 'flashcard') {
-    const f = it.payload as Flashcard;
-    return {
-      topic: f.question,
-      narration: f.answer,
-      timestampSec: 0,
-      documentId: it.document_id,
-      conceptId: it.concept_id,
-    };
-  }
-  if (it.type === 'quiz') {
-    const q = it.payload as QuizItem;
-    return {
-      topic: q.stem,
-      narration: q.explanation,
-      timestampSec: 0,
-      documentId: it.document_id,
-      conceptId: it.concept_id,
-    };
-  }
-  return {
-    topic: it.type,
-    timestampSec: 0,
-    documentId: it.document_id,
-    conceptId: it.concept_id,
-  };
-}
-
-function CardBody({
-  item,
-  override,
-  userId,
-  onComplete,
-  onExplainSimpler: _onExplainSimpler,
-}: {
-  item: FeedItem;
-  override: { title: string; body: string } | null;
-  userId: string;
-  onComplete: () => void;
-  onExplainSimpler: () => Promise<void>;
-}) {
-  const refreshGamify = useGamify((s) => s.refreshAfter);
-  switch (item.type) {
-    case 'swipe_card':
-      return <SwipeCard data={item.payload as SwipeCardData} override={override} />;
-    case 'flashcard':
-      return <FlashcardCard data={item.payload as Flashcard} />;
-    case 'quiz':
-      return (
-        <QuizCard
-          data={item.payload as QuizItem}
-          onAnswer={(chosen, correct) => {
-            void postEvent(userId, 'quiz_answer', {
-              artifact_id: item.id, chosen, correct,
-            });
-            onComplete();
-            refreshGamify(userId);
-          }}
-        />
-      );
-    case 'reel_script':
-      return (
-        <ReelCard
-          data={item.payload as ReelScript}
-          documentId={item.document_id}
-          conceptId={item.concept_id}
-          artifactId={item.id}
-          userId={userId}
-          onComplete={onComplete}
-        />
-      );
-    case 'learning_path_step':
-      return (
-        <PathStepCard
-          data={item.payload as unknown as LearningPathStep}
-          documentId={item.document_id}
-          documentTitle={item.document_title}
-        />
-      );
-    case 'summary':
-      return <SummaryFeedCard payload={item.payload as { tldr?: string; bullets?: string[] }} documentTitle={item.document_title} />;
-    default:
-      return (
-        <div className="h-full flex items-center justify-center text-muted">
-          {item.type} (no renderer yet)
-        </div>
-      );
-  }
-}
-
-function SummaryFeedCard({
-  payload,
-  documentTitle,
-}: {
-  payload: { tldr?: string; bullets?: string[] };
-  documentTitle?: string | null;
-}) {
-  return (
-    <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-indigo-500/20 via-primary/15 to-accent/20">
-      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-gradient opacity-30 blur-3xl" />
-      <div className="relative flex h-full w-full flex-col px-6 pt-24 pb-32">
-        <span className="self-start rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-glow">
-          Summary
-        </span>
-        {documentTitle && (
-          <p className="mt-3 line-clamp-1 text-[11px] uppercase tracking-widest text-white/55">{documentTitle}</p>
-        )}
-        <div className="mt-6 flex flex-1 flex-col justify-center">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/55">TL;DR</p>
-          <p className="mt-3 text-balance text-2xl font-bold leading-snug text-white">
-            {payload.tldr ?? 'No summary available.'}
-          </p>
-          {payload.bullets?.length ? (
-            <ul className="mt-5 space-y-2 text-sm text-white/85">
-              {payload.bullets.slice(0, 5).map((b, i) => (
-                <li key={i} className="flex gap-2"><span className="text-accent">•</span><span>{b}</span></li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-class CardErrorBoundary extends Component<
-  { children: ReactNode; type: string },
-  { error: Error | null }
-> {
-  state = { error: null as Error | null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-
-  componentDidCatch(error: Error) {
-    console.error('Card render failed:', this.props.type, error);
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-red-900/40 via-ink to-ink p-8 text-center">
-          <div className="mb-3 text-3xl">⚠</div>
-          <p className="mb-1 text-sm font-semibold text-white/90">
-            This {this.props.type} couldn't load
-          </p>
-          <p className="max-w-xs text-xs text-white/60">
-            It may have been generated with an older format. Re-upload the document to refresh it.
-          </p>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-function EmptyState({
-  glyph,
-  message,
-  sub,
-  cta,
-}: {
-  glyph?: React.ReactNode;
-  message: string;
-  sub?: string;
-  cta?: React.ReactNode;
-}) {
-  return (
-    <div className="flex h-dvh flex-col items-center justify-center px-8 pb-28 pt-24 text-center">
-      {glyph && (
-        <div className="mb-5 animate-fade-in-up">{glyph}</div>
-      )}
-      <p className="text-balance text-xl font-bold text-white">{message}</p>
-      {sub && <p className="mt-2 max-w-sm text-balance text-sm text-white/55">{sub}</p>}
-      {cta && <div className="mt-6">{cta}</div>}
-    </div>
-  );
-}
-
-function GlyphFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative flex h-24 w-24 items-center justify-center">
-      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/30 via-secondary/20 to-accent/30 blur-xl" />
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] text-white shadow-soft">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function SparkGlyph() {
-  return (
-    <GlyphFrame>
-      <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3v3" />
-        <path d="M12 18v3" />
-        <path d="M5.6 5.6 7.7 7.7" />
-        <path d="m16.3 16.3 2.1 2.1" />
-        <path d="M3 12h3" />
-        <path d="M18 12h3" />
-        <path d="M5.6 18.4 7.7 16.3" />
-        <path d="m16.3 7.7 2.1-2.1" />
-        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
-      </svg>
-    </GlyphFrame>
-  );
-}
-
-function LockGlyph() {
-  return (
-    <GlyphFrame>
-      <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="11" width="16" height="10" rx="2" />
-        <path d="M8 11V7a4 4 0 1 1 8 0v4" />
-      </svg>
-    </GlyphFrame>
-  );
-}
-
-function WarnGlyph() {
-  return (
-    <GlyphFrame>
-      <svg className="h-9 w-9 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 9v4" />
-        <path d="M12 17h.01" />
-        <path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-      </svg>
-    </GlyphFrame>
-  );
-}
-
-function FilterGlyph() {
-  return (
-    <GlyphFrame>
-      <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 6h18" />
-        <path d="M7 12h10" />
-        <path d="M10 18h4" />
-      </svg>
-    </GlyphFrame>
-  );
 }

@@ -10,48 +10,69 @@ body,
 
 body {
   overscroll-behavior: none;
-  background-color: #050816;
-  color: #f5f3ff;
+  background-color: #f5faf8;
+  color: #171d1c;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Global ambient aurora behind the app shell. Lives on body so it never
-   overlaps the floating chrome (which is rendered after the routes). */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 12% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 60%),
-    radial-gradient(50% 40% at 88% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
-    radial-gradient(70% 50% at 50% 100%, rgba(168, 85, 247, 0.10) 0%, transparent 60%),
-    linear-gradient(180deg, #050816 0%, #07091a 60%, #050816 100%);
+::selection {
+  background: rgba(0, 106, 97, 0.18);
+  color: #00201d;
 }
 
-::selection {
-  background: rgba(168, 85, 247, 0.35);
-  color: #fff;
+/* Material Symbols Outlined — base variation settings shared across icons.
+   Per-instance overrides (FILL, weight, etc.) go via style="font-variation-settings". */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 @layer utilities {
+  /* Light-theme glass for floating chrome on the new surface ladder */
   .glass {
-    background: rgba(17, 24, 39, 0.65);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(0, 27, 68, 0.06);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    border: 1px solid rgba(0, 27, 68, 0.08);
+  }
+  /* Dark glass — used inside the reel media surface where the canvas stays dark */
+  .glass-dark {
+    background: rgba(11, 15, 26, 0.65);
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .glass-strong {
-    background: rgba(11, 15, 26, 0.78);
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
   .text-balance {
     text-wrap: balance;
   }
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Alias kept so any existing components using `scrollbar-hidden` keep working */
   .scrollbar-hidden {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -64,14 +85,16 @@ body::before {
     height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 27, 68, 0.18);
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 27, 68, 0.3);
   }
 }
 
+/* TikTok-style vertical snap container — still used by full-screen reels.
+   Reels stay full-screen on tap from the new card-based home feed. */
 .feed {
   scroll-snap-type: y mandatory;
   overflow-y: scroll;
@@ -91,13 +114,13 @@ body::before {
   height: 100dvh;
 }
 
-/* Reusable skeleton shimmer for loading states. */
+/* Reusable skeleton shimmer for loading states. Re-tuned for the light surface. */
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.12) 50%,
-    rgba(255, 255, 255, 0.05) 75%
+    rgba(15, 23, 42, 0.04) 25%,
+    rgba(15, 23, 42, 0.10) 50%,
+    rgba(15, 23, 42, 0.04) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;

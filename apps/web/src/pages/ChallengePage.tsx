@@ -1,4 +1,4 @@
-// Multiplayer quiz battle room.
+// Multiplayer quiz battle room on the new clinical light theme.
 //
 // Server is the source of truth: questions are frozen on the challenge row
 // when the recipient accepts, and every answer is POSTed for validation so
@@ -12,9 +12,12 @@
 //  - in_progress         → 3·2·1 countdown then quiz with live scoreboard
 //  - completed           → match-over screen with final score
 //
-// URL params: ?cid=<challenge_id>. Legacy ?user=&mode=&doc= params are still
-// honored — if `cid` is missing but `user` is present, we navigate via the
-// challenge dialog instead of immediately creating a challenge.
+// The mockup `home/challenges.html` is a lobby (league banner, joinable
+// quiz battles, leaderboard, daily challenges) — none of those backends
+// exist yet, so the lobby is deferred. URL params: ?cid=<challenge_id>.
+// Legacy ?user=&mode=&doc= params are honored — if `cid` is missing but
+// `user` is present, we route via the challenge dialog instead of
+// immediately creating a challenge.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -27,14 +30,8 @@ import { supabase } from '@/lib/supabase';
 import type { QuizItem } from '../../../../packages/shared-types/artifacts';
 
 type ChallengeStatus =
-  | 'pending'
-  | 'accepted'
-  | 'declined'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
-  | 'expired'
-  | 'finished';
+  | 'pending' | 'accepted' | 'declined' | 'in_progress'
+  | 'completed' | 'cancelled' | 'expired' | 'finished';
 
 interface ProgressShape {
   answers: { q: number; pick: number; correct: boolean; time_ms: number }[];
@@ -72,7 +69,7 @@ interface ChallengeRow {
 
 const POLL_MS = 2000;
 const COUNTDOWN_S = 3;
-const FAIL_THRESHOLD_BEFORE_BLOCK = 4; // ~8s of failures before we block the screen
+const FAIL_THRESHOLD_BEFORE_BLOCK = 4;
 
 export default function ChallengePage() {
   const [params] = useSearchParams();
@@ -82,8 +79,6 @@ export default function ChallengePage() {
   const social = useSocial();
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Self / opponent legacy redirect: if no cid but we have a username, open the
-  // challenge dialog so settings are picked before a row is created.
   const [dialogOpen, setDialogOpen] = useState(false);
   const [legacyOpponent, setLegacyOpponent] = useState<ProfileLite | null>(null);
 
@@ -115,15 +110,12 @@ export default function ChallengePage() {
   }
   if (!cid && legacyUser) {
     return (
-      <div className="px-8 pb-32 pt-32 text-center text-sm text-white/55">
+      <div className="mx-auto max-w-md px-md py-xl text-center text-body-sm text-on-surface-variant">
         Configure your challenge to @{legacyUser}…
         {legacyOpponent && (
           <ChallengeDialog
             open={dialogOpen}
-            onClose={() => {
-              setDialogOpen(false);
-              navigate(-1);
-            }}
+            onClose={() => { setDialogOpen(false); navigate(-1); }}
             opponent={legacyOpponent}
           />
         )}
@@ -156,20 +148,14 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
   const oppScore = oppProgress?.score ?? 0;
 
   const inFlightRef = useRef(false);
-  // Set true while a mutation (accept/decline/answer) is being POSTed so the
-  // background poller pauses — otherwise a slow stale GET could overwrite the
-  // fresh server-confirmed row and leave the player visually stuck on the
-  // last question they just answered.
   const mutatingRef = useRef(false);
 
-  /** Update state from any source, but never let an older snapshot overwrite
-   *  a newer one. Newness is the sum of both players' completed counts plus
-   *  a tiebreaker on status finality. */
+  /** Never let an older snapshot overwrite a newer one. */
   const applyChallenge = useCallback(
     (incoming: ChallengeRow, source: 'poll' | 'mutation') => {
       setChallenge((prev) => {
         if (!prev) return incoming;
-        if (source === 'mutation') return incoming; // server-confirmed
+        if (source === 'mutation') return incoming;
         const progressOf = (c: ChallengeRow) =>
           (c.progress_from?.completed ?? 0) + (c.progress_to?.completed ?? 0);
         const rankStatus = (s: ChallengeStatus): number =>
@@ -188,7 +174,7 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
   );
 
   const loadOnce = useCallback(async () => {
-    if (inFlightRef.current || mutatingRef.current) return; // skip — busy
+    if (inFlightRef.current || mutatingRef.current) return;
     inFlightRef.current = true;
     try {
       const r = await api<ChallengeRow>(
@@ -197,16 +183,10 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
       applyChallenge(r, 'poll');
       setLoadErr(null);
       setConsecutiveFails(0);
-      // A successful poll proves the server is reachable, so any "Can't reach
-      // NeuroFeed" banner from an earlier mutation (e.g. an accept POST that
-      // timed out on the client but actually succeeded server-side) is stale.
       setActionErr((prev) =>
         prev && /can't reach neurofeed|networkerror|load failed/i.test(prev) ? null : prev,
       );
     } catch (e) {
-      // Don't block on a single transient blip — record it and let the next
-      // poll heal. The render path only treats it as fatal after several
-      // consecutive failures.
       setLoadErr(friendlyError(e));
       setConsecutiveFails((n) => n + 1);
     } finally {
@@ -214,10 +194,6 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     }
   }, [cid, userId, applyChallenge]);
 
-  // Poll. Stop polling once the match has reached a final state — there's
-  // nothing more to fetch and we don't want background tabs hammering the API.
-  // Also pause while the tab is hidden; refresh once on return so the player
-  // catches up to whatever happened on the opponent's side.
   const status = challenge?.status;
   const terminalStatus =
     status === 'completed' || status === 'finished' ||
@@ -236,12 +212,8 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
       timer = null;
     };
     const onVisibility = () => {
-      if (document.hidden) {
-        stop();
-      } else {
-        void loadOnce();
-        start();
-      }
+      if (document.hidden) stop();
+      else { void loadOnce(); start(); }
     };
     if (!document.hidden) start();
     document.addEventListener('visibilitychange', onVisibility);
@@ -251,17 +223,13 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     };
   }, [loadOnce, terminalStatus]);
 
-  // Trigger countdown when status flips to in_progress and we haven't shown it yet
   const lastSeenStatusRef = useRef<ChallengeStatus | null>(null);
   useEffect(() => {
     if (!challenge) return;
     const prev = lastSeenStatusRef.current;
     if (challenge.status === 'in_progress' && prev !== 'in_progress') {
-      // Only run countdown if we haven't already answered anything
       const meAnswered = (myProgress?.completed ?? 0) > 0;
-      if (!meAnswered) {
-        setCountdown(COUNTDOWN_S);
-      }
+      if (!meAnswered) setCountdown(COUNTDOWN_S);
     }
     lastSeenStatusRef.current = challenge.status;
   }, [challenge, myProgress]);
@@ -277,7 +245,6 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     return () => window.clearTimeout(t);
   }, [countdown]);
 
-  // Reset picked state when the current question changes
   const myCompleted = myProgress?.completed ?? 0;
   useEffect(() => {
     setPicked(null);
@@ -286,8 +253,7 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
 
   async function accept() {
     if (!challenge) return;
-    setBusy(true);
-    setActionErr(null);
+    setBusy(true); setActionErr(null);
     mutatingRef.current = true;
     try {
       const r = await api<{ challenge: ChallengeRow }>(
@@ -306,13 +272,10 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
   async function decline() {
     if (!challenge) return;
     if (!window.confirm('Decline this challenge?')) return;
-    setBusy(true);
-    setActionErr(null);
+    setBusy(true); setActionErr(null);
     mutatingRef.current = true;
     try {
-      await api(`/api/challenges/${encodeURIComponent(cid)}/decline?user_id=${encodeURIComponent(userId)}`, {
-        method: 'POST',
-      });
+      await api(`/api/challenges/${encodeURIComponent(cid)}/decline?user_id=${encodeURIComponent(userId)}`, { method: 'POST' });
       await loadOnce();
     } catch (e) {
       setActionErr(friendlyError(e));
@@ -332,10 +295,7 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     try {
       const r = await api<{ challenge: ChallengeRow }>(
         `/api/challenges/${encodeURIComponent(cid)}/answer?user_id=${encodeURIComponent(userId)}`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ question_index: qIdx, option_index: optionIndex, time_ms: timeMs }),
-        },
+        { method: 'POST', body: JSON.stringify({ question_index: qIdx, option_index: optionIndex, time_ms: timeMs }) },
       );
       if (r?.challenge) applyChallenge(r.challenge, 'mutation');
     } catch (e) {
@@ -346,23 +306,20 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     }
   }
 
-  // Only treat the load as fatal if we still don't have a challenge AND we've
-  // failed several polls in a row. Otherwise keep "Connecting…" up and let the
-  // background poller heal the page.
   if (!challenge) {
     if (loadErr && consecutiveFails >= FAIL_THRESHOLD_BEFORE_BLOCK) {
       return (
-        <div className="mx-auto max-w-md px-4 pb-32 pt-32">
+        <div className="mx-auto max-w-md px-md py-xl">
           <ErrorState title="Couldn't load this challenge" message={loadErr} onRetry={loadOnce} />
         </div>
       );
     }
     return (
-      <div className="mx-auto max-w-sm px-4 pb-32 pt-32 text-center text-sm text-white/70">
-        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-primary" />
+      <div className="mx-auto max-w-sm px-md py-xl text-center text-body-sm text-on-surface-variant">
+        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-surface-container border-t-primary" />
         <p>Connecting to the match…</p>
         {loadErr && (
-          <p className="mt-2 text-[11px] text-rose-200/80">
+          <p className="mt-2 text-label-sm text-on-error-container">
             Retrying… ({consecutiveFails} attempt{consecutiveFails === 1 ? '' : 's'})
           </p>
         )}
@@ -370,19 +327,13 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
     );
   }
 
-  // Sanity check: warn if both players appear to be the same account
-  const sameSelf =
-    me && opp && me.user_id && opp.user_id && me.user_id === opp.user_id
-      ? true
-      : false;
+  const sameSelf = !!(me && opp && me.user_id && opp.user_id && me.user_id === opp.user_id);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-32 pt-24">
+    <div className="mx-auto max-w-2xl px-md py-md">
       <Scoreboard
-        me={me}
-        opp={opp}
-        myScore={myScore}
-        oppScore={oppScore}
+        me={me} opp={opp}
+        myScore={myScore} oppScore={oppScore}
         myCompleted={myProgress?.completed ?? 0}
         oppCompleted={oppProgress?.completed ?? 0}
         total={challenge.question_count}
@@ -391,17 +342,18 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
       />
 
       {sameSelf && (
-        <div className="mt-3 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs text-rose-100">
-          Both sides resolve to the same account ({mySelfUsername ? `@${mySelfUsername}` : 'unknown'}). Open an incognito window and sign in as a different user to play 1v1.
+        <div className="mt-3 rounded-xl border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container">
+          Both sides resolve to the same account ({mySelfUsername ? `@${mySelfUsername}` : 'unknown'}).
+          Open an incognito window and sign in as a different user to play 1v1.
         </div>
       )}
 
       {actionErr && (
-        <div className="mt-3 flex items-start justify-between gap-2 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs text-rose-100">
+        <div className="mt-3 flex items-start justify-between gap-2 rounded-xl border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container">
           <span className="flex-1">{actionErr}</span>
           <button
             onClick={() => setActionErr(null)}
-            className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/70 hover:bg-white/20"
+            className="rounded-full bg-surface-container px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
           >
             Dismiss
           </button>
@@ -409,12 +361,13 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
       )}
 
       {loadErr && challenge && consecutiveFails > 0 && (
-        <p className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-500/[0.08] p-2 text-[11px] text-amber-100">
-          ⚠ Reconnecting… (last poll failed). Hold tight, your moves are still being submitted to the server.
+        <p className="mt-2 inline-flex items-center gap-1 rounded-xl border border-tertiary-container bg-tertiary-container/30 p-2 text-label-sm text-on-tertiary-container">
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
+          Reconnecting… (last poll failed). Hold tight, your moves are still being submitted to the server.
         </p>
       )}
 
-      <main className="mt-5">
+      <main className="mt-md">
         {challenge.status === 'pending' && isRecipient && (
           <PendingForRecipient
             opp={opp}
@@ -425,11 +378,9 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
             onDecline={decline}
           />
         )}
-
         {challenge.status === 'pending' && isCreator && (
           <PendingForCreator opp={opp} busy={busy} onCancel={decline} />
         )}
-
         {(challenge.status === 'declined' || challenge.status === 'cancelled') && (
           <FinalNotice
             title={challenge.status === 'declined' ? 'Challenge declined' : 'Challenge cancelled'}
@@ -440,11 +391,9 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
             }
           />
         )}
-
         {challenge.status === 'expired' && (
           <FinalNotice title="Challenge expired" body="The opponent didn't respond in time." />
         )}
-
         {challenge.status === 'in_progress' && (
           countdown !== null ? (
             <Countdown n={countdown} />
@@ -460,14 +409,10 @@ function ChallengeRoom({ cid, userId, mySelfUsername }: { cid: string; userId: s
               timeLimitS={challenge.time_limit_s}
               questionStartedAt={questionStartedAt}
               mode={challenge.mode}
-              onTimeout={() => {
-                // submit a wrong answer (-1 marks "no pick")
-                void submitAnswer(-1).catch(() => undefined);
-              }}
+              onTimeout={() => { void submitAnswer(-1).catch(() => undefined); }}
             />
           )
         )}
-
         {(challenge.status === 'completed' || challenge.status === 'finished') && (
           <CompletedPanel
             challenge={challenge}
@@ -500,22 +445,25 @@ function Scoreboard({
   status: ChallengeStatus;
 }) {
   return (
-    <header className="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/15 via-secondary/10 to-accent/15 p-4 shadow-soft">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[10px] uppercase tracking-widest text-white/55">Quiz Battle</p>
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusToTone(status)}`}>
-          {status.replace('_', ' ')}
-        </span>
-        {subject && (
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70">
-            {subject}
-          </span>
-        )}
+    <header className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary to-secondary p-md text-on-primary shadow-lg">
+      <div className="absolute right-0 top-0 p-lg opacity-10" aria-hidden>
+        <span className="material-symbols-outlined" style={{ fontSize: '120px' }}>military_tech</span>
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <PlayerSide profile={me} score={myScore} completed={myCompleted} total={total} side="left" />
-        <span className="text-2xl font-bold text-white/65">vs</span>
-        <PlayerSide profile={opp} score={oppScore} completed={oppCompleted} total={total} side="right" />
+      <div className="relative">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-label-sm uppercase tracking-widest text-white/70">Quiz Battle</p>
+          <span className={`rounded-full px-2 py-0.5 text-label-sm uppercase tracking-widest ${statusToTone(status)}`}>
+            {status.replace('_', ' ')}
+          </span>
+          {subject && (
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-label-sm">{subject}</span>
+          )}
+        </div>
+        <div className="mt-md grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <PlayerSide profile={me} score={myScore} completed={myCompleted} total={total} side="left" />
+          <span className="text-headline-md font-bold text-white/70">vs</span>
+          <PlayerSide profile={opp} score={oppScore} completed={oppCompleted} total={total} side="right" />
+        </div>
       </div>
     </header>
   );
@@ -526,13 +474,19 @@ function PlayerSide({
 }: { profile: ProfileLite | null; score: number; completed: number; total: number; side: 'left' | 'right' }) {
   if (!profile) return <div className="h-12" />;
   return (
-    <div className={`flex items-center gap-3 rounded-2xl border p-3 ${side === 'left' ? 'border-primary/40 bg-primary/[0.08]' : 'border-white/10 bg-white/[0.03]'}`}>
+    <div
+      className={
+        side === 'left'
+          ? 'flex items-center gap-3 rounded-xl border border-white/30 bg-white/10 p-3 backdrop-blur-md'
+          : 'flex items-center gap-3 rounded-xl border border-white/15 bg-black/10 p-3 backdrop-blur-md'
+      }
+    >
       <Avatar seed={profile.avatar_seed || profile.user_id} username={profile.username} size={40} linkTo={false} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-white">@{profile.username}</p>
-        <p className="text-[10px] text-white/55">{completed}/{total} answered</p>
+        <p className="truncate text-label-md font-bold text-white">@{profile.username}</p>
+        <p className="text-label-sm text-white/65">{completed}/{total} answered</p>
       </div>
-      <span className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-2.5 py-1 text-sm font-bold tabular-nums text-white shadow-glow">
+      <span className="rounded-full bg-white/20 px-2.5 py-1 text-body-md font-bold tabular-nums text-white">
         {score}
       </span>
     </div>
@@ -541,14 +495,14 @@ function PlayerSide({
 
 function statusToTone(s: ChallengeStatus): string {
   switch (s) {
-    case 'pending':     return 'border-amber-400/30 bg-amber-500/10 text-amber-100';
-    case 'in_progress': return 'border-primary/40 bg-primary/10 text-white';
+    case 'pending':     return 'bg-amber-500/30 text-white';
+    case 'in_progress': return 'bg-white/25 text-white';
     case 'completed':
-    case 'finished':    return 'border-emerald-400/30 bg-emerald-500/10 text-emerald-100';
+    case 'finished':    return 'bg-emerald-500/30 text-white';
     case 'declined':
     case 'cancelled':
-    case 'expired':     return 'border-rose-400/30 bg-rose-500/10 text-rose-100';
-    default:            return 'border-white/10 bg-white/[0.04] text-white/80';
+    case 'expired':     return 'bg-red-500/30 text-white';
+    default:            return 'bg-white/15 text-white';
   }
 }
 
@@ -556,27 +510,29 @@ function PendingForRecipient({
   opp, subject, mode, busy, onAccept, onDecline,
 }: { opp: ProfileLite | null; subject: string | null; mode: string; busy: boolean; onAccept: () => void; onDecline: () => void }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-card/40 p-6 text-center">
-      <h2 className="text-xl font-bold text-white">
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-center shadow-card">
+      <h2 className="text-headline-md text-on-surface">
         {opp?.username ? `@${opp.username}` : 'Someone'} challenged you!
       </h2>
-      <p className="mt-1 text-sm text-white/65">
+      <p className="mt-1 text-body-md text-on-surface-variant">
         {subject ? `Subject: ${subject}` : 'Mixed subjects'} · Mode: {mode}
       </p>
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
+      <div className="mt-md flex flex-wrap justify-center gap-2">
         <button
           onClick={onAccept}
           disabled={busy}
-          className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-6 py-2.5 text-sm font-semibold text-white shadow-glow disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg bg-primary px-6 py-2.5 text-label-md font-bold text-on-primary shadow-md hover:bg-on-primary-container disabled:opacity-50"
         >
-          {busy ? '…' : '✅ Accept & start'}
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>play_arrow</span>
+          {busy ? '…' : 'Accept & start'}
         </button>
         <button
           onClick={onDecline}
           disabled={busy}
-          className="rounded-full border border-white/15 bg-white/[0.04] px-6 py-2.5 text-sm font-semibold text-white/85 hover:bg-white/10 disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-surface-container px-6 py-2.5 text-label-md font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
         >
-          ✗ Decline
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+          Decline
         </button>
       </div>
     </div>
@@ -585,18 +541,22 @@ function PendingForRecipient({
 
 function PendingForCreator({ opp, busy, onCancel }: { opp: ProfileLite | null; busy: boolean; onCancel: () => void }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-card/40 p-6 text-center">
-      <div className="mx-auto mb-3 h-12 w-12 animate-pulse rounded-full bg-gradient-to-br from-primary via-secondary to-accent shadow-glow" />
-      <h2 className="text-xl font-bold text-white">
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-center shadow-card">
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-container animate-pulse">
+        <span className="material-symbols-outlined text-on-primary-container" style={{ fontSize: '28px' }}>
+          hourglass_top
+        </span>
+      </div>
+      <h2 className="text-headline-md text-on-surface">
         Waiting for {opp?.username ? `@${opp.username}` : 'opponent'}…
       </h2>
-      <p className="mt-1 text-sm text-white/65">
+      <p className="mt-1 text-body-md text-on-surface-variant">
         They'll get a notification and the match starts when they accept.
       </p>
       <button
         onClick={onCancel}
         disabled={busy}
-        className="mt-5 rounded-full border border-white/15 bg-white/[0.04] px-5 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 disabled:opacity-50"
+        className="mt-md rounded-lg border border-outline-variant bg-surface-container px-5 py-2 text-label-md font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
       >
         Cancel challenge
       </button>
@@ -606,9 +566,9 @@ function PendingForCreator({ opp, busy, onCancel }: { opp: ProfileLite | null; b
 
 function Countdown({ n }: { n: number }) {
   return (
-    <div className="mt-8 flex flex-col items-center">
-      <p className="text-[10px] uppercase tracking-widest text-white/55">Match starting in</p>
-      <span className="mt-1 bg-gradient-to-br from-primary via-secondary to-accent bg-clip-text text-7xl font-black text-transparent tabular-nums">
+    <div className="mt-xl flex flex-col items-center">
+      <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">Match starting in</p>
+      <span className="mt-1 bg-gradient-to-br from-primary to-secondary bg-clip-text text-[5rem] font-black tabular-nums text-transparent">
         {n > 0 ? n : 'Go!'}
       </span>
     </div>
@@ -617,9 +577,9 @@ function Countdown({ n }: { n: number }) {
 
 function Waiting({ msg }: { msg: string }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-card/40 p-8 text-center">
-      <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-primary" />
-      <p className="text-sm text-white/80">{msg}</p>
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-xl text-center shadow-card">
+      <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-surface-container border-t-primary" />
+      <p className="text-body-md text-on-surface">{msg}</p>
     </div>
   );
 }
@@ -641,7 +601,6 @@ function QuizPanel({
   const current = items[idx];
   const total = items.length;
   const timed = mode === 'timed';
-
   const [secondsLeft, setSecondsLeft] = useState<number>(timed ? timeLimitS : 0);
 
   useEffect(() => {
@@ -651,10 +610,7 @@ function QuizPanel({
 
   useEffect(() => {
     if (!timed || picked !== null) return;
-    if (secondsLeft <= 0) {
-      onTimeout(idx);
-      return;
-    }
+    if (secondsLeft <= 0) { onTimeout(idx); return; }
     const t = window.setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
   }, [timed, secondsLeft, picked, idx, onTimeout]);
@@ -663,44 +619,56 @@ function QuizPanel({
 
   const correctIdx = current.payload.answer_index;
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-soft">
+    <article className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-card">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-white/55">
+        <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">
           Question {idx + 1} / {total}
         </p>
         {timed && picked === null && (
-          <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-3 py-1 text-xs font-bold tabular-nums text-amber-100">
+          <span className="inline-flex items-center gap-1 rounded-full bg-tertiary-container/40 px-3 py-1 text-label-sm font-bold tabular-nums text-on-tertiary-container">
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>timer</span>
             {secondsLeft}s
           </span>
         )}
       </div>
-      <h2 className="mt-2 text-base font-semibold text-white">{current.payload.stem}</h2>
-      <div className="mt-3 grid gap-2">
+      <h2 className="mt-2 text-body-lg font-bold text-on-surface">{current.payload.stem}</h2>
+      <div className="mt-md grid gap-2">
         {current.payload.options.map((opt, i) => {
           const isAnswer = i === correctIdx;
           const isPicked = i === picked;
-          const tone = picked === null
-            ? 'border-white/10 bg-white/[0.03] hover:bg-white/10'
-            : isAnswer
-              ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-50'
-              : isPicked
-                ? 'border-rose-400/50 bg-rose-500/15 text-rose-50'
-                : 'border-white/10 bg-white/[0.03] text-white/55';
+          let tone =
+            'border-outline-variant bg-surface-container-low hover:bg-surface-container';
+          if (picked !== null && isAnswer) {
+            tone = 'border-primary bg-primary-container/40 text-on-primary-container';
+          } else if (picked !== null && isPicked) {
+            tone = 'border-error bg-error-container/40 text-on-error-container';
+          } else if (picked !== null) {
+            tone = 'border-outline-variant bg-surface-container-low opacity-60';
+          }
           return (
             <button
               key={i}
               onClick={() => onPick(i)}
               disabled={picked !== null}
-              className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${tone}`}
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left text-body-md transition-colors disabled:cursor-default ${tone}`}
             >
-              <span className="font-bold tabular-nums">{String.fromCharCode(65 + i)}.</span>
+              <span className="text-label-md font-bold text-on-surface-variant tabular-nums">{String.fromCharCode(65 + i)}.</span>
               <span className="flex-1">{opt}</span>
             </button>
           );
         })}
       </div>
       {picked !== null && (
-        <p className="mt-2 text-xs text-white/65">{current.payload.explanation}</p>
+        <p className="mt-md flex items-start gap-2 text-body-sm text-on-surface-variant">
+          <span
+            className={`material-symbols-outlined ${picked === correctIdx ? 'text-primary' : 'text-error'}`}
+            style={{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}
+            aria-hidden
+          >
+            {picked === correctIdx ? 'check_circle' : 'cancel'}
+          </span>
+          <span>{current.payload.explanation}</span>
+        </p>
       )}
     </article>
   );
@@ -717,31 +685,55 @@ function CompletedPanel({
 }) {
   const myScore = isCreator ? challenge.progress_from.score : challenge.progress_to.score;
   const oppScore = isCreator ? challenge.progress_to.score : challenge.progress_from.score;
+  const verdict = myScore > oppScore ? 'win' : myScore < oppScore ? 'loss' : 'draw';
   return (
-    <article className="rounded-3xl border border-white/10 bg-gradient-to-br from-card/60 via-card/40 to-card/30 p-6 text-center shadow-soft">
-      <p className="text-[10px] uppercase tracking-widest text-white/55">Match over</p>
-      <h2 className="mt-2 text-2xl font-bold text-white">
-        {myScore > oppScore ? 'You won!' : myScore < oppScore ? `${opp?.username ? `@${opp.username}` : 'Opponent'} won` : 'Draw'}
+    <article className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-center shadow-card">
+      <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">Match over</p>
+      <div
+        className={
+          verdict === 'win'
+            ? 'mx-auto mt-2 flex h-16 w-16 items-center justify-center rounded-full bg-secondary-container'
+            : verdict === 'loss'
+              ? 'mx-auto mt-2 flex h-16 w-16 items-center justify-center rounded-full bg-error-container/60'
+              : 'mx-auto mt-2 flex h-16 w-16 items-center justify-center rounded-full bg-tertiary-container/60'
+        }
+      >
+        <span
+          className={
+            verdict === 'win'
+              ? 'material-symbols-outlined text-on-secondary-container'
+              : verdict === 'loss'
+                ? 'material-symbols-outlined text-on-error-container'
+                : 'material-symbols-outlined text-on-tertiary-container'
+          }
+          style={{ fontSize: '32px', fontVariationSettings: "'FILL' 1" }}
+        >
+          {verdict === 'win' ? 'emoji_events' : verdict === 'loss' ? 'sentiment_neutral' : 'balance'}
+        </span>
+      </div>
+      <h2 className="mt-2 text-headline-md text-on-surface">
+        {verdict === 'win' ? 'You won!' : verdict === 'loss' ? `${opp?.username ? `@${opp.username}` : 'Opponent'} won` : 'Draw'}
       </h2>
-      <p className="mt-2 text-sm text-white/75">Final: {myScore} – {oppScore}</p>
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
+      <p className="mt-2 text-body-md text-on-surface-variant tabular-nums">Final: {myScore} – {oppScore}</p>
+      <div className="mt-md flex flex-wrap justify-center gap-2">
         <button
           onClick={onRematch}
-          className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-4 py-2 text-xs font-semibold text-white shadow-glow"
+          className="inline-flex items-center gap-1 rounded-lg bg-primary-container px-4 py-2 text-label-md font-bold text-on-primary-container hover:brightness-95"
         >
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
           Rematch
         </button>
         {opp?.username && (
           <Link
             to={`/u/${opp.username}`}
-            className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs text-white hover:bg-white/10"
+            className="rounded-lg border border-outline-variant bg-surface-container px-4 py-2 text-label-md font-bold text-on-surface hover:bg-surface-container-high"
           >
             View @{opp.username}
           </Link>
         )}
         <Link
           to="/friends"
-          className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs text-white hover:bg-white/10"
+          className="rounded-lg border border-outline-variant bg-surface-container px-4 py-2 text-label-md font-bold text-on-surface hover:bg-surface-container-high"
         >
           See all challenges
         </Link>
@@ -752,19 +744,20 @@ function CompletedPanel({
 
 function FinalNotice({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-card/40 p-8 text-center">
-      <h2 className="text-xl font-bold text-white">{title}</h2>
-      <p className="mt-1.5 text-sm text-white/65">{body}</p>
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-xl text-center shadow-card">
+      <h2 className="text-headline-md text-on-surface">{title}</h2>
+      <p className="mt-1.5 text-body-md text-on-surface-variant">{body}</p>
       <Link
         to="/discover"
-        className="mt-5 inline-block rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2 text-xs font-semibold text-white shadow-glow"
+        className="mt-md inline-flex items-center gap-1 rounded-lg bg-primary-container px-5 py-2 text-label-md font-bold text-on-primary-container hover:brightness-95"
       >
         Find someone else to challenge
+        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
       </Link>
     </div>
   );
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <div className="px-8 pb-32 pt-32 text-center text-sm text-white/55">{msg}</div>;
+  return <div className="mx-auto max-w-md px-md py-xl text-center text-body-sm text-on-surface-variant">{msg}</div>;
 }

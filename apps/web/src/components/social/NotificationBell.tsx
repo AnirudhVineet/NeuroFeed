@@ -27,11 +27,11 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={unread > 0 ? `${unread} unread notifications` : 'Notifications'}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/85 hover:bg-white/10"
+        className="relative flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-container"
       >
-        <span aria-hidden className="text-base">🔔</span>
+        <span className="material-symbols-outlined" aria-hidden>notifications</span>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
             {unread > 99 ? '99+' : unread}
           </span>
         )}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '@/components/social/Avatar';
 import { ChallengeDialog } from '@/components/social/ChallengeDialog';
@@ -23,6 +23,12 @@ import {
 } from '@/lib/social';
 import { supabase } from '@/lib/supabase';
 
+// Profile dashboard on the new clinical light theme. Header + bento overview
+// match the mockup `profilemain.html`; the remaining tabs (Uploads, Stats,
+// Achievements, Bookmarks, Activity, etc.) reuse the same updated helpers but
+// keep their existing data sources. All authentication, social-bootstrap, and
+// view-model derivation logic is preserved from the prior dark-theme version.
+
 type TabId =
   | 'overview'
   | 'uploads'
@@ -39,21 +45,21 @@ type TabId =
   | 'quiz'
   | 'leaderboard';
 
-const TABS: { id: TabId; label: string; glyph: string }[] = [
-  { id: 'overview', label: 'Overview', glyph: '✦' },
-  { id: 'uploads', label: 'Uploads', glyph: '📤' },
-  { id: 'paths', label: 'Paths', glyph: '🗺' },
-  { id: 'achievements', label: 'Achievements', glyph: '🏅' },
-  { id: 'bookmarks', label: 'Bookmarks', glyph: '🔖' },
-  { id: 'activity', label: 'Activity', glyph: '⏱' },
-  { id: 'stats', label: 'Stats', glyph: '📊' },
-  { id: 'following', label: 'Following', glyph: '➤' },
-  { id: 'followers', label: 'Followers', glyph: '★' },
-  { id: 'notes', label: 'Public notes', glyph: '✎' },
-  { id: 'reels', label: 'Public reels', glyph: '🎬' },
-  { id: 'stories', label: 'Stories', glyph: '📖' },
-  { id: 'quiz', label: 'Quiz records', glyph: '⚔' },
-  { id: 'leaderboard', label: 'Leaderboard', glyph: '🏆' },
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'uploads', label: 'Uploads' },
+  { id: 'paths', label: 'Paths' },
+  { id: 'achievements', label: 'Achievements' },
+  { id: 'bookmarks', label: 'Bookmarks' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'stats', label: 'Stats' },
+  { id: 'following', label: 'Following' },
+  { id: 'followers', label: 'Followers' },
+  { id: 'notes', label: 'Notes' },
+  { id: 'reels', label: 'Reels' },
+  { id: 'stories', label: 'Stories' },
+  { id: 'quiz', label: 'Quiz' },
+  { id: 'leaderboard', label: 'Ranking' },
 ];
 
 interface SelfData {
@@ -89,7 +95,6 @@ export default function ProfilePage() {
       setSignedIn(Boolean(uid));
       setAuthReady(true);
       if (!uid) return;
-      // Best-effort hydrate (no-op if already done).
       void bootstrapSocial(uid);
       const [d, a] = await Promise.all([
         fetchDocuments(uid).then((r) => r.items).catch(() => [] as DocSummary[]),
@@ -142,80 +147,54 @@ export default function ProfilePage() {
   // -------- Loading / error / signed-out states --------
   if (isSelf && authReady && signedIn === false) {
     return (
-      <div className="mx-auto max-w-md px-6 pb-32 pt-32 text-center">
-        <p className="text-base font-semibold text-white">You're signed out.</p>
-        <p className="mt-1 text-sm text-white/65">Sign in to view your profile.</p>
+      <div className="mx-auto max-w-md px-md pb-xl pt-xl text-center">
+        <p className="text-headline-sm text-on-surface">You're signed out.</p>
+        <p className="mt-1 text-body-sm text-on-surface-variant">Sign in to view your profile.</p>
         <Link
           to="/auth"
-          className="mt-4 inline-block rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2 text-xs font-semibold text-white shadow-glow"
+          className="mt-md inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
         >
           Sign in
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
         </Link>
       </div>
     );
   }
-
   if (isSelf && selfErr) {
-    return (
-      <div className="mx-auto max-w-md px-4 pb-32 pt-32">
-        <ErrorState
-          title="Couldn't load your profile"
-          message={selfErr}
-          onRetry={() => void loadSelf()}
-        />
-      </div>
-    );
+    return <ErrorWrap title="Couldn't load your profile" message={selfErr} onRetry={() => void loadSelf()} />;
   }
-
   if (!isSelf && otherErr) {
-    return (
-      <div className="mx-auto max-w-md px-4 pb-32 pt-32">
-        <ErrorState
-          title="Couldn't load this profile"
-          message={otherErr}
-          onRetry={() => void loadOther()}
-        />
-      </div>
-    );
+    return <ErrorWrap title="Couldn't load this profile" message={otherErr} onRetry={() => void loadOther()} />;
   }
-
   if (!view) {
-    // Self path is still loading the session/docs/analytics OR social bootstrap.
-    if (isSelf && (!authReady || !social.ready || !self)) {
-      return <ProfileLoadingSkeleton />;
-    }
-    // Self loaded but social bootstrap returned a null profile (rare — likely
-    // bootstrap fetched while the backend was 500ing). Re-bootstrap and show a
-    // gentle prompt.
+    if (isSelf && (!authReady || !social.ready || !self)) return <ProfileLoadingSkeleton />;
     if (isSelf && self && !social.profile) {
       return (
-        <div className="mx-auto max-w-md px-4 pb-32 pt-32">
-          <ErrorState
-            title="Profile not synced yet"
-            message="We couldn't load your profile data. Try again."
-            onRetry={() => {
-              void bootstrapSocial(self.userId);
-              void loadSelf();
-            }}
-          />
-        </div>
+        <ErrorWrap
+          title="Profile not synced yet"
+          message="We couldn't load your profile data. Try again."
+          onRetry={() => {
+            void bootstrapSocial(self.userId);
+            void loadSelf();
+          }}
+        />
       );
     }
     return (
-      <div className="px-8 pb-32 pt-32 text-center text-sm text-white/55">
+      <div className="px-md py-xl text-center text-body-sm text-on-surface-variant">
         No profile found for @{params.username}.
         <div className="mt-3">
-          <Link to="/discover" className="text-primary">Discover learners →</Link>
+          <Link to="/discover" className="text-primary hover:underline">Discover learners →</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-24">
+    <div className="mx-auto max-w-4xl px-md py-md">
       <Header view={view} isSelf={isSelf} />
       <TabBar tab={tab} onTab={setTab} />
-      <main className="mt-5 space-y-5">
+      <main className="space-y-md py-md">
         {tab === 'overview' && <OverviewTab view={view} onTab={setTab} />}
         {tab === 'uploads' && <UploadsTab view={view} />}
         {tab === 'paths' && <PathsTab view={view} />}
@@ -235,7 +214,15 @@ export default function ProfilePage() {
   );
 }
 
-// ---- View model ----
+function ErrorWrap({ title, message, onRetry }: { title: string; message: string; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-md px-md pb-xl pt-xl">
+      <ErrorState title={title} message={message} onRetry={onRetry} />
+    </div>
+  );
+}
+
+// ---- View model (unchanged from the prior version) ----
 
 interface ProfileView {
   username: string;
@@ -280,7 +267,6 @@ function buildView(args: {
   otherFollowers: ProfileLite[];
 }): ProfileView | null {
   const { isSelf, social, self, other, otherDocs, otherFollowers } = args;
-
   if (isSelf) {
     if (!social.profile || !self) return null;
     const xp = social.profile.xp;
@@ -321,11 +307,10 @@ function buildView(args: {
       },
       docs: self.docs,
       followingList: social.following,
-      followersList: [], // populated lazily in FollowersTab via fetch on demand
+      followersList: [],
       badgesFromAchievements: social.profile.achievements,
     };
   }
-
   if (!other) return null;
   const enrichedOther = otherDocs.map((d) => ({ ...d, subject: inferSubject(d.title) }));
   return {
@@ -373,9 +358,6 @@ function loserIsSelf(c: { from_user: string; to_user: string; wins_from?: number
 }
 
 function countEvent(self: SelfData): number {
-  // Until raw event counts are exposed, approximate via active days * a small
-  // multiplier so the surface doesn't show zeros for users who clearly do use
-  // the app. Swap for real counts once /api/analytics returns them.
   const days = self.analytics?.activity_series.filter((p) => p.events > 0).length ?? 0;
   return days * 3;
 }
@@ -398,12 +380,10 @@ function deriveBadges(args: { xp: number; streak: number; docs: number; accuracy
 function subjectCounts(docs: { subject: Subject }[]): { subject: Subject; count: number }[] {
   const map = new Map<Subject, number>();
   for (const d of docs) map.set(d.subject, (map.get(d.subject) ?? 0) + 1);
-  return Array.from(map.entries())
-    .map(([subject, count]) => ({ subject, count }))
-    .sort((a, b) => b.count - a.count);
+  return Array.from(map.entries()).map(([subject, count]) => ({ subject, count })).sort((a, b) => b.count - a.count);
 }
 
-// ---- Header / tabs ----
+// ---- Header (mockup-fidelity) ----
 
 function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
   const following = isFollowing(view.username);
@@ -427,119 +407,157 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
       setSigningOut(false);
     }
   }
-
   async function onFollow() {
-    setBusy(true);
-    setErr(null);
+    setBusy(true); setErr(null);
     try { await toggleFollow(view.username); } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   }
   async function onFriend() {
-    setBusy(true);
-    setErr(null);
+    setBusy(true); setErr(null);
     try { await sendFriendRequest(view.username); } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   }
 
   return (
-    <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-card/60 via-card/40 to-card/30 p-5 shadow-soft backdrop-blur">
-      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-gradient opacity-25 blur-3xl" />
-      <div className="absolute -left-10 -bottom-10 h-44 w-44 rounded-full bg-accent/20 blur-3xl" />
-      <div className="relative flex flex-wrap items-start gap-5">
-        <Avatar
-          seed={view.avatar_seed}
-          username={view.username}
-          size={88}
-          linkTo={false}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-white">{view.display_name}</h1>
-            <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/65">
-              @{view.username}
+    <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-card">
+      <div className="flex flex-col items-start gap-md md:flex-row">
+        {/* Avatar with gradient ring + verified badge */}
+        <div className="relative shrink-0">
+          <div className="rounded-full bg-gradient-to-tr from-primary to-tertiary p-1">
+            <div className="rounded-full border-4 border-surface">
+              <Avatar seed={view.avatar_seed} username={view.username} size={120} linkTo={false} />
+            </div>
+          </div>
+          <div className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-4 border-surface bg-primary text-white">
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>
+              verified
             </span>
-            <span className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-glow">
+          </div>
+        </div>
+
+        {/* Bio column */}
+        <div className="min-w-0 flex-1 space-y-sm">
+          <div className="flex flex-wrap items-center gap-sm">
+            <h1 className="text-headline-md text-on-surface">@{view.username}</h1>
+            <span className="rounded-full bg-primary-container/40 px-2 py-0.5 text-label-sm font-bold text-on-primary-container">
               L{view.level}
             </span>
           </div>
-          <p className="mt-1 max-w-prose text-sm text-white/75">{view.bio || 'No bio yet.'}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {view.subjects.slice(0, 6).map((s) => (
-              <span key={s} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/75">{s}</span>
-            ))}
-            {view.college && (
-              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald-200">{view.college}</span>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-base">
+            {isSelf ? (
+              <>
+                <button
+                  onClick={() => setEditing((v) => !v)}
+                  className="rounded-lg bg-primary px-md py-base text-label-md font-medium text-on-primary shadow-sm transition-colors hover:bg-on-primary-container"
+                >
+                  {editing ? 'Done editing' : 'Edit Profile'}
+                </button>
+                <Link
+                  to="/settings/privacy"
+                  className="rounded-lg bg-surface-container-high px-md py-base text-label-md text-on-surface transition-colors hover:bg-surface-dim"
+                >
+                  Privacy
+                </Link>
+                <button
+                  onClick={onSignOut}
+                  disabled={signingOut}
+                  className="rounded-lg bg-surface-container-high px-md py-base text-label-md text-on-surface transition-colors hover:bg-surface-dim disabled:opacity-50"
+                >
+                  {signingOut ? 'Signing out…' : 'Sign out'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onFollow}
+                  disabled={busy}
+                  className={
+                    following
+                      ? 'rounded-lg bg-surface-container-high px-md py-base text-label-md text-on-surface transition-colors hover:bg-surface-dim disabled:opacity-50'
+                      : 'rounded-lg bg-primary px-md py-base text-label-md font-medium text-on-primary shadow-sm transition-colors hover:bg-on-primary-container disabled:opacity-50'
+                  }
+                >
+                  {following ? 'Following' : 'Follow'}
+                </button>
+                {friend ? (
+                  <span className="rounded-lg bg-secondary-container/40 px-md py-base text-label-md font-medium text-on-secondary-container">
+                    Friends ✓
+                  </span>
+                ) : (
+                  <button
+                    onClick={onFriend}
+                    disabled={busy}
+                    className="rounded-lg bg-surface-container-high px-md py-base text-label-md text-on-surface transition-colors hover:bg-surface-dim disabled:opacity-50"
+                  >
+                    Add friend
+                  </button>
+                )}
+                <button
+                  onClick={() => setChallengeOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-tertiary-container/40 px-md py-base text-label-md font-medium text-on-tertiary-container transition-colors hover:bg-tertiary-container/60"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>swords</span>
+                  Challenge
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(`${location.origin}/u/${view.username}`);
+                    alert('Profile link copied');
+                  }}
+                  aria-label="Share profile"
+                  className="rounded-lg bg-surface-container-high p-base text-on-surface transition-colors hover:bg-surface-dim"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>share</span>
+                </button>
+              </>
             )}
           </div>
-          <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-white/75 sm:grid-cols-4">
-            <Stat label="XP" value={view.xp.toLocaleString()} />
-            <Stat label="Streak" value={`${view.streak}d 🔥`} />
-            <Stat label="Followers" value={view.followers.toLocaleString()} />
-            <Stat label="Following" value={view.following.toLocaleString()} />
-          </dl>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-          {isSelf ? (
-            <>
-              <button
-                onClick={() => setEditing((v) => !v)}
-                className="rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-white hover:bg-white/10"
-              >
-                {editing ? 'Done' : 'Edit profile'}
-              </button>
-              <Link to="/settings/privacy" className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10">
-                Privacy
-              </Link>
-              <button
-                onClick={onSignOut}
-                disabled={signingOut}
-                className="rounded-full border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100 hover:bg-rose-500/20 disabled:opacity-50"
-              >
-                {signingOut ? 'Signing out…' : 'Sign out'}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={onFollow}
-                disabled={busy}
-                className={`rounded-full px-4 py-2 text-xs font-semibold shadow-glow disabled:opacity-50 ${
-                  following
-                    ? 'border border-white/15 bg-white/[0.06] text-white'
-                    : 'bg-gradient-to-br from-primary via-secondary to-accent text-white'
-                }`}
-              >
-                {following ? 'Following' : 'Follow'}
-              </button>
-              {friend ? (
-                <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-200">
-                  Friends ✓
-                </span>
-              ) : (
-                <button onClick={onFriend} disabled={busy} className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 disabled:opacity-50">
-                  Add friend
-                </button>
-              )}
-              <button
-                onClick={() => setChallengeOpen(true)}
-                className="rounded-full border border-accent/40 bg-accent/15 px-4 py-2 text-xs font-semibold text-white hover:bg-accent/25"
-              >
-                ⚔ Challenge to quiz
-              </button>
-              <button
-                onClick={() => {
-                  navigator.clipboard?.writeText(`${location.origin}/u/${view.username}`);
-                  alert('Profile link copied');
-                }}
-                className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs text-white/75 hover:bg-white/10"
-              >
-                Share profile
-              </button>
-            </>
+
+          {/* Counts row */}
+          <div className="flex gap-lg border-y border-outline-variant/40 py-sm">
+            <CountChip value={view.stats.uploads} label="Uploads" />
+            <CountChip value={view.followers} label="Followers" />
+            <CountChip value={view.following} label="Following" />
+          </div>
+
+          {/* Display name + bio + subjects */}
+          {view.display_name && view.display_name !== view.username && (
+            <h3 className="text-body-md font-bold text-on-surface">{view.display_name}</h3>
           )}
-          {err && <p className="text-[10px] text-rose-300">{err}</p>}
+          <p className="max-w-prose text-body-md text-on-surface-variant">{view.bio || 'No bio yet.'}</p>
+          {view.subjects.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {view.subjects.slice(0, 6).map((s) => (
+                <span key={s} className="rounded-full border border-outline-variant bg-surface-container px-3 py-0.5 text-label-sm text-on-surface-variant">
+                  {s}
+                </span>
+              ))}
+              {view.college && (
+                <span className="rounded-full border border-secondary-container bg-secondary-container/30 px-3 py-0.5 text-label-sm text-on-secondary-container">
+                  {view.college}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Gamification chips */}
+          <div className="flex flex-wrap gap-base pt-xs">
+            <div className="inline-flex items-center gap-xs rounded-full border border-secondary-container bg-secondary-container/30 px-sm py-xs text-label-sm text-on-secondary-container">
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+              <span>{view.streak} Day Streak</span>
+            </div>
+            <div className="inline-flex items-center gap-xs rounded-full border border-tertiary-container bg-tertiary-container/30 px-sm py-xs text-label-sm text-on-tertiary-container">
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+              <span>XP Level {view.level}</span>
+            </div>
+          </div>
+
+          {err && <p className="text-label-sm text-error">{err}</p>}
         </div>
       </div>
+
       {isSelf && editing && <EditProfileForm />}
       <ChallengeDialog
         open={challengeOpen}
@@ -550,7 +568,16 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
           avatar_seed: view.avatar_seed,
         }}
       />
-    </header>
+    </section>
+  );
+}
+
+function CountChip({ value, label }: { value: number; label: string }) {
+  return (
+    <div>
+      <span className="text-body-lg font-bold text-on-surface tabular-nums">{value.toLocaleString()}</span>
+      <span className="ml-1 text-label-md text-on-surface-variant">{label}</span>
+    </div>
   );
 }
 
@@ -563,13 +590,11 @@ function EditProfileForm() {
   const [subjects, setSubjects] = useState((social.profile?.subjects ?? []).join(', '));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        setBusy(true);
-        setErr(null);
+        setBusy(true); setErr(null);
         try {
           await patchProfile({
             display_name: display,
@@ -584,133 +609,297 @@ function EditProfileForm() {
           setBusy(false);
         }
       }}
-      className="relative mt-5 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2"
+      className="mt-md grid grid-cols-1 gap-sm rounded-lg border border-outline-variant bg-surface-container-low p-md sm:grid-cols-2"
     >
-      <Field label="Display name" value={display} onChange={setDisplay} />
-      <Field label="Username" value={username} onChange={setUsername} />
-      <Field label="College" value={college} onChange={setCollege} />
-      <Field label="Subjects (comma separated)" value={subjects} onChange={setSubjects} />
-      <Field label="Bio" value={bio} onChange={setBio} textarea />
+      <EditField label="Display name" value={display} onChange={setDisplay} />
+      <EditField label="Username" value={username} onChange={setUsername} />
+      <EditField label="College" value={college} onChange={setCollege} />
+      <EditField label="Subjects (comma separated)" value={subjects} onChange={setSubjects} />
+      <EditField label="Bio" value={bio} onChange={setBio} textarea />
       <button
         type="submit"
         disabled={busy}
-        className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-4 py-2 text-xs font-semibold text-white shadow-glow sm:col-span-2 disabled:opacity-50"
+        className="rounded-lg bg-primary-container px-4 py-2 text-label-md font-bold text-on-primary-container shadow-sm transition-all hover:brightness-95 disabled:opacity-50 sm:col-span-2"
       >
         {busy ? 'Saving…' : 'Save profile'}
       </button>
-      {err && <p className="text-xs text-rose-300 sm:col-span-2">{err}</p>}
+      {err && <p className="text-label-sm text-error sm:col-span-2">{err}</p>}
     </form>
   );
 }
 
-function Field({ label, value, onChange, textarea }: { label: string; value: string; onChange: (v: string) => void; textarea?: boolean }) {
+function EditField({ label, value, onChange, textarea }: { label: string; value: string; onChange: (v: string) => void; textarea?: boolean }) {
   return (
-    <label className="text-xs text-white/65">
-      <span className="text-[10px] uppercase tracking-widest text-white/55">{label}</span>
+    <label className="block">
+      <span className="mb-xs block text-label-sm text-on-surface-variant">{label}</span>
       {textarea ? (
-        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-primary" />
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-body-md text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15" />
       ) : (
-        <input value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-primary" />
+        <input value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-body-md text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15" />
       )}
     </label>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2">
-      <dt className="text-[10px] uppercase tracking-widest text-white/55">{label}</dt>
-      <dd className="text-sm font-bold tabular-nums text-white">{value}</dd>
-    </div>
-  );
-}
-
 function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
   return (
-    <nav className="sticky top-[5rem] z-20 mt-4 -mx-4 border-b border-white/10 bg-ink/85 backdrop-blur">
-      <div className="flex gap-1 overflow-x-auto px-4 py-2 text-xs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => onTab(t.id)}
-            className={`shrink-0 rounded-full px-3 py-1.5 font-medium transition-colors ${
-              tab === t.id ? 'bg-accent text-white shadow-glow' : 'text-white/70 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <span className="mr-1" aria-hidden>{t.glyph}</span>
-            {t.label}
-          </button>
-        ))}
+    <nav className="sticky top-16 z-20 -mx-md mt-md border-y border-outline-variant/40 bg-background/90 backdrop-blur-sm">
+      <div className="no-scrollbar flex gap-md overflow-x-auto px-md py-2 text-label-sm uppercase tracking-widest">
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => onTab(t.id)}
+              className={
+                active
+                  ? 'shrink-0 border-b-2 border-primary pb-2 text-primary'
+                  : 'shrink-0 border-b-2 border-transparent pb-2 text-on-surface-variant transition-colors hover:text-primary'
+              }
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
 }
 
-// ---- Tabs ----
+// ---- Overview: bento grid matching the mockup ----
 
 function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => void }) {
   const social = useSocial();
   const recent = view.isSelfView
-    ? social.activity.filter((r) => r.actor_username === view.username).slice(0, 5)
+    ? social.activity.filter((r) => r.actor_username === view.username).slice(0, 4)
     : [];
+  const nextLevelXp = (view.level + 1) * 250;
+  const pctToNext = Math.min(1, (view.xp - view.level * 250) / 250);
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <KpiCard label="Uploads" value={view.stats.uploads} glyph="📤" />
-        <KpiCard label="Reels watched" value={view.stats.reels_watched} glyph="🎬" />
-        <KpiCard label="Quizzes" value={view.stats.quizzes_finished} glyph="❓" />
-        <KpiCard label="Accuracy" value={`${view.stats.accuracy}%`} glyph="🎯" />
+    <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
+      {/* XP card */}
+      <div className="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest p-md md:col-span-4">
+        <span className="text-label-md uppercase tracking-wider text-on-surface-variant">Total Experience</span>
+        <div className="mt-2 flex items-baseline gap-2">
+          <h2 className="text-display text-primary tabular-nums">{view.xp.toLocaleString()}</h2>
+          <span className="text-label-sm text-on-surface-variant">XP</span>
+        </div>
+        <div className="mt-md">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container">
+            <div className="h-full bg-primary" style={{ width: `${pctToNext * 100}%` }} />
+          </div>
+          <div className="mt-2 flex justify-between text-label-sm text-on-surface-variant">
+            <span>Level {view.level}</span>
+            <span>Next: {(nextLevelXp - view.xp).toLocaleString()} XP</span>
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <KpiCard label="Flashcards" value={view.stats.flashcards_reviewed} glyph="🎴" />
-        <KpiCard label="Hours" value={`${view.stats.hours}h`} glyph="⏱" />
-        <KpiCard label="Wins" value={view.stats.wins} glyph="🏆" />
-        <KpiCard label="Losses" value={view.stats.losses} glyph="✗" />
-      </div>
 
-      <Panel title="Achievements" right={<JumpLink label="View all" onClick={() => onTab('achievements')} />}>
-        <BadgeRow badges={view.badges.slice(0, 6)} />
-      </Panel>
-
-      <Panel title="Recent activity" right={<JumpLink label="View all" onClick={() => onTab('activity')} />}>
-        {recent.length ? (
-          <ActivityListRows rows={recent} />
-        ) : (
-          <p className="text-xs text-white/55">No recent activity yet.</p>
-        )}
-      </Panel>
-
-      <Panel title="Favourite subjects">
-        <div className="flex flex-wrap gap-2">
-          {view.subjects.length === 0 && <p className="text-xs text-white/55">Add subjects in Edit profile.</p>}
-          {view.subjects.map((s) => (
-            <span key={s} className="rounded-full bg-gradient-to-br from-primary/15 to-accent/15 px-3 py-1 text-xs text-white">{s}</span>
+      {/* Streak card */}
+      <div className="rounded-xl bg-tertiary p-md text-on-tertiary md:col-span-4">
+        <div className="text-label-md uppercase tracking-wider text-tertiary-fixed-dim">Current Streak</div>
+        <div className="mt-2 flex items-center gap-3">
+          <span
+            className="material-symbols-outlined text-secondary-container"
+            style={{ fontSize: '40px', fontVariationSettings: "'FILL' 1" }}
+            aria-hidden
+          >
+            local_fire_department
+          </span>
+          <h2 className="text-display">{view.streak}</h2>
+          <span className="text-label-md text-tertiary-fixed-dim">Days</span>
+        </div>
+        <div className="mt-md flex gap-1">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-full ${i < (view.streak % 7) ? 'bg-white' : 'bg-white/20'}`}
+            />
           ))}
-          {view.stats.favorite_subject && (
-            <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-100">
-              ★ {view.stats.favorite_subject} (most uploaded)
-            </span>
+        </div>
+      </div>
+
+      {/* Mastery / recent doc */}
+      <div className="rounded-xl bg-surface-container p-md md:col-span-4">
+        <h3 className="mb-md text-label-md uppercase tracking-wider text-on-surface-variant">
+          Continue Learning
+        </h3>
+        {view.docs[0] ? (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-lowest text-primary shadow-sm">
+                <span className="material-symbols-outlined">neurology</span>
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-label-md text-on-surface">{view.docs[0].title}</p>
+                <p className="text-label-sm text-on-surface-variant">
+                  {view.docs[0].counts.reel_script} reels · {view.docs[0].counts.flashcard} cards
+                </p>
+              </div>
+            </div>
+            <Link
+              to={`/doc/${encodeURIComponent(view.docs[0].id)}`}
+              className="mt-md block rounded-lg border border-outline-variant bg-surface-container-lowest py-2 text-center text-label-md text-on-surface transition-all hover:bg-surface-container-low"
+            >
+              Resume Learning
+            </Link>
+          </>
+        ) : (
+          <p className="text-body-sm text-on-surface-variant">
+            No documents yet. <Link to="/upload" className="text-primary hover:underline">Upload one</Link>.
+          </p>
+        )}
+      </div>
+
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-2 md:col-span-12 md:grid-cols-5">
+        <KpiTile icon="upload_file" value={view.stats.uploads} label="Uploads" />
+        <KpiTile icon="smart_display" value={view.stats.reels_watched} label="Reels watched" />
+        <KpiTile icon="quiz" value={`${view.stats.accuracy}%`} label="Avg score" />
+        <KpiTile icon="schedule" value={`${view.stats.hours}h`} label="Hours" />
+        <KpiTile icon="military_tech" value={`${view.stats.wins} / ${view.stats.losses}`} label="Wins / Losses" />
+      </div>
+
+      {/* Left col: recent uploads + activity */}
+      <div className="space-y-md md:col-span-8">
+        <SectionHead title="Recent Uploads" onAction={() => onTab('uploads')} />
+        {view.docs.length === 0 ? (
+          <EmptyTile msg="No uploads yet." />
+        ) : (
+          <div className="grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-3">
+            {view.docs.slice(0, 3).map((d) => (
+              <UploadTile key={d.id} d={d} />
+            ))}
+          </div>
+        )}
+
+        <SectionHead title="Recent Activity" onAction={() => onTab('activity')} />
+        {recent.length === 0 ? (
+          <EmptyTile msg="No recent activity yet." />
+        ) : (
+          <ul className="space-y-2">
+            {recent.map((r) => (
+              <ActivityRow key={r.id} r={r} />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Right col: recently earned + privacy */}
+      <div className="space-y-md md:col-span-4">
+        <SectionHead title="Recently Earned" onAction={() => onTab('achievements')} />
+        <div className="space-y-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          {view.badges.slice(0, 3).map((b) => {
+            const meta = BADGE_CATALOG[b];
+            if (!meta) return null;
+            return (
+              <div key={b} className="flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary-container bg-surface-container text-2xl">
+                  {meta.glyph}
+                </div>
+                <div>
+                  <h4 className="text-label-md text-on-surface">{meta.label}</h4>
+                  <p className="text-label-sm text-on-surface-variant">{meta.description}</p>
+                </div>
+              </div>
+            );
+          })}
+          {view.badges.length === 0 && (
+            <p className="text-body-sm text-on-surface-variant">No badges yet — finish a quiz to earn your first.</p>
           )}
         </div>
-      </Panel>
+
+        <div className="rounded-xl border border-tertiary-container/40 bg-tertiary-container/15 p-md">
+          <div className="mb-2 flex items-center gap-2 text-on-tertiary-container">
+            <span className="material-symbols-outlined">info</span>
+            <span className="text-label-md font-bold">Privacy Status</span>
+          </div>
+          <p className="mb-md text-label-sm text-on-tertiary-fixed-variant">
+            Your profile is {social.profile?.is_public ? 'visible to everyone' : 'private to followers'}.
+          </p>
+          <Link to="/settings/privacy" className="text-label-sm font-bold text-on-tertiary-fixed underline">
+            Update Visibility
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
 
+function KpiTile({ icon, value, label }: { icon: string; value: string | number; label: string }) {
+  return (
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-center">
+      <span className="material-symbols-outlined mb-1 text-primary" aria-hidden>
+        {icon}
+      </span>
+      <div className="text-headline-sm text-on-surface tabular-nums">{String(value)}</div>
+      <div className="text-label-sm text-on-surface-variant">{label}</div>
+    </div>
+  );
+}
+
+function SectionHead({ title, onAction }: { title: string; onAction?: () => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <h3 className="text-headline-sm text-on-surface">{title}</h3>
+      {onAction && (
+        <button onClick={onAction} className="text-label-md text-primary hover:underline">
+          View all
+        </button>
+      )}
+    </div>
+  );
+}
+
+function UploadTile({ d }: { d: DocSummary & { subject: Subject } }) {
+  return (
+    <Link
+      to={`/doc/${encodeURIComponent(d.id)}`}
+      className="group block overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest transition-colors hover:border-primary/30"
+    >
+      <div
+        className="relative aspect-video"
+        style={{
+          background: `linear-gradient(135deg, hsl(${hashHue(d.title)} 65% 35%), hsl(${(hashHue(d.title) + 80) % 360} 65% 45%))`,
+        }}
+      >
+        <span className="absolute right-2 top-2 rounded bg-surface/90 px-2 py-0.5 text-label-sm text-on-surface shadow-sm">
+          {(d.source_type ?? 'doc').toUpperCase()}
+        </span>
+      </div>
+      <div className="p-md">
+        <p className="truncate text-label-md text-on-surface group-hover:text-primary">{d.title}</p>
+        <p className="text-label-sm text-on-surface-variant">{d.subject}</p>
+      </div>
+    </Link>
+  );
+}
+
+function ActivityRow({ r }: { r: { id: string; actor_username?: string; actor_avatar_seed?: string; verb: string; object_text: string; ts: string } }) {
+  return (
+    <li className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>bolt</span>
+      </div>
+      <div className="min-w-0 flex-1 text-body-md text-on-surface-variant">
+        <span className="font-bold text-on-surface">@{r.actor_username}</span> {r.verb}{' '}
+        <span className="font-bold text-on-surface">{r.object_text}</span>
+        <p className="mt-1 text-label-sm text-outline">{relTime(r.ts)}</p>
+      </div>
+    </li>
+  );
+}
+
+// ---- Other tabs (light-themed retrofit) ----
+
 function UploadsTab({ view }: { view: ProfileView }) {
   if (!view.docs.length) return <Empty msg={view.isSelfView ? 'No uploads yet.' : `@${view.username} hasn't published any uploads yet.`} />;
   return (
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-3">
       {view.docs.map((d) => (
-        <li key={d.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/75">{d.subject}</span>
-            <span className="ml-auto text-[10px] text-white/45">{new Date(d.created_at).toLocaleDateString()}</span>
-          </div>
-          <Link to={`/doc/${encodeURIComponent(d.id)}`} className="mt-1.5 block text-sm font-semibold text-white hover:text-primary-soft">{d.title}</Link>
-          <p className="mt-1 text-[11px] text-white/55 tabular-nums">
-            {d.counts.reel_script} reels · {d.counts.flashcard} flashcards · {d.counts.quiz} quizzes
-          </p>
+        <li key={d.id}>
+          <UploadTile d={d} />
         </li>
       ))}
     </ul>
@@ -723,18 +912,25 @@ function PathsTab({ view }: { view: ProfileView }) {
   if (!withPaths.length) {
     return (
       <Empty msg="No learning paths yet. Upload a document to generate one.">
-        <Link to="/paths" className="mt-3 inline-block text-primary">Open the paths page</Link>
+        <Link to="/paths" className="mt-3 inline-block text-primary hover:underline">Open the paths page</Link>
       </Empty>
     );
   }
   return (
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-gutter sm:grid-cols-2">
       {withPaths.map((d) => (
-        <li key={d.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-[10px] uppercase tracking-widest text-white/55">{d.subject}</p>
-          <Link to={`/doc/${encodeURIComponent(d.id)}`} className="mt-1 block text-sm font-semibold text-white">{d.title}</Link>
-          <p className="mt-1 text-[11px] text-white/55">{d.counts.learning_path_step} steps</p>
-          <Link to="/paths" className="mt-2 inline-block rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1 text-[11px] font-semibold text-white">Open path</Link>
+        <li key={d.id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">{d.subject}</p>
+          <Link to={`/doc/${encodeURIComponent(d.id)}`} className="mt-1 block text-label-md font-bold text-on-surface hover:text-primary">
+            {d.title}
+          </Link>
+          <p className="mt-1 text-label-sm text-on-surface-variant">{d.counts.learning_path_step} steps</p>
+          <Link
+            to="/paths"
+            className="mt-2 inline-block rounded-lg bg-primary-container px-3 py-1 text-label-sm font-bold text-on-primary-container"
+          >
+            Open path
+          </Link>
         </li>
       ))}
     </ul>
@@ -744,16 +940,16 @@ function PathsTab({ view }: { view: ProfileView }) {
 function AchievementsTab({ view }: { view: ProfileView }) {
   if (!view.badges.length) return <Empty msg="No badges yet." />;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-gutter sm:grid-cols-3">
       {view.badges.map((b) => {
         const meta = BADGE_CATALOG[b];
         if (!meta) return null;
         return (
-          <div key={b} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+          <div key={b} className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
             <span className="text-3xl">{meta.glyph}</span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">{meta.label}</p>
-              <p className="text-[11px] text-white/65">{meta.description}</p>
+              <p className="text-label-md font-bold text-on-surface">{meta.label}</p>
+              <p className="text-label-sm text-on-surface-variant">{meta.description}</p>
             </div>
           </div>
         );
@@ -769,9 +965,9 @@ function BookmarksTab({ view }: { view: ProfileView }) {
   return (
     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {social.bookmarks.map((id) => (
-        <li key={id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/75">
-          <span className="text-[10px] uppercase tracking-widest text-white/55">Artifact</span>
-          <p className="mt-1 font-mono text-[11px] text-white/85">{id}</p>
+        <li key={id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-label-sm text-on-surface-variant">
+          <span className="text-label-sm uppercase tracking-widest">Artifact</span>
+          <p className="mt-1 font-mono text-label-sm text-on-surface">{id}</p>
         </li>
       ))}
     </ul>
@@ -787,30 +983,37 @@ function ActivityTab({ view }: { view: ProfileView }) {
   if (view.isSelfView && social.profile?.hidden_activity) {
     return <Empty msg="You've hidden your activity. Re-enable in Privacy settings." />;
   }
-  return <ActivityListRows rows={rows} />;
+  return (
+    <ul className="space-y-2">
+      {rows.map((r) => <ActivityRow key={r.id} r={r} />)}
+    </ul>
+  );
 }
 
 function StatsTab({ view }: { view: ProfileView }) {
-  const items: { label: string; value: string | number }[] = [
-    { label: 'Documents uploaded', value: view.stats.uploads },
-    { label: 'Reels watched', value: view.stats.reels_watched },
-    { label: 'Stories completed', value: view.stats.stories_completed },
-    { label: 'Quizzes finished', value: view.stats.quizzes_finished },
-    { label: 'Flashcards reviewed', value: view.stats.flashcards_reviewed },
-    { label: 'Hours learned', value: `${view.stats.hours}h` },
-    { label: 'Accuracy', value: `${view.stats.accuracy}%` },
-    { label: 'Favourite subject', value: view.stats.favorite_subject ?? '—' },
-    { label: 'Longest streak', value: `${view.longest_streak}d` },
-    { label: 'Wins', value: view.stats.wins },
-    { label: 'Losses', value: view.stats.losses },
-    { label: 'Followers', value: view.followers },
+  const items: { label: string; value: string | number; icon: string }[] = [
+    { label: 'Documents uploaded', value: view.stats.uploads, icon: 'upload_file' },
+    { label: 'Reels watched', value: view.stats.reels_watched, icon: 'smart_display' },
+    { label: 'Quizzes finished', value: view.stats.quizzes_finished, icon: 'quiz' },
+    { label: 'Flashcards reviewed', value: view.stats.flashcards_reviewed, icon: 'style' },
+    { label: 'Hours learned', value: `${view.stats.hours}h`, icon: 'schedule' },
+    { label: 'Accuracy', value: `${view.stats.accuracy}%`, icon: 'target' },
+    { label: 'Favourite subject', value: view.stats.favorite_subject ?? '—', icon: 'star' },
+    { label: 'Longest streak', value: `${view.longest_streak}d`, icon: 'local_fire_department' },
+    { label: 'Wins', value: view.stats.wins, icon: 'military_tech' },
+    { label: 'Losses', value: view.stats.losses, icon: 'close' },
+    { label: 'Followers', value: view.followers, icon: 'group' },
+    { label: 'Following', value: view.following, icon: 'person_add' },
   ];
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <ul className="grid grid-cols-2 gap-gutter sm:grid-cols-3">
       {items.map((i) => (
-        <li key={i.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-[10px] uppercase tracking-widest text-white/55">{i.label}</p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-white">{String(i.value)}</p>
+        <li key={i.label} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: '20px' }}>{i.icon}</span>
+            <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">{i.label}</p>
+          </div>
+          <p className="text-headline-sm font-bold tabular-nums text-on-surface">{String(i.value)}</p>
         </li>
       ))}
     </ul>
@@ -821,7 +1024,7 @@ function FollowingTab({ view }: { view: ProfileView }) {
   if (view.followingList.length === 0) {
     return (
       <Empty msg={view.isSelfView ? "Not following anyone yet." : `@${view.username} doesn't follow anyone yet.`}>
-        {view.isSelfView && <Link to="/discover" className="mt-3 inline-block text-primary">Discover learners →</Link>}
+        {view.isSelfView && <Link to="/discover" className="mt-3 inline-block text-primary hover:underline">Discover learners →</Link>}
       </Empty>
     );
   }
@@ -843,12 +1046,22 @@ function ReelsTab({ view }: { view: ProfileView }) {
   );
   if (!reels.length) return <Empty msg={view.isSelfView ? 'No reels yet.' : `@${view.username} hasn't published any reels publicly.`} />;
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <ul className="grid grid-cols-2 gap-gutter sm:grid-cols-3">
       {reels.slice(0, 24).map((r) => (
-        <li key={`${r.docId}-${r.idx}`} className="aspect-[9/14] overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 p-3">
-          <p className="text-[10px] uppercase tracking-widest text-white/55">Reel {r.idx + 1}</p>
-          <p className="mt-1 line-clamp-3 text-xs font-semibold text-white">{r.title}</p>
-          <Link to={`/?doc=${encodeURIComponent(r.docId)}`} className="mt-2 inline-block text-[11px] text-primary-soft">Watch</Link>
+        <li
+          key={`${r.docId}-${r.idx}`}
+          className="aspect-[9/14] overflow-hidden rounded-xl text-white"
+          style={{
+            background: `linear-gradient(135deg, hsl(${hashHue(r.title)} 65% 35%), hsl(${(hashHue(r.title) + 80) % 360} 65% 45%))`,
+          }}
+        >
+          <div className="flex h-full flex-col justify-between p-md">
+            <p className="text-label-sm uppercase tracking-widest opacity-80">Reel {r.idx + 1}</p>
+            <div>
+              <p className="line-clamp-3 text-label-md font-bold">{r.title}</p>
+              <Link to={`/?doc=${encodeURIComponent(r.docId)}`} className="mt-2 inline-block text-label-sm underline opacity-90">Watch</Link>
+            </div>
+          </div>
         </li>
       ))}
     </ul>
@@ -865,23 +1078,26 @@ function QuizTab({ view }: { view: ProfileView }) {
   const social = useSocial();
   const myCh = view.isSelfView ? social.challenges : [];
   return (
-    <div className="space-y-3">
+    <div className="space-y-md">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <KpiCard label="Wins" value={view.stats.wins} glyph="🏆" />
-        <KpiCard label="Losses" value={view.stats.losses} glyph="✗" />
-        <KpiCard label="Win rate" value={`${rate}%`} glyph="🎯" />
-        <KpiCard label="Total" value={wr} glyph="⚔" />
+        <KpiTile icon="military_tech" value={view.stats.wins} label="Wins" />
+        <KpiTile icon="close" value={view.stats.losses} label="Losses" />
+        <KpiTile icon="target" value={`${rate}%`} label="Win rate" />
+        <KpiTile icon="swords" value={wr} label="Total" />
       </div>
-      <Panel title="Match history">
+      <div>
+        <h3 className="mb-md text-headline-sm text-on-surface">Match history</h3>
         {myCh.length ? (
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {myCh.slice(0, 12).map((c) => (
-              <li key={c.id} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs">
-                <span className="font-semibold text-white">@{(c.to?.username ?? c.from?.username) ?? '—'}</span>
-                <span className="text-white/55">· {c.mode}</span>
-                <span className="ml-auto rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest border-white/15 bg-white/[0.04]">{c.status}</span>
+              <li key={c.id} className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-body-sm">
+                <span className="font-bold text-on-surface">@{(c.to?.username ?? c.from?.username) ?? '—'}</span>
+                <span className="text-on-surface-variant">· {c.mode}</span>
+                <span className="ml-auto rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-label-sm uppercase tracking-widest text-on-surface-variant">
+                  {c.status}
+                </span>
                 {c.status === 'finished' && c.wins_from != null && c.wins_to != null && (
-                  <span className="text-[11px] text-white/65 tabular-nums">{c.wins_from} – {c.wins_to}</span>
+                  <span className="text-label-sm tabular-nums text-on-surface-variant">{c.wins_from} – {c.wins_to}</span>
                 )}
               </li>
             ))}
@@ -889,80 +1105,44 @@ function QuizTab({ view }: { view: ProfileView }) {
         ) : (
           <Empty msg="No matches yet. Challenge someone to start your record." />
         )}
-      </Panel>
+      </div>
     </div>
   );
 }
 
 function LeaderboardTab({ view }: { view: ProfileView }) {
   return (
-    <Panel title="Leaderboard" right={<Link to="/leaderboard" className="text-[11px] text-primary">Full board →</Link>}>
-      <p className="text-xs text-white/65">
-        @{view.username} ranks by XP: {view.xp.toLocaleString()}. Visit the full leaderboard for live
-        rankings across global, friends, college, and subject scopes.
-      </p>
-    </Panel>
-  );
-}
-
-// ---- Shared ----
-
-function Panel({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section>
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-white/55">{title}</h3>
-        {right}
+        <h3 className="text-headline-sm text-on-surface">Leaderboard</h3>
+        <Link to="/leaderboard" className="text-label-md text-primary hover:underline">
+          Full board →
+        </Link>
       </div>
-      <div className="rounded-2xl border border-white/10 bg-card/40 p-3">{children}</div>
-    </section>
-  );
-}
-
-function JumpLink({ label, onClick }: { label: string; onClick: () => void }) {
-  return <button onClick={onClick} className="text-[11px] text-primary hover:underline">{label}</button>;
-}
-
-function KpiCard({ label, value, glyph }: { label: string; value: string | number; glyph: string }) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-      <span className="absolute right-2 top-2 text-base opacity-70">{glyph}</span>
-      <p className="text-[10px] uppercase tracking-widest text-white/55">{label}</p>
-      <p className="mt-1 text-xl font-bold tabular-nums text-white">{String(value)}</p>
+      <p className="text-body-sm text-on-surface-variant">
+        @{view.username} ranks by XP: <span className="font-bold text-on-surface">{view.xp.toLocaleString()}</span>.
+        Visit the full leaderboard for live rankings across global, friends, college, and subject scopes.
+      </p>
     </div>
   );
 }
 
-function BadgeRow({ badges }: { badges: string[] }) {
-  if (!badges.length) return <p className="text-xs text-white/55">No badges yet.</p>;
-  return (
-    <ul className="flex flex-wrap gap-2">
-      {badges.map((b) => {
-        const meta = BADGE_CATALOG[b];
-        if (!meta) return null;
-        return (
-          <li key={b} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs">
-            <span className="text-base">{meta.glyph}</span>
-            <span className="font-semibold text-white">{meta.label}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+// ---- Shared building blocks ----
 
 function UserList({ users }: { users: ProfileLite[] }) {
   if (!users.length) return <Empty msg="No users to show." />;
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2">
       {users.map((u) => (
-        <li key={u.user_id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <Avatar seed={u.avatar_seed || u.user_id} username={u.username} size={36} />
+        <li key={u.user_id} className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          <Avatar seed={u.avatar_seed || u.user_id} username={u.username} size={40} />
           <div className="min-w-0 flex-1">
-            <Link to={`/u/${u.username}`} className="text-sm font-semibold text-white hover:text-primary-soft">
+            <Link to={`/u/${u.username}`} className="text-label-md font-bold text-on-surface hover:text-primary">
               {u.display_name || u.username}
             </Link>
-            <p className="truncate text-[11px] text-white/55">@{u.username}{u.college ? ` · ${u.college}` : ''}</p>
+            <p className="truncate text-label-sm text-on-surface-variant">
+              @{u.username}{u.college ? ` · ${u.college}` : ''}
+            </p>
           </div>
           <FollowButton username={u.username} />
         </li>
@@ -978,30 +1158,31 @@ function FollowButton({ username }: { username: string }) {
     <button
       onClick={async () => { setBusy(true); try { await toggleFollow(username); } finally { setBusy(false); } }}
       disabled={busy}
-      className={`rounded-full px-3 py-1 text-[11px] font-semibold disabled:opacity-50 ${
-        following ? 'border border-white/15 bg-white/[0.06] text-white' : 'bg-gradient-to-br from-primary via-secondary to-accent text-white'
-      }`}
+      className={
+        following
+          ? 'rounded-full border border-outline-variant bg-surface-container px-3 py-1 text-label-sm font-bold text-on-surface disabled:opacity-50'
+          : 'rounded-full bg-primary-container px-3 py-1 text-label-sm font-bold text-on-primary-container disabled:opacity-50'
+      }
     >
       {following ? 'Following' : 'Follow'}
     </button>
   );
 }
 
-function ActivityListRows({ rows }: { rows: { id: string; actor_username?: string; actor_avatar_seed?: string; actor_display_name?: string; verb: string; object_text: string; ts: string }[] }) {
-  if (!rows.length) return <p className="text-xs text-white/55">No activity yet.</p>;
+function Empty({ msg, children }: { msg: string; children?: ReactNode }) {
   return (
-    <ul className="space-y-1.5">
-      {rows.map((r) => (
-        <li key={r.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <Avatar seed={r.actor_avatar_seed || r.actor_username || 'x'} username={r.actor_username} size={28} />
-          <div className="min-w-0 flex-1 text-xs text-white/85">
-            <Link to={`/u/${r.actor_username}`} className="font-semibold text-white hover:text-primary-soft">@{r.actor_username}</Link>{' '}
-            {r.verb} <span className="font-semibold text-white">{r.object_text}</span>
-            <p className="text-[10px] text-white/45">{relTime(r.ts)}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="rounded-xl border border-dashed border-outline-variant p-xl text-center text-body-sm text-on-surface-variant">
+      {msg}
+      {children}
+    </div>
+  );
+}
+
+function EmptyTile({ msg }: { msg: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-outline-variant p-md text-center text-label-sm text-on-surface-variant">
+      {msg}
+    </div>
   );
 }
 
@@ -1016,41 +1197,38 @@ function relTime(iso: string): string {
   return `${d}d ago`;
 }
 
-function Empty({ msg, children }: { msg: string; children?: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/55">
-      {msg}
-      {children}
-    </div>
-  );
+function hashHue(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 360;
 }
 
 function ProfileLoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-24" aria-busy="true">
-      <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-card/40 p-5 shadow-soft">
-        <div className="flex flex-wrap items-start gap-5">
-          <span className="h-[88px] w-[88px] animate-pulse rounded-full bg-white/10" />
+    <div className="mx-auto max-w-4xl px-md py-md" aria-busy="true">
+      <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+        <div className="flex flex-wrap items-start gap-md">
+          <span className="h-[120px] w-[120px] animate-pulse rounded-full bg-surface-container" />
           <div className="min-w-0 flex-1 space-y-3">
-            <span className="block h-5 w-1/3 animate-pulse rounded-full bg-white/10" />
-            <span className="block h-3 w-1/4 animate-pulse rounded-full bg-white/[0.06]" />
-            <span className="block h-3 w-2/3 animate-pulse rounded-full bg-white/[0.06]" />
+            <span className="block h-6 w-1/3 animate-pulse rounded-full bg-surface-container" />
+            <span className="block h-4 w-1/4 animate-pulse rounded-full bg-surface-container-low" />
+            <span className="block h-4 w-2/3 animate-pulse rounded-full bg-surface-container-low" />
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <span key={i} className="block h-10 animate-pulse rounded-xl bg-white/[0.05]" />
+                <span key={i} className="block h-12 animate-pulse rounded-lg bg-surface-container-low" />
               ))}
             </div>
           </div>
         </div>
-      </header>
-      <div className="mt-4 flex gap-2 overflow-hidden">
+      </section>
+      <div className="mt-md flex gap-2 overflow-hidden">
         {Array.from({ length: 6 }).map((_, i) => (
-          <span key={i} className="h-7 w-20 animate-pulse rounded-full bg-white/[0.06]" />
+          <span key={i} className="h-7 w-20 animate-pulse rounded-full bg-surface-container-low" />
         ))}
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-md grid grid-cols-2 gap-2 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <span key={i} className="block h-16 animate-pulse rounded-2xl bg-white/[0.04]" />
+          <span key={i} className="block h-20 animate-pulse rounded-xl bg-surface-container-low" />
         ))}
       </div>
     </div>

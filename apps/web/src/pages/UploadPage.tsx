@@ -5,21 +5,21 @@ import { subscribeStatus, type IngestStatus } from '@/lib/ingestStatus';
 import { fetchDocuments, type DocSummary } from '@/lib/dashboard';
 import { supabase } from '@/lib/supabase';
 
+// Create / Upload hub on the new clinical light theme. Matches the mockup
+// `home/create.html` for the drag-drop card + file-type shortcuts + recent
+// activity layout. All ingest wiring is preserved from the prior version
+// (upload → SSE status stream → refresh recent docs on ready).
+
 const ACCEPT = '.pdf,.docx,.pptx,.mp3,.m4a,.wav,.ogg,.webm,.flac,.txt,.md';
 
-const FORMAT_GROUPS: { label: string; items: string[] }[] = [
-  { label: 'Docs', items: ['PDF', 'DOCX', 'PPTX'] },
-  { label: 'Audio', items: ['MP3', 'M4A', 'WAV', 'OGG', 'FLAC'] },
-  { label: 'Text', items: ['TXT', 'MD'] },
+const FILE_SHORTCUTS: { icon: string; color: string; label: string }[] = [
+  { icon: 'picture_as_pdf', color: 'text-primary', label: 'Lecture PDF' },
+  { icon: 'present_to_all', color: 'text-secondary', label: 'Slide Deck' },
+  { icon: 'mic', color: 'text-tertiary', label: 'Audio Note' },
+  { icon: 'description', color: 'text-primary', label: 'Notes / DOCX' },
 ];
 
-const STEPS: IngestStatus[] = [
-  'uploaded',
-  'parsing',
-  'embedding',
-  'generating',
-  'ready',
-];
+const STEPS: IngestStatus[] = ['uploaded', 'parsing', 'embedding', 'generating', 'ready'];
 
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,9 +41,7 @@ export default function UploadPage() {
         try {
           const res = await fetchDocuments(uid);
           setRecent(res.items.slice(0, 5));
-        } catch {
-          /* ignore */
-        }
+        } catch { /* ignore */ }
       }
     })();
   }, []);
@@ -76,147 +74,162 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-32 pt-24">
-      <header className="mb-6 text-center">
-        <h1 className="text-balance text-3xl font-bold tracking-tight text-white">
-          Upload your material
-        </h1>
-        <p className="mt-2 text-balance text-sm text-white/55">
-          Drop in a PDF, lecture audio, or notes. We'll parse, chunk, and turn it into reels,
-          flashcards, and quizzes.
-        </p>
-      </header>
+    <div className="mx-auto max-w-4xl px-md py-md">
+      {/* Hero / drop card */}
+      <section className="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-card md:p-lg">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary-fixed/30 blur-3xl" />
+        <div className="relative">
+          <div className="mb-md text-center md:mb-lg">
+            <h1 className="mb-2 text-headline-lg text-on-surface">Transform your materials</h1>
+            <p className="mx-auto max-w-lg text-body-md text-on-surface-variant">
+              Upload any document, presentation, or lecture audio. We parse, chunk, and turn it into
+              study reels, flashcards, and quizzes.
+            </p>
+          </div>
 
-      <section className="relative">
-        <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-brand-soft opacity-60 blur-2xl" />
-        <label
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) void handleFile(f);
-          }}
-          className={`group relative block cursor-pointer overflow-hidden rounded-3xl border-2 border-dashed p-10 text-center shadow-soft transition-all duration-300 ${
-            dragOver
-              ? 'scale-[1.01] border-primary bg-primary/10 shadow-glow'
-              : 'border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]'
-          }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
+          <label
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
               if (f) void handleFile(f);
             }}
-          />
-
-          <div className="flex flex-col items-center gap-4">
-            <DropIcon active={dragOver || busy} />
+            className={
+              dragOver
+                ? 'group flex cursor-pointer flex-col items-center gap-md rounded-xl border-2 border-dashed border-primary bg-primary/5 p-xl text-center transition-all'
+                : 'group flex cursor-pointer flex-col items-center gap-md rounded-xl border-2 border-dashed border-outline-variant p-xl text-center transition-all hover:border-primary hover:bg-primary/5'
+            }
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleFile(f);
+              }}
+            />
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-container text-on-primary-container transition-transform group-hover:scale-110">
+              <span className="material-symbols-outlined" style={{ fontSize: '40px' }} aria-hidden>
+                cloud_upload
+              </span>
+            </div>
             <div>
-              <p className="text-base font-semibold text-white">
-                {busy ? 'Processing your file…' : dragOver ? 'Drop to upload' : 'Drag & drop or click to choose'}
+              <p className="text-headline-sm text-on-surface">
+                {busy ? 'Processing your file…' : dragOver ? 'Drop to upload' : 'Drag & drop files here'}
               </p>
-              <p className="mt-1 text-xs text-white/55">
-                Up to ~50 MB · single file at a time
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                PDF, PPTX, DOCX, MP3, M4A, WAV, TXT · up to ~50 MB
               </p>
             </div>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); inputRef.current?.click(); }}
+              className="rounded-full bg-primary px-lg py-sm text-label-md font-bold text-on-primary shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Browse Files
+            </button>
+          </label>
 
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
-              {FORMAT_GROUPS.flatMap((g) => g.items).map((fmt) => (
-                <span
-                  key={fmt}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/65"
-                >
-                  {fmt}
+          {/* File-type shortcut chips */}
+          <div className="mt-md grid grid-cols-2 gap-base md:grid-cols-4">
+            {FILE_SHORTCUTS.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="flex items-center gap-sm rounded-xl border border-outline-variant/40 bg-surface-container p-sm transition-colors hover:border-primary/50"
+              >
+                <span className={`material-symbols-outlined ${s.color}`} aria-hidden>
+                  {s.icon}
                 </span>
-              ))}
-            </div>
+                <span className="text-label-sm font-bold text-on-surface-variant">{s.label}</span>
+              </button>
+            ))}
           </div>
-        </label>
+        </div>
       </section>
 
+      {/* Active processing card */}
       {(status || error) && (
-        <section className="mt-6 rounded-3xl border border-white/10 bg-card/80 p-5 shadow-soft">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-white/55">Now processing</p>
-              <p className="truncate text-sm font-semibold text-white">{fileName ?? 'Your file'}</p>
+        <section className="mt-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-card">
+          <div className="mb-md flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">Now processing</p>
+              <p className="truncate text-label-md font-bold text-on-surface">{fileName ?? 'Your file'}</p>
             </div>
             {status && (
-              <span
-                className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${statusTone(
-                  status,
-                )}`}
-              >
+              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-label-sm font-bold uppercase tracking-widest ${statusTone(status)}`}>
                 {status === 'ready' ? 'Ready' : status === 'error' ? 'Error' : 'Working'}
               </span>
             )}
           </div>
           {status && <StatusTimeline current={status} />}
           {docId && status === 'ready' && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-md flex flex-wrap gap-2">
               <Link
                 to="/"
-                className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-4 py-2 text-xs font-semibold text-white shadow-glow"
+                className="inline-flex items-center gap-1 rounded-lg bg-primary-container px-4 py-2 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
               >
-                Open feed →
+                Open feed
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden>arrow_forward</span>
               </Link>
               <Link
                 to={`/doc/${encodeURIComponent(docId)}`}
-                className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10"
+                className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-surface-container px-4 py-2 text-label-md font-bold text-on-surface transition-colors hover:bg-surface-container-high"
               >
                 Open Chapter Hub
               </Link>
             </div>
           )}
           {error && (
-            <p className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/10 p-2.5 text-sm text-rose-200">
+            <p className="mt-md rounded-lg border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container">
               {error}
             </p>
           )}
         </section>
       )}
 
+      {/* Recent activity */}
       {recent.length > 0 && (
-        <section className="mt-8">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs uppercase tracking-widest text-white/55">Recent uploads</h2>
-            <Link to="/dashboard" className="text-xs text-white/55 hover:text-white">
-              See all →
+        <section className="mt-lg">
+          <div className="mb-md flex items-end justify-between">
+            <div>
+              <h2 className="text-headline-sm text-on-surface">Recent activity</h2>
+              <p className="text-body-sm text-on-surface-variant">Track your content generation status</p>
+            </div>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1 text-label-md text-primary hover:underline"
+            >
+              View history
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden>arrow_forward</span>
             </Link>
           </div>
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 gap-md md:grid-cols-2">
             {recent.map((d) => (
               <li
                 key={d.id}
-                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-3 transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:shadow-soft"
+                className="rounded-xl border border-outline-variant bg-surface p-md transition-colors hover:border-primary/40"
               >
-                <Link to={`/doc/${encodeURIComponent(d.id)}`} className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 text-base">
-                    {iconFor(d.source_type)}
+                <Link to={`/doc/${encodeURIComponent(d.id)}`} className="flex items-start gap-md">
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg(d.source_type)}`}>
+                    <span className="material-symbols-outlined" aria-hidden>{iconFor(d.source_type)}</span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{d.title}</p>
-                    <p className="text-[11px] text-white/50">
-                      {new Date(d.created_at).toLocaleDateString()} ·{' '}
-                      {d.counts.total} items
-                    </p>
+                  <div className="min-w-0 flex-1 space-y-base">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate pr-4 text-label-md font-bold text-on-surface">{d.title}</p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${statusTone(d.status as IngestStatus)}`}>
+                        {d.status}
+                      </span>
+                    </div>
+                    <div className="text-label-sm text-on-surface-variant">
+                      {new Date(d.created_at).toLocaleDateString()} · {d.counts.total} items
+                    </div>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${statusTone(
-                      d.status as IngestStatus,
-                    )}`}
-                  >
-                    {d.status}
-                  </span>
                 </Link>
               </li>
             ))}
@@ -227,36 +240,10 @@ export default function UploadPage() {
   );
 }
 
-function DropIcon({ active }: { active: boolean }) {
-  return (
-    <div
-      className={`relative flex h-20 w-20 items-center justify-center rounded-2xl transition-all duration-300 ${
-        active
-          ? 'bg-gradient-to-br from-primary/40 via-secondary/30 to-accent/40 shadow-glow'
-          : 'bg-white/[0.04]'
-      }`}
-    >
-      <svg
-        className={`h-9 w-9 text-white transition-transform duration-300 ${active ? '-translate-y-0.5' : 'group-hover:-translate-y-0.5'}`}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 17V5" />
-        <path d="m6 11 6-6 6 6" />
-        <path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" />
-      </svg>
-    </div>
-  );
-}
-
 function StatusTimeline({ current }: { current: IngestStatus }) {
   const currentIdx = STEPS.indexOf(current);
   return (
-    <ol className="relative space-y-3 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-white/10">
+    <ol className="relative space-y-3 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-outline-variant">
       {STEPS.map((s) => {
         const idx = STEPS.indexOf(s);
         const reached = idx <= currentIdx || current === 'ready';
@@ -264,22 +251,22 @@ function StatusTimeline({ current }: { current: IngestStatus }) {
         return (
           <li key={s} className="relative flex items-center gap-3">
             <span
-              className={`relative z-10 flex h-4 w-4 items-center justify-center rounded-full transition-colors ${
+              className={
                 reached
-                  ? 'bg-gradient-to-br from-primary to-accent shadow-glow'
-                  : 'bg-white/10'
-              }`}
+                  ? 'relative z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary shadow-[0_0_0_3px_rgba(0,106,97,0.18)]'
+                  : 'relative z-10 flex h-4 w-4 items-center justify-center rounded-full bg-surface-container border border-outline-variant'
+              }
             >
               {isCurrent && (
-                <span className="absolute inset-0 -m-0.5 animate-ping rounded-full bg-accent/40" />
+                <span className="absolute inset-0 -m-0.5 animate-ping rounded-full bg-primary/40" />
               )}
               {reached && !isCurrent && (
-                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <span className="material-symbols-outlined text-on-primary" style={{ fontSize: '12px', fontVariationSettings: "'FILL' 1" }}>
+                  check
+                </span>
               )}
             </span>
-            <span className={`text-sm ${reached ? 'text-white' : 'text-white/45'}`}>
+            <span className={reached ? 'text-body-md text-on-surface' : 'text-body-md text-on-surface-variant'}>
               {labelFor(s)}
             </span>
           </li>
@@ -289,7 +276,7 @@ function StatusTimeline({ current }: { current: IngestStatus }) {
   );
 }
 
-function labelFor(s: IngestStatus) {
+function labelFor(s: IngestStatus): string {
   switch (s) {
     case 'uploaded':
       return 'Uploaded';
@@ -309,16 +296,26 @@ function labelFor(s: IngestStatus) {
 }
 
 function statusTone(s: IngestStatus): string {
-  if (s === 'ready') return 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200';
-  if (s === 'error') return 'border-rose-400/30 bg-rose-500/15 text-rose-200';
-  return 'border-amber-400/30 bg-amber-500/15 text-amber-100';
+  if (s === 'ready') return 'bg-secondary-container/40 text-on-secondary-container';
+  if (s === 'error') return 'bg-error-container/40 text-on-error-container';
+  return 'bg-primary-container/30 text-on-primary-container';
 }
 
 function iconFor(sourceType: string): string {
-  if (/audio/i.test(sourceType)) return '🎧';
-  if (/pdf/i.test(sourceType)) return '📕';
-  if (/doc|docx/i.test(sourceType)) return '📄';
-  if (/ppt|pptx/i.test(sourceType)) return '📊';
-  if (/md|markdown|txt/i.test(sourceType)) return '📝';
-  return '📁';
+  if (/audio|mp3|m4a|wav|ogg|flac/i.test(sourceType)) return 'headphones';
+  if (/pdf/i.test(sourceType)) return 'picture_as_pdf';
+  if (/ppt|pptx/i.test(sourceType)) return 'present_to_all';
+  if (/md|markdown|txt/i.test(sourceType)) return 'description';
+  if (/doc|docx/i.test(sourceType)) return 'description';
+  return 'draft';
+}
+
+function iconBg(sourceType: string): string {
+  if (/audio|mp3|m4a|wav|ogg|flac/i.test(sourceType)) {
+    return 'bg-secondary-container text-on-secondary-container';
+  }
+  if (/ppt|pptx/i.test(sourceType)) {
+    return 'bg-tertiary-container text-on-tertiary-container';
+  }
+  return 'bg-primary-container text-on-primary-container';
 }

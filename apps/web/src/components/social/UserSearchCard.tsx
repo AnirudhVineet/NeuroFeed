@@ -25,49 +25,35 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
   const friend = isFriend(user.username);
 
   const handleToggleFollow = async () => {
-    setBusy('follow');
-    setErr(null);
-    try {
-      await toggleFollow(user.username);
-    } catch (e) {
-      setErr(friendlyError(e));
-    } finally {
-      setBusy(null);
-    }
+    setBusy('follow'); setErr(null);
+    try { await toggleFollow(user.username); }
+    catch (e) { setErr(friendlyError(e)); }
+    finally { setBusy(null); }
   };
 
   const handleSendFriend = async () => {
-    setBusy('friend');
-    setErr(null);
+    setBusy('friend'); setErr(null);
     try {
       await sendFriendRequest(user.username);
       setFlash('Friend request sent');
       setTimeout(() => setFlash(null), 1800);
-    } catch (e) {
-      setErr(friendlyError(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const openChallenge = () => {
-    setErr(null);
-    setChallengeOpen(true);
+    } catch (e) { setErr(friendlyError(e)); }
+    finally { setBusy(null); }
   };
 
   if (variant === 'compact') {
     return (
-      <li className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <li className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
         <div className="flex items-center gap-2">
           <Avatar seed={user.avatar_seed || user.user_id} username={user.username} size={36} />
           <div className="min-w-0 flex-1">
-            <Link to={`/u/${user.username}`} className="block truncate text-sm font-semibold text-white">
+            <Link to={`/u/${user.username}`} className="block truncate text-label-md font-bold text-on-surface hover:text-primary">
               {user.display_name || user.username}
             </Link>
-            <p className="truncate text-[10px] text-white/55">@{user.username}</p>
+            <p className="truncate text-label-sm text-on-surface-variant">@{user.username}</p>
           </div>
         </div>
-        <p className="mt-1.5 flex flex-wrap gap-x-2 text-[10px] text-white/65">
+        <p className="mt-1.5 flex flex-wrap gap-x-2 text-label-sm text-on-surface-variant">
           <span>L{user.level}</span>
           <span>· {user.xp.toLocaleString()} XP</span>
           <span>· {user.streak}d 🔥</span>
@@ -75,41 +61,38 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
         <button
           onClick={handleToggleFollow}
           disabled={busy !== null}
-          className={`mt-2 w-full rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-50 ${
+          className={
             following
-              ? 'border border-white/15 bg-white/[0.06] text-white'
-              : 'bg-gradient-to-br from-primary via-secondary to-accent text-white shadow-glow'
-          }`}
+              ? 'mt-2 w-full rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm font-bold text-on-surface disabled:opacity-50'
+              : 'mt-2 w-full rounded-full bg-primary-container px-3 py-1.5 text-label-sm font-bold text-on-primary-container disabled:opacity-50'
+          }
         >
           {busy === 'follow' ? '…' : following ? 'Following' : 'Follow'}
         </button>
-        {err && <p className="mt-1 text-[10px] text-rose-300">{err}</p>}
+        {err && <p className="mt-1 text-label-sm text-error">{err}</p>}
       </li>
     );
   }
 
   return (
-    <li className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+    <li className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
       <div className="flex flex-wrap items-center gap-3">
         <Avatar seed={user.avatar_seed || user.user_id} username={user.username} size={48} />
         <div className="min-w-0 flex-1">
-          <Link
-            to={`/u/${user.username}`}
-            className="block text-sm font-semibold text-white hover:text-primary-soft"
-          >
+          <Link to={`/u/${user.username}`} className="block text-label-md font-bold text-on-surface hover:text-primary">
             {user.display_name || user.username}
           </Link>
-          <p className="truncate text-[11px] text-white/55">
+          <p className="truncate text-label-sm text-on-surface-variant">
             @{user.username}
             {user.college ? ` · ${user.college}` : ''}
           </p>
-          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] tabular-nums text-white/75">
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5">L{user.level}</span>
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5">{user.xp.toLocaleString()} XP</span>
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5">{user.streak}d 🔥</span>
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5">{user.followers_count} followers</span>
+          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-label-sm tabular-nums text-on-surface-variant">
+            <span className="rounded-full bg-surface-container px-2 py-0.5">L{user.level}</span>
+            <span className="rounded-full bg-surface-container px-2 py-0.5">{user.xp.toLocaleString()} XP</span>
+            <span className="rounded-full bg-surface-container px-2 py-0.5">{user.streak}d 🔥</span>
+            <span className="rounded-full bg-surface-container px-2 py-0.5">{user.followers_count} followers</span>
             {user.mutual_followers_count > 0 && (
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary-soft">
+              <span className="rounded-full border border-primary/30 bg-primary-container/40 px-2 py-0.5 text-on-primary-container">
                 {user.mutual_followers_count} mutual
               </span>
             )}
@@ -118,18 +101,13 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
           {(user.subjects ?? []).length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {(user.subjects ?? []).slice(0, 5).map((s) => (
-                <span
-                  key={s}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
-                >
+                <span key={s} className="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-label-sm text-on-surface-variant">
                   {s}
                 </span>
               ))}
             </div>
           )}
-          {user.bio && (
-            <p className="mt-1.5 line-clamp-2 text-[11px] text-white/65">{user.bio}</p>
-          )}
+          {user.bio && <p className="mt-1.5 line-clamp-2 text-label-sm text-on-surface-variant">{user.bio}</p>}
         </div>
       </div>
 
@@ -137,11 +115,11 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
         <button
           onClick={handleToggleFollow}
           disabled={busy !== null}
-          className={`rounded-full px-3 py-1.5 text-[11px] font-semibold disabled:opacity-50 ${
+          className={
             following
-              ? 'border border-white/15 bg-white/[0.06] text-white'
-              : 'bg-gradient-to-br from-primary via-secondary to-accent text-white shadow-glow'
-          }`}
+              ? 'rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm font-bold text-on-surface disabled:opacity-50'
+              : 'rounded-full bg-primary-container px-3 py-1.5 text-label-sm font-bold text-on-primary-container disabled:opacity-50'
+          }
         >
           {busy === 'follow' ? '…' : following ? 'Following' : 'Follow'}
         </button>
@@ -149,37 +127,28 @@ export function UserSearchCard({ user, variant = 'row' }: Props) {
           <button
             onClick={handleSendFriend}
             disabled={busy !== null}
-            className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-white/85 hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
           >
             {busy === 'friend' ? '…' : '+ Friend'}
           </button>
         )}
         <button
-          onClick={openChallenge}
-          className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-white"
+          onClick={() => { setErr(null); setChallengeOpen(true); }}
+          className="inline-flex items-center gap-1 rounded-full bg-tertiary-container/40 px-3 py-1.5 text-label-sm font-bold text-on-tertiary-container"
         >
-          ⚔ Challenge
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>swords</span>
+          Challenge
         </button>
         <Link
           to={`/u/${user.username}`}
-          className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/85 hover:bg-white/10"
+          className="rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm text-on-surface hover:bg-surface-container-high"
         >
           View profile
-        </Link>
-        <Link
-          to={`/u/${user.username}#uploads`}
-          className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/85 hover:bg-white/10"
-        >
-          Uploads
         </Link>
       </div>
 
       {(err || flash) && (
-        <p
-          className={`mt-2 text-[11px] ${
-            err ? 'text-rose-300' : 'text-emerald-200'
-          }`}
-        >
+        <p className={`mt-2 text-label-sm ${err ? 'text-error' : 'text-primary'}`}>
           {err ?? flash}
         </p>
       )}
@@ -211,11 +180,11 @@ function LastActive({ iso }: { iso?: string | null }) {
   const fresh = m < 5;
   return (
     <span
-      className={`rounded-full px-2 py-0.5 ${
+      className={
         fresh
-          ? 'border border-emerald-400/30 bg-emerald-500/10 text-emerald-100'
-          : 'bg-white/[0.06] text-white/70'
-      }`}
+          ? 'rounded-full border border-primary/40 bg-primary-container/40 px-2 py-0.5 text-on-primary-container'
+          : 'rounded-full bg-surface-container px-2 py-0.5 text-on-surface-variant'
+      }
     >
       {fresh ? '● ' : ''}
       {text}

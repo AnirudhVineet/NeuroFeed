@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { AuthShell, IconField } from './AuthPage';
 
 // Landing page for the password-reset email link. Supabase places a recovery
 // token in the URL hash and the JS client auto-creates a recovery session on
@@ -19,10 +20,10 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // Two paths into "ready":
-    // 1. The PASSWORD_RECOVERY event fires while we're mounted (typical for
-    //    fresh email-link landings — the SDK parses the URL hash on load).
-    // 2. The session is already present (already-recovered tab / direct nav
-    //    while signed in).
+    //   1. The PASSWORD_RECOVERY event fires while we're mounted (typical for
+    //      fresh email-link landings — the SDK parses the URL hash on load).
+    //   2. The session is already present (already-recovered tab / direct nav
+    //      while signed in).
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
@@ -60,32 +61,31 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col justify-center px-6 py-10">
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Set a new password</h1>
-        <p className="mt-1 text-sm text-muted">
-          Pick a new password for your NeuroFeed account.
-        </p>
-      </div>
-
+    <AuthShell
+      title="Set a new password"
+      subtitle="Pick a new password for your NeuroFeed account."
+    >
       {checking ? (
-        <p className="text-center text-sm text-white/55">Loading…</p>
+        <p className="text-center text-body-sm text-on-surface-variant">Loading…</p>
       ) : !ready ? (
         <div className="space-y-3 text-center">
-          <p className="rounded-lg border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+          <p className="rounded-lg border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container">
             Your reset link is invalid or has expired. Request a new one from the sign-in page.
           </p>
           <button
             onClick={() => navigate('/auth', { replace: true })}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-container px-4 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
           >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
             Back to sign in
           </button>
         </div>
       ) : (
-        <form onSubmit={submit} className="space-y-3">
-          <Field
+        <form onSubmit={submit} className="space-y-md">
+          <IconField
+            id="new-password"
             label="New password"
+            icon="lock"
             type="password"
             required
             minLength={6}
@@ -94,8 +94,10 @@ export default function ResetPasswordPage() {
             onChange={setPassword}
             placeholder="At least 6 characters"
           />
-          <Field
+          <IconField
+            id="confirm-password"
             label="Confirm new password"
+            icon="lock_reset"
             type="password"
             required
             minLength={6}
@@ -107,41 +109,32 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={busy || !password || !confirm}
-            className="w-full rounded-xl bg-accent py-3 font-semibold text-white disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-4 py-3 text-label-md font-bold text-on-primary-container shadow-sm transition-all hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? 'Updating…' : 'Update password'}
+            {busy ? (
+              <>
+                <span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>progress_activity</span>
+                Updating…
+              </>
+            ) : (
+              <>
+                Update password
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden>check</span>
+              </>
+            )}
           </button>
           {err && (
-            <p className="rounded-lg border border-rose-400/30 bg-rose-500/10 p-2 text-sm text-rose-200">{err}</p>
+            <p className="rounded-lg border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container">
+              {err}
+            </p>
           )}
           {info && (
-            <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-2 text-sm text-emerald-100">{info}</p>
+            <p className="rounded-lg border border-primary/20 bg-secondary-container/40 p-3 text-body-sm text-on-secondary-container">
+              {info}
+            </p>
           )}
         </form>
       )}
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  ...rest
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs uppercase tracking-widest text-white/55">{label}</span>
-      <input
-        {...rest}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none placeholder:text-white/35 focus:border-accent focus:ring-2 focus:ring-accent/30"
-      />
-    </label>
+    </AuthShell>
   );
 }

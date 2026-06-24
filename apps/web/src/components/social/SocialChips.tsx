@@ -1,30 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
 
-const LINKS: { to: string; label: string; glyph: string }[] = [
-  { to: '/discover', label: 'Discover', glyph: '🔭' },
-  { to: '/friends', label: 'Friends', glyph: '👥' },
-  { to: '/activity', label: 'Activity', glyph: '⏱' },
-  { to: '/leaderboard', label: 'Leaderboard', glyph: '🏆' },
-  { to: '/badges', label: 'Badges', glyph: '🏅' },
+const LINKS: { to: string; label: string; icon: string }[] = [
+  { to: '/discover', label: 'Discover', icon: 'search' },
+  { to: '/friends', label: 'Friends', icon: 'group' },
+  { to: '/activity', label: 'Activity', icon: 'history' },
+  { to: '/leaderboard', label: 'Leaderboard', icon: 'leaderboard' },
+  { to: '/badges', label: 'Badges', icon: 'military_tech' },
 ];
 
 export function SocialChips() {
   const { pathname } = useLocation();
   return (
-    <nav className="mb-4 flex flex-wrap gap-1.5">
+    <nav className="mb-md flex flex-wrap gap-1.5">
       {LINKS.map((l) => {
         const active = pathname.startsWith(l.to);
         return (
           <Link
             key={l.to}
             to={l.to}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={
               active
-                ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white shadow-glow'
-                : 'border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/10'
-            }`}
+                ? 'inline-flex items-center gap-1.5 rounded-full bg-primary-container px-3 py-1.5 text-label-sm font-bold text-on-primary-container'
+                : 'inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high'
+            }
           >
-            <span aria-hidden>{l.glyph}</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden>
+              {l.icon}
+            </span>
             {l.label}
           </Link>
         );

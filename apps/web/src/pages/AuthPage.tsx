@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+
+// Auth flow on the new clinical light theme. UI rebuilt from the mockup
+// designs (Auth/signin.html, signup.html, magiclink*.html). All the existing
+// logic is preserved: session detection on mount, enumeration-resistant error
+// messages, magic-link mode toggle, friendly forgot-password hints.
 
 type Tab = 'signin' | 'signup' | 'forgot';
 type Mode = 'password' | 'magic';
@@ -11,16 +16,13 @@ export default function AuthPage() {
   const [mode, setMode] = useState<Mode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  // When sign-in fails with "Invalid login credentials" we can't know whether
-  // the account exists with a different method or the password is just wrong.
-  // We surface both options as hints rather than guess.
   const [hintForgot, setHintForgot] = useState(false);
 
-  // If a session already exists (e.g. the magic-link redirect landed here),
-  // bounce straight to the feed.
+  // Already-signed-in: bounce to feed. Handles the magic-link redirect too.
   useEffect(() => {
     void (async () => {
       const { data } = await supabase.auth.getSession();
@@ -30,6 +32,13 @@ export default function AuthPage() {
 
   function switchTab(next: Tab) {
     setTab(next);
+    setErr(null);
+    setInfo(null);
+    setHintForgot(false);
+  }
+
+  function toggleMode() {
+    setMode((m) => (m === 'password' ? 'magic' : 'password'));
     setErr(null);
     setInfo(null);
     setHintForgot(false);
@@ -47,7 +56,6 @@ export default function AuthPage() {
           redirectTo: window.location.origin + '/auth/reset',
         });
         if (error) throw error;
-        // Anti-enumeration: don't say whether the email exists.
         setInfo(
           `If an account exists for ${email}, we sent a password reset link. Check your inbox.`,
         );
@@ -55,9 +63,6 @@ export default function AuthPage() {
       }
 
       if (mode === 'magic') {
-        // Sign In + magic → only allow if the account exists. Sign Up + magic
-        // → allow creating one. This makes the "wrong method" experience
-        // explicit instead of silently no-opping.
         const shouldCreateUser = tab === 'signup';
         const { error } = await supabase.auth.signInWithOtp({
           email,
@@ -68,7 +73,7 @@ export default function AuthPage() {
         });
         if (error) {
           if (/signups not allowed|user not found/i.test(error.message)) {
-            setErr("No account found for that email. Use Sign Up instead.");
+            setErr('No account found for that email. Use Sign Up instead.');
             return;
           }
           throw error;
@@ -93,7 +98,7 @@ export default function AuthPage() {
           }
           if (/email not confirmed/i.test(error.message)) {
             setErr(
-              'Your email isn\'t confirmed yet. Check your inbox for the confirmation link, or sign in with magic link.',
+              "Your email isn't confirmed yet. Check your inbox for the confirmation link, or sign in with magic link.",
             );
             return;
           }
@@ -111,20 +116,18 @@ export default function AuthPage() {
       });
       if (error) throw error;
 
-      // Supabase anti-enumeration: a repeated signup returns 200 with an
-      // empty `identities` array on the user object. Detect that and show a
-      // clear error rather than letting the user wait for an email that will
-      // never arrive.
+      // Supabase anti-enumeration: a repeated signup returns 200 with an empty
+      // identities[] on the user. Detect and surface a clear error instead of
+      // letting the user wait for an email that will never arrive.
       const identities = data?.user?.identities ?? [];
       if (data?.user && identities.length === 0) {
         setErr(
-          "This email is already registered. Sign in below, or use Forgot password to set a new one.",
+          'This email is already registered. Sign in below, or use Forgot password to set a new one.',
         );
         setHintForgot(true);
         return;
       }
 
-      // Real new user. Session present when "Confirm email" is disabled.
       if (data.session) {
         navigate('/', { replace: true });
       } else {
@@ -154,146 +157,235 @@ export default function AuthPage() {
     (tab !== 'forgot' && mode === 'password' && password.length < passwordMin);
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col justify-center px-6 py-10">
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">NeuroFeed</h1>
-        <p className="mt-1 text-sm text-muted">
-          Study-focused social learning. Your material, as a feed.
-        </p>
-      </div>
-
-      {tab !== 'forgot' ? (
-        <div className="mb-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/5 p-1 text-sm font-semibold">
-          <TabBtn active={tab === 'signin'} onClick={() => switchTab('signin')}>Sign in</TabBtn>
-          <TabBtn active={tab === 'signup'} onClick={() => switchTab('signup')}>Sign up</TabBtn>
+    <AuthShell
+      title={
+        tab === 'forgot'
+          ? 'Reset your password'
+          : mode === 'magic'
+            ? tab === 'signup' ? 'Sign up with Magic Link' : 'Sign in with Magic Link'
+            : null
+      }
+      subtitle={
+        tab === 'forgot'
+          ? "Enter your email and we'll send you a reset link."
+          : mode === 'magic'
+            ? "We'll send a secure login link to your inbox. No password required."
+            : null
+      }
+    >
+      {tab !== 'forgot' && (
+        <div className="mb-md flex border-b border-outline-variant">
+          <TabBtn active={tab === 'signin'} onClick={() => switchTab('signin')}>Sign In</TabBtn>
+          <TabBtn active={tab === 'signup'} onClick={() => switchTab('signup')}>Sign Up</TabBtn>
         </div>
-      ) : (
+      )}
+
+      {tab === 'forgot' && (
         <button
           type="button"
           onClick={() => switchTab('signin')}
-          className="mb-4 text-left text-xs text-white/65 hover:text-white"
+          className="mb-md flex items-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-primary"
         >
-          ← Back to sign in
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
+          Back to sign in
         </button>
       )}
 
-      <form onSubmit={submit} className="space-y-3">
-        <Field
-          label="Email"
+      <form onSubmit={submit} className="space-y-md">
+        <IconField
+          id="email"
+          label="Email Address"
+          icon="mail"
           type="email"
-          required
           autoComplete="email"
           value={email}
           onChange={setEmail}
-          placeholder="you@email.com"
+          placeholder="you@gmail.com"
+          required
         />
 
         {tab !== 'forgot' && mode === 'password' && (
-          <Field
-            label="Password"
-            type="password"
-            required
-            minLength={passwordMin}
-            autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={setPassword}
-            placeholder={tab === 'signup' ? `At least ${passwordMin} characters` : '••••••••'}
-          />
-        )}
-
-        {tab === 'signin' && mode === 'password' && (
-          <div className="text-right">
-            <button
-              type="button"
-              onClick={() => switchTab('forgot')}
-              className="text-xs text-white/65 hover:text-white"
-            >
-              Forgot password?
-            </button>
+          <div>
+            <div className="mb-xs flex items-center justify-between">
+              <label className="text-label-sm text-on-surface-variant" htmlFor="password">
+                Password
+              </label>
+              {tab === 'signin' && (
+                <button
+                  type="button"
+                  onClick={() => switchTab('forgot')}
+                  className="text-label-sm text-primary transition-all hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <span
+                className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline"
+                style={{ fontSize: '20px' }}
+                aria-hidden
+              >
+                lock
+              </span>
+              <input
+                id="password"
+                type={showPw ? 'text' : 'password'}
+                required
+                minLength={passwordMin}
+                autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={tab === 'signup' ? `At least ${passwordMin} characters` : '••••••••'}
+                className="w-full rounded-lg border border-outline-variant bg-surface py-3 pl-10 pr-10 text-body-md text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline transition-colors hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  {showPw ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
+            {tab === 'signup' && (
+              <p className="mt-xs text-[11px] text-outline">
+                Must be at least {passwordMin} characters long.
+              </p>
+            )}
           </div>
         )}
 
         <button
           type="submit"
           disabled={disabled}
-          className="w-full rounded-xl bg-accent py-3 font-semibold text-white disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-4 py-3 text-label-md font-bold text-on-primary-container shadow-sm transition-all hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? 'Working…' : submitLabel}
+          {busy ? (
+            <>
+              <span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>progress_activity</span>
+              Working…
+            </>
+          ) : (
+            <>
+              {submitLabel}
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden>arrow_forward</span>
+            </>
+          )}
         </button>
 
         {tab !== 'forgot' && (
-          <button
-            type="button"
-            onClick={() => {
-              setMode((m) => (m === 'password' ? 'magic' : 'password'));
-              setErr(null);
-              setInfo(null);
-              setHintForgot(false);
-            }}
-            className="w-full text-center text-xs text-white/65 hover:text-white"
-          >
-            {mode === 'password'
-              ? 'Use a magic link instead'
-              : 'Use email + password instead'}
-          </button>
+          <>
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-outline-variant" />
+              <span className="mx-4 flex-shrink text-label-sm uppercase tracking-wider text-outline">or</span>
+              <div className="flex-grow border-t border-outline-variant" />
+            </div>
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-outline-variant bg-transparent py-3 text-label-md font-medium text-secondary transition-colors hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden>
+                {mode === 'password' ? 'auto_fix_high' : 'key'}
+              </span>
+              {mode === 'password'
+                ? tab === 'signup' ? 'Sign up with Magic Link' : 'Sign in with Magic Link'
+                : 'Use email + password instead'}
+            </button>
+          </>
         )}
 
-        {err && (
-          <p className="rounded-lg border border-rose-400/30 bg-rose-500/10 p-2 text-sm text-rose-200">
-            {err}
-          </p>
-        )}
+        {err && <Banner kind="error">{err}</Banner>}
         {hintForgot && tab === 'signin' && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-white/75">
-            <span>Try one of:</span>
-            <button
-              type="button"
-              onClick={() => switchTab('forgot')}
-              className="rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 text-white hover:bg-accent/25"
-            >
-              Reset password
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode('magic'); setErr(null); setHintForgot(false); }}
-              className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white hover:bg-white/10"
-            >
+          <HintChipRow label="Try one of:">
+            <HintChip onClick={() => switchTab('forgot')}>Reset password</HintChip>
+            <HintChip onClick={() => { setMode('magic'); setErr(null); setHintForgot(false); }}>
               Use magic link
-            </button>
-          </div>
+            </HintChip>
+          </HintChipRow>
         )}
         {hintForgot && tab === 'signup' && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-white/75">
-            <span>Already have an account?</span>
-            <button
-              type="button"
-              onClick={() => switchTab('signin')}
-              className="rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 text-white hover:bg-accent/25"
-            >
-              Sign in
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab('forgot')}
-              className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white hover:bg-white/10"
-            >
-              Forgot password
-            </button>
-          </div>
+          <HintChipRow label="Already have an account?">
+            <HintChip onClick={() => switchTab('signin')}>Sign in</HintChip>
+            <HintChip onClick={() => switchTab('forgot')}>Forgot password</HintChip>
+          </HintChipRow>
         )}
-        {info && (
-          <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-2 text-sm text-emerald-100">
-            {info}
-          </p>
-        )}
+        {info && <Banner kind="success">{info}</Banner>}
       </form>
 
-      <p className="mt-6 text-center text-[11px] text-white/45">
-        By continuing you agree that NeuroFeed processes your uploaded documents to generate study material.
-      </p>
+      <div className="mt-md border-t border-outline-variant pt-md">
+        <p className="text-center text-[12px] leading-relaxed text-on-surface-variant">
+          By continuing, you agree to NeuroFeed's{' '}
+          <a className="text-primary hover:underline" href="#">Terms of Service</a> and{' '}
+          <a className="text-primary hover:underline" href="#">Privacy Policy</a>.
+        </p>
+      </div>
+    </AuthShell>
+  );
+}
+
+// ---------- Shared shell ----------
+
+export function AuthShell({
+  title,
+  subtitle,
+  children,
+}: {
+  title?: string | null;
+  subtitle?: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background px-gutter py-md">
+      {/* Subtle background decoration — soft teal/navy blooms */}
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-40">
+        <div className="absolute -right-20 -top-20 h-[400px] w-[400px] rounded-full bg-primary-fixed blur-[120px]" />
+        <div className="absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full bg-tertiary-fixed blur-[120px]" />
+      </div>
+
+      <main className="w-full max-w-[440px]">
+        <div className="mb-lg flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-container text-on-primary-container">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                psychology
+              </span>
+            </div>
+            <h1 className="text-headline-md font-bold tracking-tight text-primary">NeuroFeed</h1>
+          </div>
+          <p className="text-body-sm text-on-surface-variant">
+            Study-focused social learning. Your material, as a feed.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-auth-card sm:p-lg">
+          {(title || subtitle) && (
+            <div className="mb-md text-center">
+              {title && <h2 className="mb-1 text-headline-sm text-on-surface">{title}</h2>}
+              {subtitle && <p className="text-body-sm text-on-surface-variant">{subtitle}</p>}
+            </div>
+          )}
+          {children}
+        </div>
+
+        <div className="mt-md text-center">
+          <a
+            href="mailto:support@neurofeed.app"
+            className="inline-flex items-center justify-center gap-1 text-label-sm text-on-surface-variant transition-colors hover:text-primary"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>help_outline</span>
+            Need help with your account?
+          </a>
+        </div>
+      </main>
     </div>
   );
 }
+
+// ---------- Small helpers ----------
 
 function TabBtn({
   active,
@@ -302,41 +394,88 @@ function TabBtn({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl py-2 transition-colors ${
-        active ? 'bg-accent text-white shadow' : 'text-white/65 hover:text-white'
-      }`}
       aria-pressed={active}
+      className={
+        active
+          ? 'flex-1 border-b-2 border-primary py-sm text-center text-label-md font-bold text-primary'
+          : 'flex-1 border-b-2 border-transparent py-sm text-center text-label-md text-on-surface-variant transition-colors hover:text-primary'
+      }
     >
       {children}
     </button>
   );
 }
 
-function Field({
+export function IconField({
+  id,
   label,
+  icon,
   value,
   onChange,
   ...rest
 }: {
+  id: string;
   label: string;
+  icon: string;
   value: string;
   onChange: (v: string) => void;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'id'>) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs uppercase tracking-widest text-white/55">{label}</span>
-      <input
-        {...rest}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none placeholder:text-white/35 focus:border-accent focus:ring-2 focus:ring-accent/30"
-      />
-    </label>
+    <div>
+      <label className="mb-xs block text-label-sm text-on-surface-variant" htmlFor={id}>
+        {label}
+      </label>
+      <div className="relative">
+        <span
+          className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline"
+          style={{ fontSize: '20px' }}
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <input
+          {...rest}
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-outline-variant bg-surface py-3 pl-10 pr-4 text-body-md text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Banner({ kind, children }: { kind: 'error' | 'success'; children: ReactNode }) {
+  const cls =
+    kind === 'error'
+      ? 'rounded-lg border border-error/30 bg-error-container/40 p-3 text-body-sm text-on-error-container'
+      : 'rounded-lg border border-primary/20 bg-secondary-container/40 p-3 text-body-sm text-on-secondary-container';
+  return <p className={cls}>{children}</p>;
+}
+
+function HintChipRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low p-3 text-label-sm text-on-surface-variant">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function HintChip({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-full border border-primary/30 bg-primary-container/40 px-3 py-0.5 text-label-sm text-on-primary-container transition-colors hover:bg-primary-container/60"
+    >
+      {children}
+    </button>
   );
 }

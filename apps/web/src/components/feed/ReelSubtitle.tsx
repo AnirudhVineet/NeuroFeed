@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Karaoke-style subtitle band. Chunks narration into short (≤7-word) lines,
-// times them off scene elapsed seconds, and highlights the currently spoken
+// times them off reel elapsed seconds, and highlights the currently spoken
 // word. Stays under 15% of viewport height per the design spec.
 
-export function SceneSubtitle({
+export function ReelSubtitle({
   narration,
   elapsedSec,
   durationSec,

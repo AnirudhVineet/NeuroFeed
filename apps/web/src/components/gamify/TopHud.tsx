@@ -5,7 +5,7 @@ import { NotificationBell } from '@/components/social/NotificationBell';
 
 // Sticky status bar with goal ring, XP progress, and streak.
 // Sits at the very top with safe-area padding so it never overlaps the
-// reel scene-progress bars (which now start below the HUD).
+// reel progress bar (which now sits below the HUD).
 export function TopHud() {
   const state = useGamify((s) => s.state);
   const fetchFor = useGamify((s) => s.fetchFor);

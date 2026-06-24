@@ -86,16 +86,15 @@ class LearningPath(BaseModel):
 
 
 # ---------- Reel script ----------
-SceneType = Literal[
-    "hook", "problem", "concept", "visualization", "example",
-    "analogy", "fun_fact", "summary", "application", "comparison",
-]
+# A reel is a single self-contained micro-lesson on one topic. If a topic
+# is too long to fit in one reel, the generator emits MULTIPLE reels for the
+# same topic — part_index / part_total identify the parts. There is no
+# longer an internal "scenes" array.
 AnimationType = Literal[
     "zoom_in", "zoom_out", "slide_left", "slide_right", "slide_up",
     "fade", "scale_up", "kinetic_text", "type_writer", "highlight",
     "split", "pulse",
 ]
-TransitionType = Literal["fade", "slide", "zoom", "wipe", "morph"]
 VisualKind = Literal[
     # legacy decorative kinds — kept for back-compat, but the prompt no longer
     # suggests them; the frontend degrades them into educational fallbacks.
@@ -120,31 +119,50 @@ VisualKind = Literal[
 MusicMood = Literal["uplifting", "curious", "intense", "dreamy", "playful"]
 
 
-class ReelScene(BaseModel):
-    # All Literal types loosened to plain strings: LLMs frequently pick
-    # variants like "key_concept" or "visualize" that aren't in the enum.
-    # The frontend's `normaliseReel` defaults anything unknown sensibly.
-    scene_type: str = Field(default="concept", max_length=40)
-    narration: str = Field(..., min_length=10, max_length=1200)
-    subtitle: str = Field(..., min_length=1, max_length=160)
-    image_prompt: str = Field(default="", max_length=400)
-    animation_type: str = Field(default="fade", max_length=40)
-    transition_type: str = Field(default="fade", max_length=40)
-    highlight_words: list[str] = Field(default_factory=list)
-    duration_sec: float = Field(default=6.0, ge=1.0, le=30.0)
+class VisualBeat(BaseModel):
+    # One timed visual shot inside a reel. The renderer cuts to this beat when
+    # playback elapsed >= at_sec (normalised against actual TTS duration).
+    at_sec: float = Field(..., ge=0.0, le=90.0)
     visual_kind: str = Field(default="flowchart", max_length=40)
-    # Optional structured payload the visual renderer uses to draw the scene
-    # accurately (chart points, network nodes, equation TeX, etc.). Schema is
-    # intentionally open — see VISUAL_SPEC.md in the frontend for shapes.
     visual_spec: dict[str, Any] | None = None
+    animation_type: str = Field(default="fade", max_length=40)
+    caption_anchor: str | None = Field(default=None, max_length=240)
 
 
 class ReelScript(BaseModel):
+    # All Literal types loosened to plain strings: LLMs frequently pick
+    # variants like "key_concept" or "visualize" that aren't in the enum.
+    # The frontend's `normaliseReel` defaults anything unknown sensibly.
     topic: str = Field(..., max_length=240)
     title: str = Field(default="", max_length=240)
-    hook: str = Field(default="", max_length=600)
+    narration: str = Field(..., min_length=20, max_length=2000)
+    subtitle: str = Field(..., min_length=1, max_length=200)
+    highlight_words: list[str] = Field(default_factory=list)
+    duration_sec: float = Field(default=25.0, ge=5.0, le=90.0)
+    visual_kind: str = Field(default="flowchart", max_length=40)
+    # Optional structured payload the visual renderer uses to draw the reel
+    # accurately (chart points, network nodes, equation TeX, etc.). Schema is
+    # intentionally open — see VISUAL_SPEC.md in the frontend for shapes.
+    visual_spec: dict[str, Any] | None = None
+    animation_type: str = Field(default="fade", max_length=40)
     music_mood: str = Field(default="curious", max_length=40)
-    scenes: conlist(ReelScene, min_length=2, max_length=15)  # type: ignore[valid-type]
+    # Timed visual beats — when present, the player cuts between these instead
+    # of holding the top-level visual_kind for the whole reel. The first beat
+    # MUST have at_sec=0; subsequent beats trigger on elapsed-ratio crossings.
+    # When absent / empty, the player renders one beat = (visual_kind, visual_spec).
+    #
+    # Length bound is content-driven: emit one beat per distinct idea in the
+    # narration. 2 is the floor (single-beat reels should just leave this
+    # null), 6 is the ceiling so a 25-30s reel doesn't strobe.
+    visual_beats: list[VisualBeat] | None = Field(default=None, min_length=2, max_length=6)
+    # Multi-part marker: when a topic spans more than one reel, these are
+    # filled in (1-based). For single-part topics they may be omitted.
+    part_index: int | None = Field(default=None, ge=1, le=10)
+    part_total: int | None = Field(default=None, ge=1, le=10)
+
+
+class ReelScriptList(BaseModel):
+    reels: conlist(ReelScript, min_length=1, max_length=4)  # type: ignore[valid-type]
 
 
 # ---------- Tutor ----------

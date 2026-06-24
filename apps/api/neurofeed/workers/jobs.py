@@ -192,8 +192,9 @@ async def generate_job(*, doc_id: str) -> None:
             _run_and_persist(gen.gen_learning_path(concepts_for_prompt), _persist_path),
         )
 
-        # Reels: one per concept, capped. Each reel uses concept-specific chunks
-        # so deep PDFs get topic-grounded scenes instead of a stale prefix window.
+        # Reels: each concept yields 1–3 focused single-topic reels. Concept
+        # chunks are used so deep PDFs get topic-grounded content instead of a
+        # stale prefix window.
         def _chunks_for_topic(topic: dict[str, Any]) -> list[dict[str, Any]]:
             ids = topic.get("source_chunk_ids") or []
             selected = [chunk_by_id[i] for i in ids if i in chunk_by_id]
@@ -214,16 +215,20 @@ async def generate_job(*, doc_id: str) -> None:
 
         async def _run_reel(target: dict[str, Any]) -> None:
             try:
-                script = await gen.gen_reel_script(target, _chunks_for_topic(target))
+                reels = await gen.gen_reels_for_concept(target, _chunks_for_topic(target))
             except Exception as e:
                 log.warning("reel_script failed for concept %s: %s", target["name"], e)
                 return
-            _persist({
-                "document_id": doc_id,
-                "concept_id": target["id"] or None,
-                "type": "reel_script", "payload": script.model_dump(),
-            })
-            log.info("reel_script persisted (doc=%s concept=%s)", doc_id, target["name"])
+            for r in reels:
+                _persist({
+                    "document_id": doc_id,
+                    "concept_id": target["id"] or None,
+                    "type": "reel_script", "payload": r.model_dump(),
+                })
+            log.info(
+                "reels persisted (doc=%s concept=%s count=%d)",
+                doc_id, target["name"], len(reels),
+            )
 
         # Kick all reel generators off at once; the Featherless semaphore
         # caps how many actually hit the API, but every successful reel writes

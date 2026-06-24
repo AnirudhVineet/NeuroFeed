@@ -303,8 +303,8 @@ function tutorContextFor(it: FeedItem): TutorContext {
     const r = it.payload as ReelScript;
     return {
       topic: r.topic,
-      sceneIndex: 0,
-      totalScenes: r.scenes?.length ?? 0,
+      subtitle: r.subtitle,
+      narration: r.narration,
       timestampSec: 0,
       documentId: it.document_id,
       conceptId: it.concept_id,
@@ -314,9 +314,7 @@ function tutorContextFor(it: FeedItem): TutorContext {
     const s = it.payload as SwipeCardData;
     return {
       topic: s.title,
-      sceneSubtitle: s.body,
-      sceneIndex: 0,
-      totalScenes: 1,
+      subtitle: s.body,
       timestampSec: 0,
       documentId: it.document_id,
       conceptId: it.concept_id,
@@ -326,9 +324,7 @@ function tutorContextFor(it: FeedItem): TutorContext {
     const f = it.payload as Flashcard;
     return {
       topic: f.question,
-      sceneNarration: f.answer,
-      sceneIndex: 0,
-      totalScenes: 1,
+      narration: f.answer,
       timestampSec: 0,
       documentId: it.document_id,
       conceptId: it.concept_id,
@@ -338,9 +334,7 @@ function tutorContextFor(it: FeedItem): TutorContext {
     const q = it.payload as QuizItem;
     return {
       topic: q.stem,
-      sceneNarration: q.explanation,
-      sceneIndex: 0,
-      totalScenes: 1,
+      narration: q.explanation,
       timestampSec: 0,
       documentId: it.document_id,
       conceptId: it.concept_id,
@@ -348,8 +342,6 @@ function tutorContextFor(it: FeedItem): TutorContext {
   }
   return {
     topic: it.type,
-    sceneIndex: 0,
-    totalScenes: 1,
     timestampSec: 0,
     documentId: it.document_id,
     conceptId: it.concept_id,

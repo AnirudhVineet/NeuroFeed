@@ -221,7 +221,7 @@ const TILES: { id: CategoryId; glyph: string; label: string; sub: string; coming
   { id: 'flashcards', glyph: '🎴', label: 'Flashcards', sub: 'Practice key facts' },
   { id: 'quiz', glyph: '❓', label: 'Quiz', sub: 'Check what you know' },
   { id: 'summary', glyph: '📄', label: 'Summary', sub: 'TL;DR for this document' },
-  { id: 'tutor', glyph: '💬', label: 'AI Tutor', sub: 'Ask about this scene' },
+  { id: 'tutor', glyph: '💬', label: 'AI Tutor', sub: 'Ask about this reel' },
   { id: 'story', glyph: '📖', label: 'Story Mode', sub: 'Coming soon', comingSoon: true },
   { id: 'notes', glyph: '✎', label: 'Generate Notes', sub: 'Coming soon', comingSoon: true },
 ];

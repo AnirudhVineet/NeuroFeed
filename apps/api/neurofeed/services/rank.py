@@ -127,8 +127,14 @@ def rank_artifacts(
         seen_types[a["type"]] = seen_types.get(a["type"], 0) + 1
     base.sort(key=lambda x: x["score"], reverse=True)
 
+    # Collapse multi-part reels (same doc + concept + topic, part_total > 1)
+    # into a single representative carrying its siblings in part-order. The
+    # representative keeps the BEST score in the group so it lands where any
+    # part would have ranked; the slot-filler below expands it back inline.
+    base = _group_reel_parts(base)
+
     if limit is None or limit <= 0:
-        return base
+        return _expand_groups(base)
 
     # Split: a fresh queue + a revision queue (low-mastery only).
     fresh = [x for x in base if not _is_weak(x, mastery)]
@@ -139,21 +145,27 @@ def rank_artifacts(
     f_i = w_i = 0
     weak_stride = max(2, int(round(1.0 / REVISION_FRACTION))) if target_weak_slots else 0
     used_weak = 0
-    for slot in range(limit):
+    slot = 0
+    # Each entry from base/fresh/weak may be a single artifact OR a grouped
+    # multi-part reel; expanding the latter can yield 2-3 items per slot. We
+    # let a group overshoot `limit` slightly rather than truncate it mid-
+    # sequence — losing part 3 of 3 is worse than serving 31 items instead of 30.
+    while len(out) < limit:
         want_weak = weak_stride > 0 and (slot + 1) % weak_stride == 0 and used_weak < target_weak_slots
         if want_weak and w_i < len(weak):
             x = dict(weak[w_i]); w_i += 1
             x["reason"] = {**x.get("reason", {}), "revision": 1}
-            out.append(x)
+            _emit(out, x)
             used_weak += 1
         elif f_i < len(fresh):
-            out.append(fresh[f_i]); f_i += 1
+            _emit(out, fresh[f_i]); f_i += 1
         elif w_i < len(weak):
             x = dict(weak[w_i]); w_i += 1
             x["reason"] = {**x.get("reason", {}), "revision": 1}
-            out.append(x)
+            _emit(out, x)
         else:
             break
+        slot += 1
     return out
 
 
@@ -162,3 +174,88 @@ def _is_weak(a: dict[str, Any], mastery: dict[str, float]) -> bool:
     if not cid:
         return False
     return mastery.get(cid, 1.0) < WEAK_MASTERY_FLOOR
+
+
+# Internal key used to mark a grouped multi-part reel. The group carries its
+# member artifacts in `_parts` (already sorted by part_index) and presents the
+# best-scoring member's score so it ranks where any part would have ranked.
+_GROUP_KEY = "_parts"
+
+
+def _group_reel_parts(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse multi-part reels into single group representatives.
+
+    Two items are siblings when they share (document_id, concept_id, topic)
+    AND both declare part_total > 1. The representative keeps the highest
+    score in the group; siblings are stashed under `_GROUP_KEY` in part order.
+    Items without parts pass through unchanged.
+    """
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    order: list[tuple[str, str, str] | dict[str, Any]] = []
+    for it in items:
+        key = _reel_group_key(it)
+        if key is None:
+            order.append(it)
+            continue
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(it)
+
+    out: list[dict[str, Any]] = []
+    for entry in order:
+        if isinstance(entry, dict):
+            out.append(entry)
+            continue
+        members = sorted(groups[entry], key=_part_sort_key)
+        best = max(members, key=lambda m: m.get("score", 0.0))
+        rep = dict(best)
+        rep[_GROUP_KEY] = members
+        out.append(rep)
+    # Re-sort so group representatives sit at their best member's rank.
+    out.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+    return out
+
+
+def _reel_group_key(a: dict[str, Any]) -> tuple[str, str, str] | None:
+    if a.get("type") != "reel_script":
+        return None
+    payload = a.get("payload") or {}
+    part_total = payload.get("part_total")
+    if not isinstance(part_total, int) or part_total <= 1:
+        return None
+    topic = (payload.get("topic") or "").strip().lower()
+    doc_id = a.get("document_id") or ""
+    concept_id = a.get("concept_id") or ""
+    if not topic and not concept_id:
+        return None
+    return (doc_id, concept_id, topic)
+
+
+def _part_sort_key(a: dict[str, Any]) -> tuple[int, str]:
+    payload = a.get("payload") or {}
+    idx = payload.get("part_index")
+    # Items missing part_index sort last; created_at breaks remaining ties.
+    return (idx if isinstance(idx, int) else 999, a.get("created_at") or "")
+
+
+def _expand_groups(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for it in items:
+        _emit(out, it)
+    return out
+
+
+def _emit(out: list[dict[str, Any]], it: dict[str, Any]) -> None:
+    """Append a single artifact or expand a grouped multi-part reel inline."""
+    parts = it.get(_GROUP_KEY)
+    if not parts:
+        out.append(it)
+        return
+    revision = bool((it.get("reason") or {}).get("revision"))
+    for p in parts:
+        member = dict(p)
+        member.pop(_GROUP_KEY, None)
+        if revision:
+            member["reason"] = {**member.get("reason", {}), "revision": 1}
+        out.append(member)

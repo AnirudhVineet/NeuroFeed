@@ -21,6 +21,7 @@ from .llm.schemas import (
     LearningPath,
     QuizSet,
     ReelScript,
+    ReelScriptList,
     Summary,
     SwipeCardSet,
 )
@@ -35,8 +36,8 @@ CAPS = {
     "flashcards": (10, 20),
     "quiz": (8, 12),
     "learning_path": (3, 15),
-    "reel_scripts": 5,           # max reels per doc (one per top concept)
-    "reel_scenes_per_script": (5, 10),
+    "reel_scripts": 5,           # max concepts that get reels per doc
+    "reels_per_concept": (1, 3), # how many reels the LLM may emit per concept
 }
 
 
@@ -188,49 +189,80 @@ async def gen_learning_path(concepts: list[dict[str, Any]]) -> LearningPath:
 
 
 # ---------- Reel script ----------
-async def gen_reel_script(focus_concept: dict[str, Any], chunks: list[dict[str, Any]]) -> ReelScript:
-    lo, hi = CAPS["reel_scenes_per_script"]
+async def gen_reels_for_concept(
+    focus_concept: dict[str, Any], chunks: list[dict[str, Any]],
+) -> list[ReelScript]:
+    """Return 1–3 single-topic reels for the concept.
+
+    Each reel is self-contained: one focused narration (~20–35 s of TTS), one
+    visual, one karaoke caption. If the concept is too dense to teach in a
+    single reel, the LLM emits a sequence of parts (part_index/part_total) that
+    appear adjacent to each other in the feed.
+    """
+    lo, hi = CAPS["reels_per_concept"]
     sys = (
         "You are a Kurzgesagt / Veritasium / 3Blue1Brown-style educational video "
-        "writer. Your job is to TEACH the topic as a short-form video, not to "
-        "summarise the source PDF. The source is ONLY a bank of facts; you are the "
-        "teacher who turns those facts into a story.\n\n"
+        "writer. Your job is to TEACH the topic as a series of short vertical "
+        "reels, not to summarise the source PDF. The source is ONLY a bank of "
+        "facts; you are the teacher who turns those facts into a story.\n\n"
         "HARD RULES:\n"
         "- NEVER copy sentences or paragraphs from the source. Rewrite everything "
         "in your own conversational teaching voice.\n"
         "- ENRICH with intuition, analogies, vivid real-world examples, fun facts, "
-        "historical context, and applications. The final reel must be MORE useful "
+        "historical context, and applications. The final reels must be MORE useful "
         "than the source paragraphs alone.\n"
-        "- Open scene 1 with a HOOK: a question, surprising fact, or vivid scenario "
-        "that makes the viewer want to keep watching.\n"
         "- No textbook tone. No bullet-list dumps. No definitions without intuition. "
         "Sound like a passionate YouTube educator.\n"
-        "- The VISUAL on every scene must TEACH something concrete about the topic. "
+        "- The VISUAL on every reel must TEACH something concrete about the topic. "
         "NEVER pick a generic decorative background (particles, gradient pulse, "
         "shape morph). Pick a visual_kind that draws the actual content — a packet "
-        "moving over a network, a neural net firing, a tree being traversed, a graph "
-        "being plotted, an equation being solved, a flowchart of the process, etc.\n\n"
-        f"Produce {lo}-{hi} scenes. Each scene plays a distinct role drawn from: "
-        "hook, problem, concept, visualization, example, analogy, fun_fact, "
-        "application, comparison, summary. Cover the topic end-to-end in a satisfying "
-        "narrative arc.\n\n"
-        "Per-scene fields (ALL REQUIRED):\n"
-        "- scene_type: one of [hook, problem, concept, visualization, example, "
-        "analogy, fun_fact, summary, application, comparison].\n"
-        "- narration: 30-90 words, sounds great read aloud, conversational, "
-        "no markdown, no lists.\n"
+        "moving over a network, a neural net firing, a tree being traversed, a "
+        "graph being plotted, an equation being solved, a flowchart of the "
+        "process, etc.\n\n"
+        f"Produce {lo}-{hi} reels for this ONE topic.\n"
+        "- Each reel covers ONE focused angle on the topic — never multiple "
+        "unrelated ideas in the same reel.\n"
+        "- Reel 1 opens with a HOOK: a question, surprising fact, or vivid "
+        "scenario that makes the viewer want to keep watching.\n"
+        "- DEFAULT TO ONE REEL. Only split when a single 50-130 word narration "
+        "would clearly leave essential ideas unexplained. Use this heuristic:\n"
+        "    1 reel — a single definition, a single mechanism, or a tight idea "
+        "that fits in one ~25-second narration. (Most concepts land here.)\n"
+        "    2 reels — the topic has TWO distinct halves that each deserve their "
+        "own teaching beat (e.g. 'what it is' + 'how it works', or 'mechanism' + "
+        "'consequence'), and forcing them into one reel would feel rushed.\n"
+        "    3 reels — only for multi-stage processes or topics with several "
+        "interlocking sub-ideas (e.g. an algorithm with setup → steps → analysis, "
+        "or a phenomenon with cause → mechanism → real-world impact).\n"
+        "- When splitting, give each part a distinct ANGLE — never just continue "
+        "the same sentence from the previous part. If you cannot name a clear "
+        "different angle per part, emit fewer reels instead.\n"
+        "- For a single-part reel, leave part_index and part_total as null. For "
+        "multi-part, set part_index (1-based) and part_total on EVERY reel in "
+        "the sequence: part 1 hooks + sets up, middle parts develop, the last "
+        "part lands the payoff.\n"
+        "- Keep each reel watchable on its own. Do not require the viewer to "
+        "have seen the previous part; recap the one essential prior idea in a "
+        "single phrase if needed.\n\n"
+        "Per-reel fields (ALL REQUIRED unless noted):\n"
+        "- topic: the concept being taught (same string for every reel in a "
+        "multi-part sequence).\n"
+        "- title: a catchy hook-style title for THIS reel (e.g. 'Why doesn't the "
+        "Internet melt?'). Different parts get different titles that reflect the "
+        "angle of that part.\n"
+        "- narration: 50-130 words, sounds great read aloud, conversational, no "
+        "markdown, no lists. Aim for ~20-35 seconds of speech at 3 words/sec.\n"
         "- subtitle: 3-12 words. The punchy line that stays on screen. Title-case "
         "or sentence-case, no trailing punctuation.\n"
-        "- image_prompt: a vivid 1-2 sentence description of the visual you imagine "
-        "(diagram, scene, comparison, etc.).\n"
-        "- animation_type: how the subtitle enters. Pick one that matches the "
-        "scene's energy: [zoom_in, zoom_out, slide_left, slide_right, slide_up, "
-        "fade, scale_up, kinetic_text, type_writer, highlight, split, pulse].\n"
-        "- transition_type: how this scene transitions to the next: [fade, slide, "
-        "zoom, wipe, morph].\n"
         "- highlight_words: 2-4 keywords drawn from the subtitle that should be "
         "visually emphasised.\n"
-        "- duration_sec: 5-10 seconds, scaled to narration length (~3 words/sec).\n"
+        "- duration_sec: 15-40 seconds, scaled to narration length (~3 words/sec).\n"
+        "- animation_type: how the subtitle enters. Pick one that matches the "
+        "reel's energy: [zoom_in, zoom_out, slide_left, slide_right, slide_up, "
+        "fade, scale_up, kinetic_text, type_writer, highlight, split, pulse].\n"
+        "- music_mood: one of [uplifting, curious, intense, dreamy, playful].\n"
+        "- part_index / part_total: integers (1-based) for multi-part topics, or "
+        "null for a single standalone reel.\n"
         "- visual_kind: MUST be one of the educational kinds. Pick the kind that "
         "literally draws the concept being taught:\n"
         "    network_packets   — packets travelling across routers/switches/hosts\n"
@@ -253,7 +285,7 @@ async def gen_reel_script(focus_concept: dict[str, Any], chunks: list[dict[str, 
         "  DO NOT use: particles, gradient_pulse, shape_morph, icon_grid, "
         "concept_map, arrow_flow, diagram — these are decorative and forbidden.\n"
         "- visual_spec: REQUIRED OBJECT — the structured data the chosen visual "
-        "needs to draw the scene. The shape depends on visual_kind:\n"
+        "needs to draw the reel. The shape depends on visual_kind:\n"
         "    network_packets   -> {nodes:[{id,label,kind?}], edges:[{from,to}], "
         "packets:[{from,to,label?}]}\n"
         "    neural_network    -> {layers:[3,5,4,2], layer_labels?:[..]}\n"
@@ -275,19 +307,68 @@ async def gen_reel_script(focus_concept: dict[str, Any], chunks: list[dict[str, 
         "    comparison        -> {nodes:[{id:'a',label:'Left side'},{id:'b',"
         "label:'Right side'}]}\n"
         "    bar_chart         -> {bars:[{label:'TCP',value:42},...]}\n"
-        "  Fill visual_spec with REAL content that comes from the topic. Coordinates "
-        "in coordinate_graph/molecule/map_route should be plain numbers in [0,100]. "
-        "Keep arrays small (<=8 items) so it stays readable on a phone.\n\n"
-        "Reel-level fields:\n"
-        "- topic: the concept being taught.\n"
-        "- title: a catchy hook-style title (e.g. 'Why doesn't the Internet melt?').\n"
-        "- hook: 1-2 sentences that capture the central question or surprise.\n"
-        "- music_mood: one of [uplifting, curious, intense, dreamy, playful].\n\n"
-        'Schema: {"topic": str, "title": str, "hook": str, "music_mood": str, '
-        '"scenes": [{"scene_type": str, "narration": str, "subtitle": str, '
-        '"image_prompt": str, "animation_type": str, "transition_type": str, '
-        '"highlight_words": [str], "duration_sec": number, "visual_kind": str, '
-        '"visual_spec": object}]}'
+        "  Fill visual_spec with REAL content that comes from the topic. "
+        "Coordinates in coordinate_graph/molecule/map_route should be plain "
+        "numbers in [0,100]. Keep arrays small (<=8 items) so it stays readable "
+        "on a phone.\n\n"
+        "- visual_beats: REQUIRED ARRAY of 2-6 timed visual shots that play in "
+        "sequence under the SAME continuous narration. This is what makes the "
+        "reel feel like a Kurzgesagt video instead of one static frame with "
+        "voiceover.\n\n"
+        "  HOW TO DECIDE BEAT COUNT — content-driven, NOT time-driven:\n"
+        "    1. First, re-read your narration and mark every place the SUBJECT "
+        "of the sentence changes (a new entity, a new step in a process, a new "
+        "comparison, a new example, a hook → mechanism shift, etc.).\n"
+        "    2. Emit ONE beat per distinct idea you marked. A narration that "
+        "talks about 'a TCP packet', then 'the three-way handshake', then "
+        "'what happens if it fails', then 'retransmission' is FOUR distinct "
+        "ideas → four beats. A narration that explains a single mechanism "
+        "without shifting subjects is TWO beats (entrance + payoff).\n"
+        "    3. The visual MUST change every time the narration's subject "
+        "changes. If the voiceover moves to a new entity but the visual stays "
+        "the same, the reel feels like generic voiceover-over-stock-footage — "
+        "the opposite of what we want.\n"
+        "    4. Floor is 2 beats (single-beat reels should not use this field "
+        "at all). Ceiling is 6 (prevents strobing on short reels).\n\n"
+        "  HARD RULES for each beat:\n"
+        "    * at_sec — the first beat MUST have at_sec=0. Subsequent values "
+        "must be strictly increasing and stay inside duration_sec. Pick at_sec "
+        "to match when the corresponding phrase is actually spoken — assume "
+        "the voiceover runs at ~3 words per second from at_sec=0, so the "
+        "phrase 'starting at word 18' lands around at_sec=6.\n"
+        "    * caption_anchor — REQUIRED. Copy the 5-12-word phrase from the "
+        "narration that this beat illustrates. This is the contract: the "
+        "beat's visual_kind + visual_spec MUST visually depict the specific "
+        "entities, numbers, and actions in caption_anchor.\n"
+        "    * visual_kind / visual_spec — must literally draw what "
+        "caption_anchor describes. Concrete relevance bar:\n"
+        "        - If caption_anchor names entities ('TCP, UDP, ICMP'), the "
+        "visual_spec MUST contain those exact labels (e.g. "
+        "bars:[{label:'TCP',value:..},{label:'UDP',value:..},{label:'ICMP',value:..}]).\n"
+        "        - If caption_anchor describes an action ('packet hops across "
+        "three routers'), the visual_kind MUST be the one that shows that "
+        "action (network_packets with three router nodes), NOT a related-"
+        "but-generic kind like flowchart.\n"
+        "        - If caption_anchor describes a relationship ('demand falls "
+        "as price rises'), the visual_kind MUST be the one that shows the "
+        "relationship (coordinate_graph or supply_demand), NOT a static list.\n"
+        "        - A vaguely-on-topic visual is WORSE than no change. If you "
+        "can't draw the specific phrase, REWRITE the phrase or fold this beat "
+        "into the neighbour.\n"
+        "    * No same visual_kind back-to-back. No re-using the same "
+        "visual_spec values across two beats — each beat shows different "
+        "entities or a different state.\n"
+        "    * animation_type — each beat gets its own entrance animation "
+        "from the same list as the reel-level animation_type.\n\n"
+        "  The top-level visual_kind / visual_spec / animation_type fields are "
+        "the FALLBACK rendering for legacy clients — set them to a copy of the "
+        "first beat so old clients still render something coherent.\n\n"
+        'Schema: {"reels": [{"topic": str, "title": str, "narration": str, '
+        '"subtitle": str, "highlight_words": [str], "duration_sec": number, '
+        '"visual_kind": str, "visual_spec": object, "animation_type": str, '
+        '"music_mood": str, "visual_beats": [{"at_sec": number, "visual_kind": '
+        'str, "visual_spec": object, "animation_type": str, "caption_anchor": '
+        'str}], "part_index": int|null, "part_total": int|null}]}'
     )
     user = (
         f"TEACH this topic: {focus_concept['name']}\n"
@@ -302,4 +383,4 @@ async def gen_reel_script(focus_concept: dict[str, Any], chunks: list[dict[str, 
         client=_client(), system=sys, user=user, provider="featherless",
         max_tokens=6000, temperature=0.55,
     )
-    return ReelScript.model_validate(data)
+    return list(ReelScriptList.model_validate(data).reels)

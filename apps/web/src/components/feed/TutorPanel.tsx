@@ -5,11 +5,8 @@ import { askTutor, type TutorCitation } from '@/lib/tutor';
 
 export interface TutorContext {
   topic: string;
-  sceneType?: string;
-  sceneSubtitle?: string;
-  sceneNarration?: string;
-  sceneIndex: number;
-  totalScenes: number;
+  subtitle?: string;
+  narration?: string;
   timestampSec: number;
   documentId?: string;
   conceptId?: string | null;
@@ -27,7 +24,7 @@ const PRESETS = [
   'Explain this more simply.',
   'Give me a concrete example.',
   'Why is this important?',
-  'Generate a quick quiz on this scene.',
+  'Generate a quick quiz on this reel.',
   'How does this connect to what came before?',
   'What\'s a common misconception here?',
 ];
@@ -117,10 +114,10 @@ export function TutorPanel({
                 <h2 className="text-lg font-bold leading-tight">AI Tutor</h2>
                 <p className="mt-1 text-xs text-white/65">
                   {ctx.topic}
-                  {ctx.sceneSubtitle ? ` · ${ctx.sceneSubtitle}` : ''}
+                  {ctx.subtitle ? ` · ${ctx.subtitle}` : ''}
                 </p>
                 <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/45">
-                  Scene {ctx.sceneIndex + 1}/{ctx.totalScenes} · {formatTime(ctx.timestampSec)}
+                  {formatTime(ctx.timestampSec)}
                 </p>
               </div>
               <button
@@ -137,7 +134,7 @@ export function TutorPanel({
               {history.length === 0 ? (
                 <div className="space-y-3">
                   <p className="text-sm text-white/70">
-                    Ask anything about this scene, or tap a quick prompt:
+                    Ask anything about this reel, or tap a quick prompt:
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {PRESETS.map((p) => (
@@ -202,7 +199,7 @@ export function TutorPanel({
                       void ask(q);
                     }
                   }}
-                  placeholder="Ask about this scene…"
+                  placeholder="Ask about this reel…"
                   rows={1}
                   className="flex-1 resize-none rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/40"
                 />
@@ -226,13 +223,11 @@ export function TutorPanel({
 function buildContextLine(ctx: TutorContext): string {
   const parts = [
     `topic="${ctx.topic}"`,
-    `scene=${ctx.sceneIndex + 1}/${ctx.totalScenes}`,
     `at=${formatTime(ctx.timestampSec)}`,
   ];
-  if (ctx.sceneType) parts.push(`type=${ctx.sceneType}`);
-  if (ctx.sceneSubtitle) parts.push(`subtitle="${ctx.sceneSubtitle}"`);
-  if (ctx.sceneNarration) {
-    const trimmed = ctx.sceneNarration.slice(0, 280);
+  if (ctx.subtitle) parts.push(`subtitle="${ctx.subtitle}"`);
+  if (ctx.narration) {
+    const trimmed = ctx.narration.slice(0, 280);
     parts.push(`narration="${trimmed}"`);
   }
   return parts.join(' · ');

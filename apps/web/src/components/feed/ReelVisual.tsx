@@ -1,32 +1,37 @@
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import type {
-  ReelScene,
   VisualKind,
   VisualSpec,
 } from '../../../../../packages/shared-types/artifacts';
 
-// SceneVisual draws the actual educational content for a scene.
+// ReelVisual draws the actual educational content for a reel.
 // No decorative-only kinds: every renderer below teaches something concrete.
 // Legacy decorative kinds are remapped to an educational fallback.
 
-export function SceneVisual({
-  scene,
+export function ReelVisual({
+  visualKind,
+  visualSpec,
+  fallbackText,
   hue,
-  sceneKey,
 }: {
-  scene: ReelScene;
+  visualKind: VisualKind;
+  visualSpec: VisualSpec | null;
+  fallbackText: string;
   hue: number;
-  sceneKey: string;
 }) {
   const c1 = `hsl(${hue} 80% 60%)`;
   const c2 = `hsl(${(hue + 60) % 360} 80% 60%)`;
   const c3 = `hsl(${(hue + 200) % 360} 80% 60%)`;
 
-  const kind = remap(scene.visual_kind);
+  // sceneKey identifies SVG marker / def IDs so multiple reels mounted at
+  // once in the feed never collide. useId() gives a stable per-mount value.
+  const sceneKey = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+
+  const kind = remap(visualKind);
   const spec: VisualSpec = useMemo(
-    () => (scene.visual_spec && typeof scene.visual_spec === 'object' ? scene.visual_spec : {}),
-    [scene.visual_spec],
+    () => (visualSpec && typeof visualSpec === 'object' ? visualSpec : {}),
+    [visualSpec],
   );
 
   switch (kind) {
@@ -43,11 +48,11 @@ export function SceneVisual({
     case 'stack_queue':
       return <StackQueue c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} />;
     case 'equation':
-      return <EquationVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={scene.subtitle} />;
+      return <EquationVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={fallbackText} />;
     case 'coordinate_graph':
       return <CoordinateGraph c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} />;
     case 'flowchart':
-      return <FlowChart c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={scene.subtitle} />;
+      return <FlowChart c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={fallbackText} />;
     case 'process_diagram':
       return <ProcessDiagram c1={c1} c2={c2} c3={c3} spec={spec} sceneKey={sceneKey} />;
     case 'molecule':
@@ -61,11 +66,11 @@ export function SceneVisual({
     case 'timeline':
       return <TimelineVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} />;
     case 'comparison':
-      return <ComparisonVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={scene.subtitle} />;
+      return <ComparisonVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={fallbackText} />;
     case 'bar_chart':
       return <BarChartLabeled c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} />;
     default:
-      return <EquationVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={scene.subtitle} />;
+      return <EquationVisual c1={c1} c2={c2} spec={spec} sceneKey={sceneKey} fallback={fallbackText} />;
   }
 }
 
@@ -88,8 +93,8 @@ function remap(k: VisualKind): VisualKind {
 
 // ----- Shared chrome -----
 // Visual safe-area:
-//   top   ~ 9rem (scene title + progress bars + meta live here)
-//   bottom ~13rem (subtitle band + pause/scene-dots + action rail)
+//   top   ~ 9rem (HUD + progress bar live here)
+//   bottom ~13rem (subtitle band + action rail)
 // Renderers must keep their content inside this window so labels never get
 // covered by the subtitle line. We also reserve a small "label rail" along the
 // bottom of the visual for axis names / kind chips.

@@ -44,16 +44,10 @@ export interface LearningPathStep {
   artifact_ids: string[];
 }
 
-export type SceneType =
-  | 'hook' | 'problem' | 'concept' | 'visualization' | 'example'
-  | 'analogy' | 'fun_fact' | 'summary' | 'application' | 'comparison';
-
 export type AnimationType =
   | 'zoom_in' | 'zoom_out' | 'slide_left' | 'slide_right' | 'slide_up'
   | 'fade' | 'scale_up' | 'kinetic_text' | 'type_writer' | 'highlight'
   | 'split' | 'pulse';
-
-export type TransitionType = 'fade' | 'slide' | 'zoom' | 'wipe' | 'morph';
 
 export type VisualKind =
   // legacy / decorative — degraded to educational fallbacks in the renderer
@@ -68,20 +62,7 @@ export type VisualKind =
 
 export type MusicMood = 'uplifting' | 'curious' | 'intense' | 'dreamy' | 'playful';
 
-export interface ReelScene {
-  scene_type: SceneType;
-  narration: string;
-  subtitle: string;
-  image_prompt: string;
-  animation_type: AnimationType;
-  transition_type: TransitionType;
-  highlight_words: string[];
-  duration_sec: number;
-  visual_kind: VisualKind;
-  visual_spec?: VisualSpec | null;
-}
-
-// Structured drawing data the LLM may emit per scene. Every field optional —
+// Structured drawing data the LLM may emit per reel. Every field optional —
 // renderers fall back to topic-derived defaults when missing.
 export interface VisualSpec {
   // network_packets
@@ -124,12 +105,42 @@ export interface VisualSpec {
   [k: string]: unknown;
 }
 
+// One timed visual shot inside a reel. The narration stays continuous; the
+// visual cuts to the next beat when the playback ratio (elapsed / duration)
+// crosses the beat's at_ratio. The LLM emits at_sec; the player normalises
+// it against the actual TTS duration so beats stay synced regardless of
+// voice pacing.
+export interface VisualBeat {
+  at_sec: number;
+  visual_kind: VisualKind;
+  visual_spec?: VisualSpec | null;
+  animation_type?: AnimationType;
+  // Optional phrase from the narration this beat illustrates. Not rendered —
+  // useful for debugging and future "cue at exact word" sync.
+  caption_anchor?: string | null;
+}
+
+// A reel is one self-contained micro-lesson on a single topic. Long topics
+// get split into multiple reels (part_index / part_total); there is no longer
+// an internal scene array.
+//
+// Visuals: the reel may declare a sequence of timed `visual_beats` that the
+// renderer cuts between during playback. When absent, the top-level
+// visual_kind / visual_spec render for the entire narration as a single beat.
 export interface ReelScript {
   topic: string;
   title: string;
-  hook: string;
+  narration: string;
+  subtitle: string;
+  highlight_words: string[];
+  duration_sec: number;
+  visual_kind: VisualKind;
+  visual_spec?: VisualSpec | null;
+  animation_type: AnimationType;
   music_mood: MusicMood;
-  scenes: ReelScene[];
+  visual_beats?: VisualBeat[] | null;
+  part_index?: number | null;
+  part_total?: number | null;
 }
 
 export type TutorLevel = 'beg' | 'int' | 'adv';

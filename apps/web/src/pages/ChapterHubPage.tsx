@@ -323,14 +323,20 @@ function ReelsSection({ rows, docId }: { rows: ArtifactRow<ReelScript>[]; docId:
     <ul className="space-y-2">
       {rows.map((r) => {
         const script = r.payload;
-        const sceneCount = script.scenes?.length ?? 0;
+        const dur = Math.round(script.duration_sec || 0);
+        const partTag =
+          script.part_index && script.part_total && script.part_total > 1
+            ? ` · part ${script.part_index}/${script.part_total}`
+            : '';
         return (
           <li key={r.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <p className="text-[10px] uppercase tracking-widest text-white/55">{script.music_mood ?? 'reel'}</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/55">
+              {script.music_mood ?? 'reel'}{partTag}
+            </p>
             <h3 className="mt-0.5 text-sm font-semibold">{script.title || script.topic}</h3>
-            {script.hook && <p className="mt-1 text-xs text-white/70">{script.hook}</p>}
+            {script.subtitle && <p className="mt-1 text-xs text-white/70">{script.subtitle}</p>}
             <div className="mt-2 flex items-center justify-between text-[11px] text-white/55">
-              <span>{sceneCount} scenes</span>
+              <span>{dur > 0 ? `${dur}s` : 'reel'}</span>
               <Link
                 to={`/?doc=${encodeURIComponent(docId)}`}
                 className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white"

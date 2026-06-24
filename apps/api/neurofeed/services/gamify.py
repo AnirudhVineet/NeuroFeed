@@ -19,8 +19,6 @@ XP_AWARDS: dict[str, int] = {
     "reel_complete": 10,
     "tutor_query": 4,
     "explain_simpler": 2,
-    "like": 1,
-    "save": 2,
     "upload": 25,
 }
 

@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from ..deps import get_supabase_admin
 from ..services.parse import SourceType, detect_source_type
 from ..workers import bus
-from ..workers.jobs import schedule_parse_job
+from ..workers.jobs import schedule_generate_job, schedule_parse_job
 
 router = APIRouter(prefix="/api/ingest", tags=["ingest"])
 
@@ -68,6 +68,23 @@ async def ingest(req: IngestRequest) -> IngestResponse:
         filename=req.filename,
     )
     return IngestResponse(document_id=doc_id, status="uploaded")
+
+
+@router.post("/{doc_id}/regenerate", response_model=IngestResponse)
+async def regenerate(doc_id: str) -> IngestResponse:
+    """Re-run artifact generation for a doc that already parsed + chunked.
+
+    Used when the first generate_job failed (e.g. provider rate limit) and we
+    want to retry without re-uploading the file.
+    """
+    sb = get_supabase_admin()
+    if sb is None:
+        raise HTTPException(503, "Supabase not configured")
+    res = sb.table("documents").select("id").eq("id", doc_id).single().execute()
+    if not getattr(res, "data", None):
+        raise HTTPException(404, f"document {doc_id} not found")
+    schedule_generate_job(doc_id=doc_id)
+    return IngestResponse(document_id=doc_id, status="generating")
 
 
 @router.get("/{doc_id}/status")

@@ -6,15 +6,15 @@ system prompt.
 """
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, conint, conlist
 
 
 # ---------- Summary ----------
 class Summary(BaseModel):
-    tldr: str = Field(..., max_length=400)
-    bullets: conlist(str, min_length=5, max_length=8)  # type: ignore[valid-type]
+    tldr: str = Field(..., max_length=800)
+    bullets: conlist(str, min_length=3, max_length=12)  # type: ignore[valid-type]
 
 
 # ---------- Key concept ----------
@@ -26,20 +26,23 @@ class KeyConcept(BaseModel):
 
 
 class KeyConceptList(BaseModel):
-    concepts: conlist(KeyConcept, min_length=5, max_length=15)  # type: ignore[valid-type]
+    concepts: conlist(KeyConcept, min_length=5, max_length=60)  # type: ignore[valid-type]
 
 
 # ---------- Swipe card ----------
 class SwipeCard(BaseModel):
-    title: str = Field(..., max_length=60)
-    body: str = Field(..., max_length=240, description="<=40 words")
-    icon: str = Field(..., max_length=24, description="emoji or lucide name")
-    accent_color: str = Field(..., pattern=r"^#[0-9a-fA-F]{6}$")
+    title: str = Field(..., max_length=120)
+    body: str = Field(..., max_length=400, description="<=60 words")
+    icon: str = Field(default="✨", max_length=24, description="emoji or lucide name")
+    # Loosened: LLMs produce all kinds of garbage here — "#FFF", "blue",
+    # full UUIDs with a "#" prefix, etc. We accept anything; the frontend
+    # falls back to its own palette when the value isn't a real CSS color.
+    accent_color: str = Field(default="#8B5CF6")
     concept_id: str | None = None
 
 
 class SwipeCardSet(BaseModel):
-    cards: conlist(SwipeCard, min_length=8, max_length=14)  # type: ignore[valid-type]
+    cards: conlist(SwipeCard, min_length=4, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Flashcard ----------
@@ -47,51 +50,119 @@ Difficulty = conint(ge=1, le=3)  # type: ignore[valid-type]
 
 
 class Flashcard(BaseModel):
-    question: str = Field(..., max_length=240)
-    answer: str = Field(..., max_length=400)
+    question: str = Field(..., max_length=400)
+    answer: str = Field(..., max_length=600)
     concept_id: str | None = None
-    difficulty: Difficulty
+    difficulty: Difficulty = 2  # type: ignore[assignment]
 
 
 class FlashcardSet(BaseModel):
-    cards: conlist(Flashcard, min_length=10, max_length=20)  # type: ignore[valid-type]
+    cards: conlist(Flashcard, min_length=5, max_length=30)  # type: ignore[valid-type]
 
 
 # ---------- Quiz ----------
 class QuizItem(BaseModel):
-    stem: str = Field(..., max_length=300)
-    options: conlist(str, min_length=4, max_length=4)  # type: ignore[valid-type]
-    answer_index: conint(ge=0, le=3)  # type: ignore[valid-type]
-    explanation: str = Field(..., max_length=240)
+    stem: str = Field(..., max_length=500)
+    options: conlist(str, min_length=2, max_length=6)  # type: ignore[valid-type]
+    answer_index: conint(ge=0, le=5)  # type: ignore[valid-type]
+    explanation: str = Field(default="", max_length=500)
     source_chunk_id: int | None = None
 
 
 class QuizSet(BaseModel):
-    items: conlist(QuizItem, min_length=8, max_length=12)  # type: ignore[valid-type]
+    items: conlist(QuizItem, min_length=3, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Learning path ----------
 class LearningPathStep(BaseModel):
     order: conint(ge=1)  # type: ignore[valid-type]
-    concept_id: str
-    goal: str = Field(..., max_length=200)
+    concept_id: str = ""
+    goal: str = Field(..., max_length=400)
     artifact_ids: list[str] = Field(default_factory=list)
 
 
 class LearningPath(BaseModel):
-    steps: conlist(LearningPathStep, min_length=3, max_length=15)  # type: ignore[valid-type]
+    steps: conlist(LearningPathStep, min_length=2, max_length=20)  # type: ignore[valid-type]
 
 
 # ---------- Reel script ----------
-class ReelScene(BaseModel):
-    caption: str = Field(..., max_length=120)
-    voiceover: str = Field(..., max_length=240)
-    visual_hint: str = Field(..., max_length=120)
-    duration_sec: float = Field(..., gt=0.5, le=8.0)
+# A reel is a single self-contained micro-lesson on one topic. If a topic
+# is too long to fit in one reel, the generator emits MULTIPLE reels for the
+# same topic — part_index / part_total identify the parts. There is no
+# longer an internal "scenes" array.
+AnimationType = Literal[
+    "zoom_in", "zoom_out", "slide_left", "slide_right", "slide_up",
+    "fade", "scale_up", "kinetic_text", "type_writer", "highlight",
+    "split", "pulse",
+]
+VisualKind = Literal[
+    # legacy decorative kinds — kept for back-compat, but the prompt no longer
+    # suggests them; the frontend degrades them into educational fallbacks.
+    "arrow_flow", "icon_grid", "comparison", "timeline", "diagram",
+    "bar_chart", "particles", "concept_map", "gradient_pulse", "shape_morph",
+    # new educational visuals — each one TEACHES, it does not just decorate.
+    "network_packets",       # packets traveling over a wired network
+    "neural_network",        # input/hidden/output layers + animated activations
+    "tree_traversal",        # binary tree with highlighted traversal
+    "sorting_bars",          # bars rearranging into sorted order
+    "linked_list",           # nodes connected with next pointers
+    "stack_queue",           # push/pop or enqueue/dequeue ops
+    "equation",              # rendered formula(s)
+    "coordinate_graph",      # x/y axes with a function curve
+    "flowchart",             # ordered process steps with arrows
+    "molecule",              # atoms + bonds
+    "waveform",              # sine / square wave / pulse train
+    "supply_demand",         # crossing economic curves
+    "map_route",             # simple map with a highlighted path
+    "process_diagram",       # block diagram of a process / pipeline
+]
+MusicMood = Literal["uplifting", "curious", "intense", "dreamy", "playful"]
+
+
+class VisualBeat(BaseModel):
+    # One timed visual shot inside a reel. The renderer cuts to this beat when
+    # playback elapsed >= at_sec (normalised against actual TTS duration).
+    at_sec: float = Field(..., ge=0.0, le=90.0)
+    visual_kind: str = Field(default="flowchart", max_length=40)
+    visual_spec: dict[str, Any] | None = None
+    animation_type: str = Field(default="fade", max_length=40)
+    caption_anchor: str | None = Field(default=None, max_length=240)
 
 
 class ReelScript(BaseModel):
-    scenes: conlist(ReelScene, min_length=3, max_length=8)  # type: ignore[valid-type]
+    # All Literal types loosened to plain strings: LLMs frequently pick
+    # variants like "key_concept" or "visualize" that aren't in the enum.
+    # The frontend's `normaliseReel` defaults anything unknown sensibly.
+    topic: str = Field(..., max_length=240)
+    title: str = Field(default="", max_length=240)
+    narration: str = Field(..., min_length=20, max_length=2000)
+    subtitle: str = Field(..., min_length=1, max_length=200)
+    highlight_words: list[str] = Field(default_factory=list)
+    duration_sec: float = Field(default=25.0, ge=5.0, le=90.0)
+    visual_kind: str = Field(default="flowchart", max_length=40)
+    # Optional structured payload the visual renderer uses to draw the reel
+    # accurately (chart points, network nodes, equation TeX, etc.). Schema is
+    # intentionally open — see VISUAL_SPEC.md in the frontend for shapes.
+    visual_spec: dict[str, Any] | None = None
+    animation_type: str = Field(default="fade", max_length=40)
+    music_mood: str = Field(default="curious", max_length=40)
+    # Timed visual beats — when present, the player cuts between these instead
+    # of holding the top-level visual_kind for the whole reel. The first beat
+    # MUST have at_sec=0; subsequent beats trigger on elapsed-ratio crossings.
+    # When absent / empty, the player renders one beat = (visual_kind, visual_spec).
+    #
+    # Length bound is content-driven: emit one beat per distinct idea in the
+    # narration. 2 is the floor (single-beat reels should just leave this
+    # null), 6 is the ceiling so a 25-30s reel doesn't strobe.
+    visual_beats: list[VisualBeat] | None = Field(default=None, min_length=2, max_length=6)
+    # Multi-part marker: when a topic spans more than one reel, these are
+    # filled in (1-based). For single-part topics they may be omitted.
+    part_index: int | None = Field(default=None, ge=1, le=10)
+    part_total: int | None = Field(default=None, ge=1, le=10)
+
+
+class ReelScriptList(BaseModel):
+    reels: conlist(ReelScript, min_length=1, max_length=4)  # type: ignore[valid-type]
 
 
 # ---------- Tutor ----------

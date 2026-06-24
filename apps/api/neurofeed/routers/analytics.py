@@ -79,3 +79,74 @@ async def analytics(user_id: str = Query(...)) -> dict[str, Any]:
         "activity_series": activity_series,
         "mastery": sorted(mastery_rows, key=lambda r: r.get("score", 0), reverse=True),
     }
+
+
+@router.get("/stats")
+async def stats(user_id: str = Query(...)) -> dict[str, Any]:
+    """Top-line counters for the dashboard hero strip.
+
+    Aggregates over all-time events so the user sees lifetime totals, not
+    just the rolling 14-day analytics window.
+    """
+    sb = get_supabase_admin()
+    if sb is None:
+        raise HTTPException(503, "Supabase not configured")
+
+    # Document + reel counts come straight from row aggregates.
+    docs_res = (
+        sb.table("documents")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    total_uploads = int(getattr(docs_res, "count", None) or 0)
+
+    doc_ids: list[str] = [d["id"] for d in (getattr(docs_res, "data", None) or [])]
+    total_reels = 0
+    if doc_ids:
+        reels_res = (
+            sb.table("artifacts")
+            .select("id", count="exact")
+            .in_("document_id", doc_ids)
+            .eq("type", "reel_script")
+            .execute()
+        )
+        total_reels = int(getattr(reels_res, "count", None) or 0)
+
+    # Event-derived stats. Pull only the columns/types we need.
+    evt_res = (
+        sb.table("learning_events")
+        .select("type,payload")
+        .eq("user_id", user_id)
+        .in_("type", ["quiz_answer", "reel_complete"])
+        .limit(10000)
+        .execute()
+    )
+    quizzes_completed = 0
+    quizzes_correct = 0
+    reels_watched = 0
+    seconds_watched = 0.0
+    for e in getattr(evt_res, "data", None) or []:
+        t = e["type"]
+        payload = e.get("payload") or {}
+        if t == "quiz_answer":
+            quizzes_completed += 1
+            if payload.get("correct"):
+                quizzes_correct += 1
+        elif t == "reel_complete":
+            reels_watched += 1
+            dur = payload.get("duration_sec")
+            if isinstance(dur, (int, float)) and dur > 0:
+                seconds_watched += float(dur)
+            else:
+                # Fallback estimate: most reels run ~45s of actual narration.
+                seconds_watched += 45.0
+
+    return {
+        "total_uploads": total_uploads,
+        "total_reels": total_reels,
+        "reels_watched": reels_watched,
+        "seconds_watched": int(seconds_watched),
+        "quizzes_completed": quizzes_completed,
+        "quizzes_correct": quizzes_correct,
+    }

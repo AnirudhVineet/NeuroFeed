@@ -35,7 +35,15 @@ class Settings(BaseSettings):
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    cors_origins: str = "http://localhost:5173"
+    # Includes desktop Vite (localhost + LAN IP) and the Capacitor WebView origins
+    # used by the Android app. Override via CORS_ORIGINS env var if needed.
+    cors_origins: str = (
+        "http://localhost:5173,"
+        "http://192.168.1.9:5173,"
+        "http://localhost,"
+        "https://localhost,"
+        "capacitor://localhost"
+    )
 
 
 @lru_cache

@@ -45,7 +45,7 @@ type TabId =
   | 'quiz'
   | 'leaderboard';
 
-const TABS: { id: TabId; label: string }[] = [
+const TABS_SELF: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'uploads', label: 'Uploads' },
   { id: 'paths', label: 'Paths' },
@@ -62,6 +62,17 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'leaderboard', label: 'Ranking' },
 ];
 
+// Public tabs visible when viewing another user's profile. Anything that
+// would expose private learning data (bookmarks, activity, raw stats,
+// quiz history, ranking, paths) is hidden here — those are self-only.
+const TABS_PUBLIC: { id: TabId; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'uploads', label: 'Uploads' },
+  { id: 'achievements', label: 'Achievements' },
+  { id: 'followers', label: 'Followers' },
+  { id: 'following', label: 'Following' },
+];
+
 interface SelfData {
   userId: string;
   email: string | null;
@@ -74,7 +85,11 @@ export default function ProfilePage() {
   const params = useParams<{ username?: string }>();
   const social = useSocial();
   const isSelf = !params.username || params.username === 'me' || params.username === social.profile?.username;
+  const visibleTabs = isSelf ? TABS_SELF : TABS_PUBLIC;
   const [tab, setTab] = useState<TabId>('overview');
+  useEffect(() => {
+    if (!visibleTabs.some((t) => t.id === tab)) setTab('overview');
+  }, [visibleTabs, tab]);
 
   const [self, setSelf] = useState<SelfData | null>(null);
   const [other, setOther] = useState<ProfileMeta | null>(null);
@@ -120,13 +135,16 @@ export default function ProfilePage() {
       const p = await fetchProfileByUsername(params.username);
       setOther(p);
       if (p) {
-        const f = await fetchFollowers(p.username).catch(() => []);
+        // Fan out followers + docs in parallel — they used to chain serially,
+        // which doubled the time-to-first-paint on /u/:username navigations.
+        const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000';
+        const [f, docs] = await Promise.all([
+          fetchFollowers(p.username).catch(() => [] as ProfileLite[]),
+          fetch(`${apiBase}/api/documents?user_id=${encodeURIComponent(p.user_id)}`)
+            .then((r) => (r.ok ? r.json() : { items: [] }))
+            .catch(() => ({ items: [] })),
+        ]);
         setOtherFollowers(f);
-        const docs = await fetch(
-          `${(import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'}/api/documents?user_id=${encodeURIComponent(p.user_id)}`,
-        )
-          .then((r) => (r.ok ? r.json() : { items: [] }))
-          .catch(() => ({ items: [] }));
         setOtherDocs(docs.items ?? []);
       }
     } catch (e) {
@@ -193,7 +211,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl px-md py-md">
       <Header view={view} isSelf={isSelf} />
-      <TabBar tab={tab} onTab={setTab} />
+      <TabBar tabs={visibleTabs} tab={tab} onTab={setTab} />
       <main className="space-y-md py-md">
         {tab === 'overview' && <OverviewTab view={view} onTab={setTab} />}
         {tab === 'uploads' && <UploadsTab view={view} />}
@@ -439,9 +457,11 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
         <div className="min-w-0 flex-1 space-y-sm">
           <div className="flex flex-wrap items-center gap-sm">
             <h1 className="text-headline-md text-on-surface">@{view.username}</h1>
-            <span className="rounded-full bg-primary-container/40 px-2 py-0.5 text-label-sm font-bold text-on-primary-container">
-              L{view.level}
-            </span>
+            {isSelf && (
+              <span className="rounded-full bg-primary-container/40 px-2 py-0.5 text-label-sm font-bold text-on-primary-container">
+                L{view.level}
+              </span>
+            )}
           </div>
 
           {/* Action buttons */}
@@ -542,17 +562,19 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
             </div>
           )}
 
-          {/* Gamification chips */}
-          <div className="flex flex-wrap gap-base pt-xs">
-            <div className="inline-flex items-center gap-xs rounded-full border border-secondary-container bg-secondary-container/30 px-sm py-xs text-label-sm text-on-secondary-container">
-              <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-              <span>{view.streak} Day Streak</span>
+          {/* Gamification chips (self only — XP/streak are private learning signals) */}
+          {isSelf && (
+            <div className="flex flex-wrap gap-base pt-xs">
+              <div className="inline-flex items-center gap-xs rounded-full border border-secondary-container bg-secondary-container/30 px-sm py-xs text-label-sm text-on-secondary-container">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                <span>{view.streak} Day Streak</span>
+              </div>
+              <div className="inline-flex items-center gap-xs rounded-full border border-tertiary-container bg-tertiary-container/30 px-sm py-xs text-label-sm text-on-tertiary-container">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                <span>XP Level {view.level}</span>
+              </div>
             </div>
-            <div className="inline-flex items-center gap-xs rounded-full border border-tertiary-container bg-tertiary-container/30 px-sm py-xs text-label-sm text-on-tertiary-container">
-              <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-              <span>XP Level {view.level}</span>
-            </div>
-          </div>
+          )}
 
           {err && <p className="text-label-sm text-error">{err}</p>}
         </div>
@@ -641,11 +663,11 @@ function EditField({ label, value, onChange, textarea }: { label: string; value:
   );
 }
 
-function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
+function TabBar({ tabs, tab, onTab }: { tabs: { id: TabId; label: string }[]; tab: TabId; onTab: (t: TabId) => void }) {
   return (
     <nav className="sticky top-16 z-20 -mx-md mt-md border-y border-outline-variant/40 bg-background/90 backdrop-blur-sm">
       <div className="no-scrollbar flex gap-md overflow-x-auto px-md py-2 text-label-sm uppercase tracking-widest">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const active = tab === t.id;
           return (
             <button
@@ -670,9 +692,8 @@ function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
 
 function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => void }) {
   const social = useSocial();
-  const recent = view.isSelfView
-    ? social.activity.filter((r) => r.actor_username === view.username).slice(0, 4)
-    : [];
+  if (!view.isSelfView) return <PublicOverviewTab view={view} onTab={onTab} />;
+  const recent = social.activity.filter((r) => r.actor_username === view.username).slice(0, 4);
   const nextLevelXp = (view.level + 1) * 250;
   const pctToNext = Math.min(1, (view.xp - view.level * 250) / 250);
 
@@ -821,6 +842,52 @@ function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => 
           <Link to="/settings/privacy" className="text-label-sm font-bold text-on-tertiary-fixed underline">
             Update Visibility
           </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Public-facing overview shown when viewing another user's profile. Only
+// surfaces the user's published uploads + badges they've earned — no XP,
+// streak, KPI tiles, activity feed, or progress data.
+function PublicOverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => void }) {
+  return (
+    <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
+      <div className="space-y-md md:col-span-8">
+        <SectionHead title="Recent Uploads" onAction={() => onTab('uploads')} />
+        {view.docs.length === 0 ? (
+          <EmptyTile msg={`@${view.username} hasn't shared any uploads yet.`} />
+        ) : (
+          <div className="grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-3">
+            {view.docs.slice(0, 3).map((d) => (
+              <UploadTile key={d.id} d={d} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-md md:col-span-4">
+        <SectionHead title="Recently Earned" onAction={() => onTab('achievements')} />
+        <div className="space-y-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          {view.badges.slice(0, 3).map((b) => {
+            const meta = BADGE_CATALOG[b];
+            if (!meta) return null;
+            return (
+              <div key={b} className="flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary-container bg-surface-container text-2xl">
+                  {meta.glyph}
+                </div>
+                <div>
+                  <h4 className="text-label-md text-on-surface">{meta.label}</h4>
+                  <p className="text-label-sm text-on-surface-variant">{meta.description}</p>
+                </div>
+              </div>
+            );
+          })}
+          {view.badges.length === 0 && (
+            <p className="text-body-sm text-on-surface-variant">No badges yet.</p>
+          )}
         </div>
       </div>
     </div>

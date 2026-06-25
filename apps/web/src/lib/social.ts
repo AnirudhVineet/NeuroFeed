@@ -497,10 +497,22 @@ export async function refreshActivityScope(scope: 'all' | 'mine' | 'following' |
 
 // ---- Profile lookups (for /u/:username pages) ----
 
+// Short-lived cache: repeat visits to the same profile inside ~60s reuse the
+// in-memory hit instead of round-tripping to the API. Keeps tab switches and
+// back-nav snappy without showing stale data on real refreshes.
+const PROFILE_CACHE_TTL_MS = 60_000;
+const profileCache = new Map<string, { ts: number; value: ProfileMeta | null }>();
+
 export async function fetchProfileByUsername(username: string): Promise<ProfileMeta | null> {
+  const key = username.toLowerCase();
+  const cached = profileCache.get(key);
+  if (cached && Date.now() - cached.ts < PROFILE_CACHE_TTL_MS) return cached.value;
   try {
-    return await api<ProfileMeta>(`/api/profiles/by-username/${encodeURIComponent(username)}`);
+    const value = await api<ProfileMeta>(`/api/profiles/by-username/${encodeURIComponent(username)}`);
+    profileCache.set(key, { ts: Date.now(), value });
+    return value;
   } catch {
+    profileCache.set(key, { ts: Date.now(), value: null });
     return null;
   }
 }

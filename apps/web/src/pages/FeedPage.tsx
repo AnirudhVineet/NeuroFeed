@@ -8,7 +8,6 @@ import {
   type FeedFilters,
 } from '@/components/feed/FilterSheet';
 import { FlashcardCard } from '@/components/feed/FlashcardCard';
-import { PathStepCard } from '@/components/feed/PathStepCard';
 import { QuizCard } from '@/components/feed/QuizCard';
 import { ReelFeedCard } from '@/components/feed/ReelFeedCard';
 import { ReelOverlay } from '@/components/feed/ReelOverlay';
@@ -26,7 +25,6 @@ import { inferSubject } from '@/lib/subjects';
 import { useGamify } from '@/state/gamify';
 import type {
   Flashcard,
-  LearningPathStep,
   QuizItem,
   ReelScript,
   SwipeCard as SwipeCardData,
@@ -38,7 +36,12 @@ import type {
 // engine + karaoke captions + tutor panel stay intact.
 
 export default function FeedPage() {
-  const [items, setItems] = useState<FeedItem[]>([]);
+  // Seed items from the last-cached feed so the launch shows real content
+  // immediately and only the revalidation network round-trip happens in the
+  // background. Without this, items is [] until /api/feed resolves and the
+  // empty-state ("Upload now") flashes for the entire request duration.
+  const [items, setItems] = useState<FeedItem[]>(() => loadCachedFeed());
+  const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<
     Record<string, { title: string; body: string } | null>
@@ -81,12 +84,18 @@ export default function FeedPage() {
       const { data } = await supabase.auth.getSession();
       const uid = data.session?.user.id ?? null;
       setUserId(uid);
-      if (!uid) return;
+      if (!uid) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetchFeed(uid);
         setItems(res.items);
+        saveCachedFeed(res.items);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
@@ -128,7 +137,16 @@ export default function FeedPage() {
       />
     );
   }
-  if (items.length === 0) {
+  // Skeleton while the initial fetch is still in flight and we don't have any
+  // cached items to paint. Without this, the "Your feed is empty / Upload now"
+  // panel below flashes for the entire request duration even when the user
+  // does have a populated feed.
+  if (loading && items.length === 0) {
+    return <FeedLoadingSkeleton />;
+  }
+  // Real "empty" state — only show it once we know the fetch finished and
+  // there really is nothing to show.
+  if (!loading && items.length === 0) {
     return (
       <EmptyState
         icon="auto_awesome"
@@ -321,14 +339,6 @@ function FeedItemRender({
           }}
         />
       );
-    case 'learning_path_step':
-      return (
-        <PathStepCard
-          data={item.payload as unknown as LearningPathStep}
-          documentId={item.document_id}
-          documentTitle={item.document_title}
-        />
-      );
     case 'summary':
       return (
         <SummaryFeedCard
@@ -454,7 +464,66 @@ function EmptyState({
   );
 }
 
+function FeedLoadingSkeleton() {
+  return (
+    <div className="mx-auto max-w-2xl px-md pt-md" aria-busy="true">
+      <div className="mb-md flex items-center justify-between gap-sm">
+        <span className="block h-6 w-24 animate-pulse rounded bg-surface-container" />
+        <span className="block h-8 w-20 animate-pulse rounded-full bg-surface-container" />
+      </div>
+      <ul className="space-y-md pb-md">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <li
+            key={i}
+            className="overflow-hidden rounded-xl border border-outline-variant bg-surface"
+          >
+            <div className="flex items-center gap-sm p-md">
+              <span className="block h-10 w-10 animate-pulse rounded-full bg-surface-container" />
+              <div className="flex-1 space-y-2">
+                <span className="block h-3 w-1/3 animate-pulse rounded bg-surface-container" />
+                <span className="block h-3 w-1/2 animate-pulse rounded bg-surface-container-low" />
+              </div>
+            </div>
+            <span className="block aspect-[4/5] w-full animate-pulse bg-surface-container-low" />
+            <div className="p-md">
+              <span className="block h-9 w-full animate-pulse rounded-lg bg-surface-container" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const COMPLETED_STORAGE_KEY = 'neurofeed.feed.completed.v1';
+const FEED_CACHE_KEY = 'neurofeed.feed.cache.v1';
+const FEED_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function loadCachedFeed(): FeedItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(FEED_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { ts?: number; items?: FeedItem[] };
+    if (!parsed?.ts || !Array.isArray(parsed.items)) return [];
+    if (Date.now() - parsed.ts > FEED_CACHE_TTL_MS) return [];
+    return parsed.items;
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedFeed(items: FeedItem[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      FEED_CACHE_KEY,
+      JSON.stringify({ ts: Date.now(), items }),
+    );
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 function loadCompletedIds(): Set<string> {
   if (typeof window === 'undefined') return new Set();

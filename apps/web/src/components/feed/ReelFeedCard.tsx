@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { inferSubject } from '@/lib/subjects';
 import { postInterest } from '@/lib/feed';
+import { ReelCard } from './ReelCard';
 import type { ReelScript } from '../../../../../packages/shared-types/artifacts';
 
-// 4:5 Instagram-style card representing one reel in the home feed. Tapping
-// the thumbnail (or the play button) opens the existing ReelCard engine
-// fullscreen via the ReelOverlay. The card itself never plays audio.
+// 4:5 Instagram-style card representing one reel in the home feed. The reel
+// auto-plays inline once it scrolls into view (>=60% intersection) via the
+// embedded ReelCard's IntersectionObserver — no click required. The
+// "Watch" footer button still opens the fullscreen overlay for the full UX.
+// When the overlay is open for this same reel, the inline ReelCard is
+// unmounted so audio doesn't double-play.
 
 export interface ReelFeedCardProps {
   reel: ReelScript;
@@ -14,6 +18,7 @@ export interface ReelFeedCardProps {
   documentId?: string;
   conceptId?: string | null;
   userId?: string | null;
+  isOpenedInOverlay?: boolean;
   onOpen: () => void;
   onQuickLearning?: () => void;
 }
@@ -25,6 +30,7 @@ export function ReelFeedCard({
   documentId,
   conceptId,
   userId,
+  isOpenedInOverlay = false,
   onOpen,
   onQuickLearning,
 }: ReelFeedCardProps) {
@@ -32,10 +38,6 @@ export function ReelFeedCard({
   const hue = hashHue(`${reel.topic}|${reel.title}`);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  const partLabel =
-    reel.part_index && reel.part_total && reel.part_total > 1
-      ? `Part ${reel.part_index}/${reel.part_total}`
-      : null;
 
   return (
     <article className="overflow-hidden rounded-xl border border-outline-variant bg-surface shadow-card">
@@ -66,44 +68,30 @@ export function ReelFeedCard({
         </span>
       </header>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Play reel: ${reel.title || reel.topic}`}
-        className="group relative block aspect-[4/5] w-full overflow-hidden bg-surface-dim"
+      {/* Inline reel player. Auto-plays once 60%+ visible. While the same
+          reel is open in the fullscreen overlay we drop this instance so a
+          second <audio> isn't speaking over the overlay. */}
+      <div
+        className="relative aspect-[4/5] w-full overflow-hidden bg-black"
         style={{
           background: `radial-gradient(120% 80% at 20% 10%, hsl(${hue} 65% 35%) 0%, transparent 60%), radial-gradient(120% 80% at 80% 90%, hsl(${(hue + 80) % 360} 65% 35%) 0%, transparent 60%), linear-gradient(160deg, #0a0e18 0%, #03050a 100%)`,
         }}
       >
-        {/* Subject + part chip */}
-        <div className="absolute left-md top-md flex items-center gap-2">
-          <span className="glass rounded-full px-3 py-1 text-label-sm text-on-surface">
-            #{subject}
-          </span>
-          {partLabel && (
-            <span className="rounded-full bg-tertiary-fixed/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-fixed">
-              {partLabel}
-            </span>
-          )}
-        </div>
-
-        {/* Title overlay */}
-        <div className="absolute inset-x-md bottom-md text-white">
-          <h2 className="line-clamp-3 text-headline-sm font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
-            {reel.title || reel.topic}
-          </h2>
-        </div>
-
-        {/* Center play button — visible always, more prominent on hover */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity">
-          <span
-            className="material-symbols-outlined text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)] transition-transform group-hover:scale-110 group-active:scale-95"
-            style={{ fontSize: '72px', fontVariationSettings: "'FILL' 1" }}
-          >
-            play_circle
-          </span>
-        </div>
-      </button>
+        {isOpenedInOverlay ? (
+          <div className="absolute inset-0 flex items-center justify-center text-white/80">
+            <span className="text-label-sm uppercase tracking-widest">Playing fullscreen</span>
+          </div>
+        ) : (
+          <ReelCard
+            data={reel}
+            documentId={documentId}
+            conceptId={conceptId}
+            artifactId={artifactId}
+            userId={userId}
+            embedded
+          />
+        )}
+      </div>
 
       <div className="p-md">
         <div className="mb-md flex items-center justify-between">

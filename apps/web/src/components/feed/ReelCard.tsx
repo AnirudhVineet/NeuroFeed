@@ -21,12 +21,18 @@ const AUDIO_UNLOCK_EVENT = 'reel-audio-unlocked';
 const SPEEDS = [0.5, 1, 1.25, 1.5, 1.75, 2] as const;
 type Speed = (typeof SPEEDS)[number];
 const SPEED_STORAGE_KEY = 'neurofeed.reel.speed';
+const MUTED_STORAGE_KEY = 'neurofeed.reel.muted';
 
 function loadSavedSpeed(): Speed {
   if (typeof window === 'undefined') return 1;
   const raw = window.localStorage.getItem(SPEED_STORAGE_KEY);
   const n = Number(raw);
   return (SPEEDS as readonly number[]).includes(n) ? (n as Speed) : 1;
+}
+
+function loadSavedMuted(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(MUTED_STORAGE_KEY) === '1';
 }
 
 export function ReelCard({
@@ -36,6 +42,7 @@ export function ReelCard({
   artifactId,
   userId,
   onComplete,
+  embedded = false,
 }: {
   data: ReelScript;
   documentId?: string;
@@ -43,6 +50,11 @@ export function ReelCard({
   artifactId?: string;
   userId?: string | null;
   onComplete?: () => void;
+  /** When true, the reel is being rendered inside the in-feed card (not the
+   * fullscreen overlay). Drops the safe-area + TopBar/BottomNav offsets so
+   * chrome (progress bar, title block, right rail) sits on the card's
+   * actual edges instead of floating in the middle. */
+  embedded?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -64,7 +76,9 @@ export function ReelCard({
   const [speed, setSpeed] = useState<Speed>(() => loadSavedSpeed());
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
   const [quickLearningOpen, setQuickLearningOpen] = useState(false);
+  const [muted, setMuted] = useState<boolean>(() => loadSavedMuted());
   const speedRef = useRef<Speed>(speed);
+  const mutedRef = useRef<boolean>(muted);
 
   const reel = useMemo(() => normaliseReel(data), [data]);
   const hue = useMemo(
@@ -117,6 +131,14 @@ export function ReelCard({
     startRef.current = performance.now() - (elapsedRef.current * 1000) / speed;
     try { window.localStorage.setItem(SPEED_STORAGE_KEY, String(speed)); } catch { /* ignore */ }
   }, [speed]);
+
+  // Mute toggle: applies to the live audio element and persists across reels
+  // so the user only sets it once per session.
+  useEffect(() => {
+    mutedRef.current = muted;
+    if (audioRef.current) audioRef.current.muted = muted;
+    try { window.localStorage.setItem(MUTED_STORAGE_KEY, muted ? '1' : '0'); } catch { /* ignore */ }
+  }, [muted]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -235,6 +257,7 @@ export function ReelCard({
           audio.src = url;
           audio.currentTime = elapsedRef.current;
           audio.playbackRate = speedRef.current;
+          audio.muted = mutedRef.current;
           audio.onended = finish;
           audioUrlRef.current = url;
           await audio.play().catch(() => undefined);
@@ -287,6 +310,24 @@ export function ReelCard({
     }
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // Hard stop on unmount. Without this, closing the fullscreen overlay (Esc or
+  // the X button) tears down the visual layer but leaves the underlying
+  // HTMLAudioElement playing — the in-flight .play() promise resolves after
+  // teardown, so audio kept going with no UI. Pause + drop src kills both
+  // current playback and any pending play() that's still resolving.
+  useEffect(() => {
+    return () => {
+      const a = audioRef.current;
+      if (a) {
+        a.onended = null;
+        a.pause();
+        a.removeAttribute('src');
+        a.load();
+      }
+      audioUrlRef.current = null;
+    };
   }, []);
 
   function bumpSpeed(delta: 1 | -1) {
@@ -410,11 +451,12 @@ export function ReelCard({
           darker so the left-bottom info panel stays legible. */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/40" />
 
-      {/* TOP: single progress bar for this reel. Sits below the floating
-          TopHud so the two layers never collide. */}
+      {/* TOP: single progress bar for this reel. In fullscreen it sits below
+          the floating TopHud; when embedded inline in the feed there's no
+          TopHud above us, so we hug the card edge instead. */}
       <div
         className="absolute left-3 right-3 z-30"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
+        style={{ top: embedded ? '0.5rem' : 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
       >
         <div className="h-1 w-full overflow-hidden rounded-full bg-white/20">
           <div
@@ -453,25 +495,39 @@ export function ReelCard({
         )}
       </AnimatePresence>
 
-      {/* RIGHT RAIL — vertical action stack in Instagram-Reels order. */}
+      {/* RIGHT RAIL — vertical action stack in Instagram-Reels order. When
+          embedded inline we drop the BottomNav offset (the nav doesn't float
+          over us inside a feed card) and trim the rail to the essentials so
+          eight 48px buttons don't overflow a 4:5 thumbnail. */}
       <div
         className="absolute right-3 z-30 flex flex-col items-center gap-3"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+        style={{ bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
       >
-        <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
+        <RailBtn
+          glyph={muted ? '🔇' : '🔊'}
+          title={muted ? 'Unmute' : 'Mute'}
+          onClick={() => setMuted((m) => !m)}
+        />
+        {!embedded && (
+          <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
+        )}
         <RailBtn glyph="↗" title="Share" onClick={onShare} />
-        <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} />
+        {!embedded && (
+          <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} />
+        )}
         <InterestButtons
           userId={userId ?? null}
           target={{ artifactId, documentId, conceptId }}
         />
-        <SpeedRailBtn
-          speed={speed}
-          open={speedMenuOpen}
-          onToggle={() => setSpeedMenuOpen((v) => !v)}
-          onSelect={(s) => { setSpeed(s); setSpeedMenuOpen(false); }}
-        />
-        <RailBtn glyph="⬇" title="Download" onClick={onDownload} />
+        {!embedded && (
+          <SpeedRailBtn
+            speed={speed}
+            open={speedMenuOpen}
+            onToggle={() => setSpeedMenuOpen((v) => !v)}
+            onSelect={(s) => { setSpeed(s); setSpeedMenuOpen(false); }}
+          />
+        )}
+        {!embedded && <RailBtn glyph="⬇" title="Download" onClick={onDownload} />}
         <RailBtn
           glyph={fullscreen ? '⤡' : '⛶'}
           title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
@@ -482,7 +538,7 @@ export function ReelCard({
       {/* LEFT BOTTOM — creator + subject + topic + part marker. */}
       <div
         className="pointer-events-none absolute left-4 right-20 z-30 flex flex-col gap-1.5"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+        style={{ bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
       >
         <div className="pointer-events-auto flex items-center gap-2 text-[11px] font-medium text-white/85">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[11px]">N</span>

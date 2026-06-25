@@ -194,6 +194,7 @@ export default function FeedPage() {
                     item={it}
                     override={overrides[it.id] ?? null}
                     userId={userId}
+                    isOpenedInOverlay={openedReel?.id === it.id}
                     onComplete={() => markCompleted(it.id)}
                     onExplainSimpler={async () => {
                       const r = await explainSimpler(it.id, userId);
@@ -270,6 +271,7 @@ function FeedItemRender({
   item,
   override,
   userId,
+  isOpenedInOverlay,
   onComplete,
   onExplainSimpler: _onExplainSimpler,
   onOpenReel,
@@ -278,6 +280,7 @@ function FeedItemRender({
   item: FeedItem;
   override: { title: string; body: string } | null;
   userId: string;
+  isOpenedInOverlay: boolean;
   onComplete: () => void;
   onExplainSimpler: () => Promise<void>;
   onOpenReel: () => void;
@@ -294,6 +297,7 @@ function FeedItemRender({
           documentId={item.document_id}
           conceptId={item.concept_id}
           userId={userId}
+          isOpenedInOverlay={isOpenedInOverlay}
           onOpen={onOpenReel}
           onQuickLearning={onOpenQuickLearning}
         />

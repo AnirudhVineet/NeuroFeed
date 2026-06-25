@@ -10,7 +10,6 @@ const TutorPage = lazy(() => import('./pages/TutorPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ChapterHubPage = lazy(() => import('./pages/ChapterHubPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const PathsPage = lazy(() => import('./pages/PathsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
@@ -60,7 +59,6 @@ export default function App() {
               <Route path="/tutor" element={<TutorPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/doc/:id" element={<ChapterHubPage />} />
-              <Route path="/paths" element={<PathsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/me" element={<ProfilePage />} />
               <Route path="/u/:username" element={<ProfilePage />} />

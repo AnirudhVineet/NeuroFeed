@@ -7,7 +7,6 @@ export interface DocCounts {
   flashcard: number;
   quiz: number;
   reel_script: number;
-  learning_path_step: number;
   total: number;
 }
 
@@ -63,7 +62,6 @@ export function artifactLabel(t: ArtifactType): string {
     case 'flashcard': return 'flashcards';
     case 'quiz': return 'quizzes';
     case 'summary': return 'summary';
-    case 'learning_path_step': return 'steps';
     default: return t;
   }
 }

@@ -5,10 +5,8 @@ import { fetchAnalytics, type MasteryRow } from '@/lib/analytics';
 import { postEvent } from '@/lib/feed';
 import { inferSubject } from '@/lib/subjects';
 import { supabase } from '@/lib/supabase';
-import { LearningPath, type ConceptIndex } from '@/components/learning/LearningPath';
 import type {
   Flashcard,
-  LearningPathStep,
   QuizItem,
   ReelScript,
   Summary,
@@ -37,10 +35,9 @@ interface GroupedArtifacts {
   flashcard?: ArtifactRow<Flashcard>[];
   quiz?: ArtifactRow<QuizItem>[];
   reel_script?: ArtifactRow<ReelScript>[];
-  learning_path_step?: ArtifactRow<LearningPathStep>[];
 }
 
-type SectionId = 'overview' | 'path' | 'reels' | 'flashcards' | 'quiz' | 'tutor' | 'progress';
+type SectionId = 'overview' | 'reels' | 'flashcards' | 'quiz' | 'tutor' | 'progress';
 
 export default function ChapterHubPage() {
   const { id: docId } = useParams();
@@ -96,28 +93,7 @@ export default function ChapterHubPage() {
     quizzes: artifacts?.quiz?.length ?? 0,
     cards: artifacts?.swipe_card?.length ?? 0,
     summary: artifacts?.summary?.length ?? 0,
-    steps: artifacts?.learning_path_step?.length ?? 0,
   }), [artifacts]);
-
-  const conceptIndex: ConceptIndex = useMemo(() => {
-    const idx: ConceptIndex = {};
-    for (const m of mastery) {
-      idx[m.concept_id] = { name: m.name, mastery: m.score };
-    }
-    // Fall back to artifact rows so steps with no quiz history still get
-    // some concept label (the row carries concept_id even when mastery is 0).
-    const all = ([] as ArtifactRow[]).concat(
-      artifacts?.flashcard ?? [],
-      artifacts?.quiz ?? [],
-      artifacts?.swipe_card ?? [],
-    );
-    for (const r of all) {
-      if (r.concept_id && !idx[r.concept_id]) {
-        idx[r.concept_id] = { name: extractConceptName(r), mastery: 0 };
-      }
-    }
-    return idx;
-  }, [mastery, artifacts]);
 
   if (err) return <Empty msg={err} />;
   if (!doc || !artifacts) return <Empty msg="Loading…" />;
@@ -127,28 +103,27 @@ export default function ChapterHubPage() {
   return (
     <div className="mx-auto max-w-3xl pb-32 pt-20">
       <header className="px-4 pt-2">
-        <Link to="/dashboard" className="text-xs text-white/60 hover:text-white">← Library</Link>
+        <Link to="/dashboard" className="text-xs text-on-surface-variant hover:text-on-surface">← Library</Link>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/80">{subject}</span>
+          <span className="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-[10px] uppercase tracking-widest text-on-surface">{subject}</span>
           <StatusPill status={doc.status} />
-          <span className="text-[10px] text-white/45">· {new Date(doc.created_at).toLocaleDateString()}</span>
+          <span className="text-[10px] text-outline">· {new Date(doc.created_at).toLocaleDateString()}</span>
         </div>
         <h1 className="mt-1 text-2xl font-bold leading-tight">{doc.title}</h1>
-        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-white/60 tabular-nums">
+        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-on-surface-variant tabular-nums">
           <span>{counts.reels} reels</span>
           <span>· {counts.flashcards} flashcards</span>
           <span>· {counts.quizzes} quizzes</span>
           <span>· {counts.cards} cards</span>
-          {counts.steps > 0 && <span>· {counts.steps} path steps</span>}
         </div>
         {doc.error && (
-          <p className="mt-2 rounded-lg border border-rose-400/30 bg-rose-500/10 p-2 text-xs text-rose-200">
+          <p className="mt-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2 text-xs text-rose-700">
             {doc.error}
           </p>
         )}
       </header>
 
-      <nav className="sticky top-[5rem] z-20 mt-4 border-b border-white/10 bg-ink/85 backdrop-blur">
+      <nav className="sticky top-[5rem] z-20 mt-4 border-b border-outline-variant bg-background/90 backdrop-blur">
         <div className="flex gap-1 overflow-x-auto px-4 py-2 text-xs">
           {SECTIONS.map((s) => (
             <button
@@ -156,8 +131,8 @@ export default function ChapterHubPage() {
               onClick={() => setActive(s.id)}
               className={`shrink-0 rounded-full px-3 py-1.5 font-medium transition-colors ${
                 active === s.id
-                  ? 'bg-accent text-white'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  ? 'bg-primary text-on-primary'
+                  : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
               }`}
             >
               {s.label}
@@ -173,20 +148,6 @@ export default function ChapterHubPage() {
             counts={counts}
             mastery={docMastery}
             onJump={setActive}
-          />
-        )}
-        {active === 'path' && (
-          <LearningPath
-            docId={doc.id}
-            docTitle={doc.title}
-            steps={artifacts.learning_path_step ?? []}
-            conceptIndex={conceptIndex}
-            onOpenReel={() => setActive('reels')}
-            onOpenStory={() => setActive('reels')}
-            onOpenQuiz={() => setActive('quiz')}
-            onOpenFlashcards={() => setActive('flashcards')}
-            onOpenTutor={() => setActive('tutor')}
-            onGenerateNotes={() => setActive('tutor')}
           />
         )}
         {active === 'reels' && (
@@ -213,7 +174,6 @@ export default function ChapterHubPage() {
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
-  { id: 'path', label: 'Learning Path' },
   { id: 'reels', label: 'Reels' },
   { id: 'flashcards', label: 'Flashcards' },
   { id: 'quiz', label: 'Quiz' },
@@ -221,27 +181,11 @@ const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'progress', label: 'Progress' },
 ];
 
-// Try to pull a human-readable concept name out of an artifact payload. Each
-// artifact type stores it under different keys, so we look in a few places
-// before falling back to a slice of the id.
-function extractConceptName(row: ArtifactRow): string {
-  const p = row.payload as Record<string, unknown> | undefined;
-  if (!p) return row.concept_id?.slice(0, 6) ?? '';
-  const candidates = ['name', 'title', 'topic', 'question', 'stem', 'concept'];
-  for (const k of candidates) {
-    const v = p[k];
-    if (typeof v === 'string' && v.trim()) {
-      return v.length > 60 ? `${v.slice(0, 57)}…` : v;
-    }
-  }
-  return row.concept_id?.slice(0, 6) ?? '';
-}
-
 function StatusPill({ status }: { status: string }) {
   const tone =
-    status === 'ready' ? 'bg-emerald-500/15 text-emerald-200 border-emerald-400/30'
-    : status === 'error' ? 'bg-rose-500/15 text-rose-200 border-rose-400/30'
-    : 'bg-amber-500/15 text-amber-100 border-amber-400/30';
+    status === 'ready' ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/40'
+    : status === 'error' ? 'bg-rose-500/15 text-rose-700 border-rose-500/40'
+    : 'bg-amber-500/20 text-amber-800 border-amber-500/40';
   return (
     <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${tone}`}>
       {status}
@@ -255,7 +199,7 @@ function OverviewSection({
   summary, counts, mastery, onJump,
 }: {
   summary: ArtifactRow<Summary> | null;
-  counts: { reels: number; flashcards: number; quizzes: number; cards: number; steps: number };
+  counts: { reels: number; flashcards: number; quizzes: number; cards: number };
   mastery: MasteryRow[];
   onJump: (s: SectionId) => void;
 }) {
@@ -265,35 +209,34 @@ function OverviewSection({
   return (
     <div className="space-y-4">
       {summary ? (
-        <div className="rounded-2xl border border-accent/30 bg-accent/10 p-4">
-          <p className="text-[10px] uppercase tracking-widest text-accent">TL;DR</p>
+        <div className="rounded-2xl border border-primary/30 bg-primary-container/30 p-4">
+          <p className="text-[10px] uppercase tracking-widest text-primary">TL;DR</p>
           <p className="mt-1 text-sm leading-snug">{summary.payload.tldr}</p>
           {summary.payload.bullets?.length > 0 && (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-white/85">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-on-surface">
               {summary.payload.bullets.slice(0, 5).map((b, i) => <li key={i}>{b}</li>)}
             </ul>
           )}
         </div>
       ) : (
-        <p className="text-sm text-white/55">No summary generated yet.</p>
+        <p className="text-sm text-on-surface-variant">No summary generated yet.</p>
       )}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <JumpTile glyph="🗺" label="Path" sub={counts.steps ? `${counts.steps} steps` : 'Not built'} onClick={() => onJump('path')} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <JumpTile glyph="🎬" label="Reels" sub={`${counts.reels} items`} onClick={() => onJump('reels')} />
         <JumpTile glyph="🎴" label="Flashcards" sub={`${counts.flashcards} cards`} onClick={() => onJump('flashcards')} />
         <JumpTile glyph="❓" label="Quiz" sub={`${counts.quizzes} questions`} onClick={() => onJump('quiz')} />
         <JumpTile glyph="💬" label="AI Tutor" sub="Ask anything" onClick={() => onJump('tutor')} />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs uppercase tracking-widest text-white/55">Mastery</p>
-          <p className="text-xs tabular-nums text-white/75">
+          <p className="text-xs uppercase tracking-widest text-on-surface-variant">Mastery</p>
+          <p className="text-xs tabular-nums text-on-surface">
             {mastery.length ? `${Math.round(avg * 100)}% avg` : 'No quiz data yet'}
           </p>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container">
           <div
             className="h-full"
             style={{ width: `${Math.round(avg * 100)}%`, background: avg >= 0.7 ? '#34d399' : avg >= 0.4 ? '#facc15' : '#f87171' }}
@@ -308,11 +251,11 @@ function JumpTile({ glyph, label, sub, onClick }: { glyph: string; label: string
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-start gap-0.5 rounded-xl border border-white/10 bg-white/5 p-3 text-left hover:border-accent/40 hover:bg-white/10"
+      className="flex flex-col items-start gap-0.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-left hover:border-primary/40 hover:bg-surface-container-high"
     >
       <span className="text-xl">{glyph}</span>
       <span className="text-sm font-semibold">{label}</span>
-      <span className="text-[11px] text-white/55">{sub}</span>
+      <span className="text-[11px] text-on-surface-variant">{sub}</span>
     </button>
   );
 }
@@ -329,17 +272,17 @@ function ReelsSection({ rows, docId }: { rows: ArtifactRow<ReelScript>[]; docId:
             ? ` · part ${script.part_index}/${script.part_total}`
             : '';
         return (
-          <li key={r.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <p className="text-[10px] uppercase tracking-widest text-white/55">
+          <li key={r.id} className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-3">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
               {script.music_mood ?? 'reel'}{partTag}
             </p>
             <h3 className="mt-0.5 text-sm font-semibold">{script.title || script.topic}</h3>
-            {script.subtitle && <p className="mt-1 text-xs text-white/70">{script.subtitle}</p>}
-            <div className="mt-2 flex items-center justify-between text-[11px] text-white/55">
+            {script.subtitle && <p className="mt-1 text-xs text-on-surface-variant">{script.subtitle}</p>}
+            <div className="mt-2 flex items-center justify-between text-[11px] text-on-surface-variant">
               <span>{dur > 0 ? `${dur}s` : 'reel'}</span>
               <Link
                 to={`/?doc=${encodeURIComponent(docId)}`}
-                className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white"
+                className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-on-primary"
               >
                 Watch in feed
               </Link>
@@ -373,11 +316,11 @@ function FlashcardRow({ row, userId }: { row: ArtifactRow<Flashcard>; userId: st
             void postEvent(userId, 'flashcard_review', { artifact_id: row.id });
           }
         }}
-        className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/8"
+        className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-left hover:bg-surface-container-high"
       >
-        <p className="text-[10px] uppercase tracking-widest text-white/45">Difficulty {card.difficulty}</p>
+        <p className="text-[10px] uppercase tracking-widest text-outline">Difficulty {card.difficulty}</p>
         <p className="mt-0.5 text-sm font-semibold">{card.question}</p>
-        <p className={`mt-2 text-xs ${revealed ? 'text-white/85' : 'text-white/35 blur-[3px]'}`}>
+        <p className={`mt-2 text-xs ${revealed ? 'text-on-surface' : 'text-outline-variant blur-[3px]'}`}>
           {revealed ? card.answer : 'Tap to reveal answer'}
         </p>
       </button>
@@ -411,19 +354,19 @@ function QuizRow({ row, userId }: { row: ArtifactRow<QuizItem>; userId: string |
   }
 
   return (
-    <li className="rounded-xl border border-white/10 bg-white/5 p-3">
+    <li className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
       <p className="text-sm font-semibold">{q.stem}</p>
       <div className="mt-2 grid gap-1.5">
         {q.options.map((opt, i) => {
           const isAnswer = i === q.answer_index;
           const isPicked = i === chosen;
           const tone = !answered
-            ? 'border-white/10 bg-white/[0.03] hover:bg-white/10'
+            ? 'border-outline-variant bg-surface-container-low hover:bg-surface-container-high'
             : isAnswer
-              ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-50'
+              ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-800'
               : isPicked
-                ? 'border-rose-400/50 bg-rose-500/20 text-rose-50'
-                : 'border-white/10 bg-white/[0.03] text-white/55';
+                ? 'border-rose-500/60 bg-rose-500/20 text-rose-800'
+                : 'border-outline-variant bg-surface-container-low text-on-surface-variant';
           return (
             <button
               key={i}
@@ -438,7 +381,7 @@ function QuizRow({ row, userId }: { row: ArtifactRow<QuizItem>; userId: string |
         })}
       </div>
       {answered && (
-        <p className={`mt-2 text-[11px] ${correct ? 'text-emerald-200' : 'text-rose-200'}`}>
+        <p className={`mt-2 text-[11px] ${correct ? 'text-emerald-700' : 'text-rose-700'}`}>
           {correct ? 'Correct.' : 'Not quite.'} {q.explanation}
         </p>
       )}
@@ -448,15 +391,15 @@ function QuizRow({ row, userId }: { row: ArtifactRow<QuizItem>; userId: string |
 
 function TutorSection({ docId }: { docId: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
+    <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5 text-center">
       <p className="text-3xl">💬</p>
       <h3 className="mt-2 text-sm font-semibold">Ask the AI Tutor about this chapter</h3>
-      <p className="mt-1 text-xs text-white/65">
+      <p className="mt-1 text-xs text-on-surface-variant">
         Get explanations, examples, and follow-up questions grounded in this document.
       </p>
       <Link
         to={`/tutor?doc=${encodeURIComponent(docId)}`}
-        className="mt-4 inline-block rounded-full bg-accent px-4 py-2 text-xs font-semibold text-white"
+        className="mt-4 inline-block rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary"
       >
         Open AI Tutor
       </Link>
@@ -474,12 +417,12 @@ function ProgressSection({ mastery }: { mastery: MasteryRow[] }) {
         .slice()
         .sort((a, b) => b.score - a.score)
         .map((m) => (
-        <li key={m.concept_id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <li key={m.concept_id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
           <div className="flex items-center justify-between gap-3">
             <span className="min-w-0 flex-1 truncate text-sm">{m.name}</span>
-            <span className="text-xs tabular-nums text-white/65">{Math.round(m.score * 100)}%</span>
+            <span className="text-xs tabular-nums text-on-surface-variant">{Math.round(m.score * 100)}%</span>
           </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container">
             <div
               className="h-full"
               style={{
@@ -504,7 +447,7 @@ function ComingSoonRow() {
       ].map((t) => (
         <div
           key={t.label}
-          className="flex flex-col items-center gap-0.5 rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-3 text-center text-white/40"
+          className="flex flex-col items-center gap-0.5 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-3 text-center text-outline"
         >
           <span className="text-xl">{t.glyph}</span>
           <span className="text-xs font-semibold">{t.label}</span>
@@ -517,12 +460,12 @@ function ComingSoonRow() {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/55">
+    <div className="rounded-2xl border border-dashed border-outline-variant p-8 text-center text-sm text-on-surface-variant">
       {text}
     </div>
   );
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <div className="p-8 text-center text-muted">{msg}</div>;
+  return <div className="p-8 text-center text-on-surface-variant">{msg}</div>;
 }

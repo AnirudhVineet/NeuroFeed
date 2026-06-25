@@ -12,8 +12,7 @@ export type ArtifactType =
   | 'swipe_card'
   | 'flashcard'
   | 'quiz'
-  | 'reel_script'
-  | 'learning_path_step';
+  | 'reel_script';
 
 export interface FeedItem {
   id: string;

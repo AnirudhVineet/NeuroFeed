@@ -91,16 +91,6 @@ export interface ActivityRow {
   hidden?: boolean;
 }
 
-export interface PathProgressRow {
-  user_id: string;
-  document_id: string;
-  step_order: number;
-  status: 'not_started' | 'in_progress' | 'completed';
-  pct: number;
-  completed_at?: string | null;
-  updated_at: string;
-}
-
 export interface SocialState {
   ready: boolean;
   user_id: string | null;
@@ -112,7 +102,6 @@ export interface SocialState {
   challenges: Challenge[];
   activity: ActivityRow[];
   doc_visibility: Record<string, Visibility>;
-  path_progress: Record<string, PathProgressRow>; // key = `${docId}:${order}`
   bookmarks: string[];
 }
 
@@ -137,7 +126,6 @@ const EMPTY_STATE: SocialState = {
   challenges: [],
   activity: [],
   doc_visibility: {},
-  path_progress: {},
   bookmarks: [],
 };
 
@@ -186,7 +174,7 @@ export async function bootstrap(userId: string, opts: { force?: boolean } = {}):
 
 async function doBootstrap(userId: string): Promise<void> {
   set({ user_id: userId, ready: false });
-  const [profile, privacy, following, friends, requests, challenges, activity, docVis, path, bookmarks] =
+  const [profile, privacy, following, friends, requests, challenges, activity, docVis, bookmarks] =
     await Promise.all([
       api<ProfileMeta>(`/api/profiles/me?user_id=${encodeURIComponent(userId)}`).catch(() => null),
       api<Partial<PrivacySettings>>(`/api/privacy?user_id=${encodeURIComponent(userId)}`).catch(() => ({})),
@@ -198,18 +186,12 @@ async function doBootstrap(userId: string): Promise<void> {
       api<{ items: Challenge[] }>(`/api/challenges?user_id=${encodeURIComponent(userId)}`).catch(() => ({ items: [] })),
       api<{ items: ActivityRow[] }>(`/api/activity?user_id=${encodeURIComponent(userId)}&scope=all`).catch(() => ({ items: [] })),
       api<{ items: Record<string, Visibility> }>(`/api/doc-visibility?user_id=${encodeURIComponent(userId)}`).catch(() => ({ items: {} })),
-      api<{ items: PathProgressRow[] }>(`/api/path-progress?user_id=${encodeURIComponent(userId)}`).catch(() => ({ items: [] })),
       api<{ items: { artifact_id: string }[] }>(`/api/bookmarks?user_id=${encodeURIComponent(userId)}`).catch(() => ({ items: [] })),
     ]);
 
-  const pathMap: Record<string, PathProgressRow> = {};
-  for (const r of path.items ?? []) {
-    pathMap[`${r.document_id}:${r.step_order}`] = r;
-  }
-
   // Defensive: when the backend returns the safe-read fallback (an empty
   // profile shape with user_id=""), pretend we got nothing so the UI shows the
-  // "not synced" path instead of rendering "@" with no username.
+  // "not synced" state instead of rendering "@" with no username.
   const validProfile = profile && profile.user_id ? profile : null;
 
   set({
@@ -223,7 +205,6 @@ async function doBootstrap(userId: string): Promise<void> {
     challenges: challenges.items ?? [],
     activity: activity.items ?? [],
     doc_visibility: docVis.items ?? {},
-    path_progress: pathMap,
     bookmarks: (bookmarks.items ?? []).map((b) => b.artifact_id),
   });
 }
@@ -408,43 +389,6 @@ export async function setDocVisibility(docId: string, v: Visibility): Promise<vo
     body: JSON.stringify({ visibility: v }),
   });
   set({ doc_visibility: { ...state.doc_visibility, [docId]: v } });
-}
-
-// ---- Path progress ----
-
-export function getPathProgress(docId: string, order: number): { status: 'not_started' | 'in_progress' | 'completed'; pct: number; completed_at?: string | null } {
-  const row = state.path_progress[`${docId}:${order}`];
-  if (!row) return { status: 'not_started', pct: 0 };
-  return { status: row.status, pct: row.pct, completed_at: row.completed_at };
-}
-
-export async function setPathProgress(
-  docId: string,
-  order: number,
-  patch: { status?: 'not_started' | 'in_progress' | 'completed'; pct?: number; completed_at?: string },
-): Promise<void> {
-  const key = `${docId}:${order}`;
-  const prev = state.path_progress[key];
-  const status = patch.status ?? prev?.status ?? 'in_progress';
-  const pct = patch.pct ?? prev?.pct ?? 0;
-  await api(`/api/path-progress?user_id=${encodeURIComponent(uid())}`, {
-    method: 'PUT',
-    body: JSON.stringify({ document_id: docId, step_order: order, status, pct }),
-  });
-  set({
-    path_progress: {
-      ...state.path_progress,
-      [key]: {
-        user_id: state.user_id ?? '',
-        document_id: docId,
-        step_order: order,
-        status,
-        pct,
-        completed_at: status === 'completed' ? new Date().toISOString() : (prev?.completed_at ?? null),
-        updated_at: new Date().toISOString(),
-      },
-    },
-  });
 }
 
 // ---- Bookmarks ----

@@ -75,11 +75,12 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
   }, [open]);
 
   const selectedDoc = useMemo(() => docs.find((d) => d.id === docId) ?? null, [docs, docId]);
-  // Chapter strings aren't on DocSummary yet, so derive a simple list — placeholder
-  // chapters numbered by the document's learning_path_step count.
+  // Chapter strings aren't on DocSummary yet, so derive a simple list — bucket
+  // quiz items into ~5-question chapters as a placeholder until the backend
+  // exposes real chapter metadata.
   const chapterOptions = useMemo(() => {
     if (!selectedDoc) return [] as string[];
-    const n = Math.max(1, selectedDoc.counts.learning_path_step || 0);
+    const n = Math.max(1, Math.ceil((selectedDoc.counts.quiz || 0) / 5));
     return Array.from({ length: n }, (_, i) => `Chapter ${i + 1}`);
   }, [selectedDoc]);
 

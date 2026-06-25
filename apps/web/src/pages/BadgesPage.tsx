@@ -89,8 +89,7 @@ export default function BadgesPage() {
         <p className="text-[10px] uppercase tracking-widest text-white/55">Achievements</p>
         <h1 className="text-2xl font-bold text-white">Badges</h1>
         <p className="mt-1 text-sm text-white/65">
-          {earned.length} / {items.length} earned. Earn more by studying daily, completing paths,
-          and winning quizzes.
+          {earned.length} / {items.length} earned. Earn more by studying daily and winning quizzes.
         </p>
       </header>
 

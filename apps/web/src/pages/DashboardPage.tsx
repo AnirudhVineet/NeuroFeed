@@ -273,7 +273,6 @@ export default function DashboardPage() {
 
 function SocialQuickRow() {
   const links: { to: string; glyph: string; label: string }[] = [
-    { to: '/paths', glyph: '🗺', label: 'Paths' },
     { to: '/discover', glyph: '🔭', label: 'Discover' },
     { to: '/friends', glyph: '👥', label: 'Friends' },
     { to: '/activity', glyph: '⏱', label: 'Activity' },

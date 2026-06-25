@@ -32,39 +32,37 @@ import { supabase } from '@/lib/supabase';
 type TabId =
   | 'overview'
   | 'uploads'
-  | 'paths'
   | 'achievements'
-  | 'bookmarks'
-  | 'activity'
   | 'stats'
   | 'following'
   | 'followers'
-  | 'notes'
-  | 'reels'
-  | 'stories'
-  | 'quiz'
-  | 'leaderboard';
+  | 'reels';
 
+// Tabs shown in the TabBar when viewing your own profile. Uploads, Followers,
+// and Following are deliberately omitted — they are reachable via the count
+// chips in the header, so listing them in the bar would just be duplication.
 const TABS_SELF: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
-  { id: 'uploads', label: 'Uploads' },
-  { id: 'paths', label: 'Paths' },
   { id: 'achievements', label: 'Achievements' },
-  { id: 'bookmarks', label: 'Bookmarks' },
-  { id: 'activity', label: 'Activity' },
   { id: 'stats', label: 'Stats' },
-  { id: 'following', label: 'Following' },
-  { id: 'followers', label: 'Followers' },
-  { id: 'notes', label: 'Notes' },
   { id: 'reels', label: 'Reels' },
-  { id: 'stories', label: 'Stories' },
-  { id: 'quiz', label: 'Quiz' },
-  { id: 'leaderboard', label: 'Ranking' },
+];
+
+// All TabIds that can render for the self view. Used to guard the active-tab
+// reset effect so clicking a count chip into "uploads" doesn't bounce us
+// straight back to overview.
+const SELF_RENDERABLE: TabId[] = [
+  'overview',
+  'uploads',
+  'achievements',
+  'stats',
+  'followers',
+  'following',
+  'reels',
 ];
 
 // Public tabs visible when viewing another user's profile. Anything that
-// would expose private learning data (bookmarks, activity, raw stats,
-// quiz history, ranking, paths) is hidden here — those are self-only.
+// would expose private learning data is omitted; these are self-only.
 const TABS_PUBLIC: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'uploads', label: 'Uploads' },
@@ -88,8 +86,9 @@ export default function ProfilePage() {
   const visibleTabs = isSelf ? TABS_SELF : TABS_PUBLIC;
   const [tab, setTab] = useState<TabId>('overview');
   useEffect(() => {
-    if (!visibleTabs.some((t) => t.id === tab)) setTab('overview');
-  }, [visibleTabs, tab]);
+    const allowed: TabId[] = isSelf ? SELF_RENDERABLE : TABS_PUBLIC.map((t) => t.id);
+    if (!allowed.includes(tab)) setTab('overview');
+  }, [isSelf, tab]);
 
   const [self, setSelf] = useState<SelfData | null>(null);
   const [other, setOther] = useState<ProfileMeta | null>(null);
@@ -210,23 +209,16 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl px-md py-md">
-      <Header view={view} isSelf={isSelf} />
+      <Header view={view} isSelf={isSelf} onTab={setTab} />
       <TabBar tabs={visibleTabs} tab={tab} onTab={setTab} />
       <main className="space-y-md py-md">
         {tab === 'overview' && <OverviewTab view={view} onTab={setTab} />}
         {tab === 'uploads' && <UploadsTab view={view} />}
-        {tab === 'paths' && <PathsTab view={view} />}
         {tab === 'achievements' && <AchievementsTab view={view} />}
-        {tab === 'bookmarks' && <BookmarksTab view={view} />}
-        {tab === 'activity' && <ActivityTab view={view} />}
         {tab === 'stats' && <StatsTab view={view} />}
         {tab === 'following' && <FollowingTab view={view} />}
         {tab === 'followers' && <FollowersTab view={view} />}
-        {tab === 'notes' && <NotesTab view={view} />}
         {tab === 'reels' && <ReelsTab view={view} />}
-        {tab === 'stories' && <StoriesTab view={view} />}
-        {tab === 'quiz' && <QuizTab view={view} />}
-        {tab === 'leaderboard' && <LeaderboardTab view={view} />}
       </main>
     </div>
   );
@@ -403,7 +395,7 @@ function subjectCounts(docs: { subject: Subject }[]): { subject: Subject; count:
 
 // ---- Header (mockup-fidelity) ----
 
-function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
+function Header({ view, isSelf, onTab }: { view: ProfileView; isSelf: boolean; onTab: (t: TabId) => void }) {
   const following = isFollowing(view.username);
   const friend = isFriend(view.username);
   const navigate = useNavigate();
@@ -535,11 +527,11 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
             )}
           </div>
 
-          {/* Counts row */}
+          {/* Counts row — each chip jumps to its tab. */}
           <div className="flex gap-lg border-y border-outline-variant/40 py-sm">
-            <CountChip value={view.stats.uploads} label="Uploads" />
-            <CountChip value={view.followers} label="Followers" />
-            <CountChip value={view.following} label="Following" />
+            <CountChip value={view.stats.uploads} label="Uploads" onClick={() => onTab('uploads')} />
+            <CountChip value={view.followers} label="Followers" onClick={() => onTab('followers')} />
+            <CountChip value={view.following} label="Following" onClick={() => onTab('following')} />
           </div>
 
           {/* Display name + bio + subjects */}
@@ -594,12 +586,16 @@ function Header({ view, isSelf }: { view: ProfileView; isSelf: boolean }) {
   );
 }
 
-function CountChip({ value, label }: { value: number; label: string }) {
+function CountChip({ value, label, onClick }: { value: number; label: string; onClick?: () => void }) {
   return (
-    <div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="-mx-1 rounded-md px-1 text-left transition-colors hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
       <span className="text-body-lg font-bold text-on-surface tabular-nums">{value.toLocaleString()}</span>
       <span className="ml-1 text-label-md text-on-surface-variant">{label}</span>
-    </div>
+    </button>
   );
 }
 
@@ -693,7 +689,6 @@ function TabBar({ tabs, tab, onTab }: { tabs: { id: TabId; label: string }[]; ta
 function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => void }) {
   const social = useSocial();
   if (!view.isSelfView) return <PublicOverviewTab view={view} onTab={onTab} />;
-  const recent = social.activity.filter((r) => r.actor_username === view.username).slice(0, 4);
   const nextLevelXp = (view.level + 1) * 250;
   const pctToNext = Math.min(1, (view.xp - view.level * 250) / 250);
 
@@ -782,7 +777,7 @@ function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => 
         <KpiTile icon="military_tech" value={`${view.stats.wins} / ${view.stats.losses}`} label="Wins / Losses" />
       </div>
 
-      {/* Left col: recent uploads + activity */}
+      {/* Left col: recent uploads */}
       <div className="space-y-md md:col-span-8">
         <SectionHead title="Recent Uploads" onAction={() => onTab('uploads')} />
         {view.docs.length === 0 ? (
@@ -793,17 +788,6 @@ function OverviewTab({ view, onTab }: { view: ProfileView; onTab: (t: TabId) => 
               <UploadTile key={d.id} d={d} />
             ))}
           </div>
-        )}
-
-        <SectionHead title="Recent Activity" onAction={() => onTab('activity')} />
-        {recent.length === 0 ? (
-          <EmptyTile msg="No recent activity yet." />
-        ) : (
-          <ul className="space-y-2">
-            {recent.map((r) => (
-              <ActivityRow key={r.id} r={r} />
-            ))}
-          </ul>
         )}
       </div>
 
@@ -943,21 +927,6 @@ function UploadTile({ d }: { d: DocSummary & { subject: Subject } }) {
   );
 }
 
-function ActivityRow({ r }: { r: { id: string; actor_username?: string; actor_avatar_seed?: string; verb: string; object_text: string; ts: string } }) {
-  return (
-    <li className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
-        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>bolt</span>
-      </div>
-      <div className="min-w-0 flex-1 text-body-md text-on-surface-variant">
-        <span className="font-bold text-on-surface">@{r.actor_username}</span> {r.verb}{' '}
-        <span className="font-bold text-on-surface">{r.object_text}</span>
-        <p className="mt-1 text-label-sm text-outline">{relTime(r.ts)}</p>
-      </div>
-    </li>
-  );
-}
-
 // ---- Other tabs (light-themed retrofit) ----
 
 function UploadsTab({ view }: { view: ProfileView }) {
@@ -967,37 +936,6 @@ function UploadsTab({ view }: { view: ProfileView }) {
       {view.docs.map((d) => (
         <li key={d.id}>
           <UploadTile d={d} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PathsTab({ view }: { view: ProfileView }) {
-  if (!view.isSelfView) return <Empty msg={`@${view.username} hasn't shared their paths publicly.`} />;
-  const withPaths = view.docs.filter((d) => d.counts.learning_path_step > 0);
-  if (!withPaths.length) {
-    return (
-      <Empty msg="No learning paths yet. Upload a document to generate one.">
-        <Link to="/paths" className="mt-3 inline-block text-primary hover:underline">Open the paths page</Link>
-      </Empty>
-    );
-  }
-  return (
-    <ul className="grid grid-cols-1 gap-gutter sm:grid-cols-2">
-      {withPaths.map((d) => (
-        <li key={d.id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
-          <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">{d.subject}</p>
-          <Link to={`/doc/${encodeURIComponent(d.id)}`} className="mt-1 block text-label-md font-bold text-on-surface hover:text-primary">
-            {d.title}
-          </Link>
-          <p className="mt-1 text-label-sm text-on-surface-variant">{d.counts.learning_path_step} steps</p>
-          <Link
-            to="/paths"
-            className="mt-2 inline-block rounded-lg bg-primary-container px-3 py-1 text-label-sm font-bold text-on-primary-container"
-          >
-            Open path
-          </Link>
         </li>
       ))}
     </ul>
@@ -1022,38 +960,6 @@ function AchievementsTab({ view }: { view: ProfileView }) {
         );
       })}
     </div>
-  );
-}
-
-function BookmarksTab({ view }: { view: ProfileView }) {
-  const social = useSocial();
-  if (!view.isSelfView) return <Empty msg="Bookmarks are private." />;
-  if (!social.bookmarks.length) return <Empty msg="No bookmarks yet. Tap the bookmark icon on a card to save it." />;
-  return (
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {social.bookmarks.map((id) => (
-        <li key={id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-label-sm text-on-surface-variant">
-          <span className="text-label-sm uppercase tracking-widest">Artifact</span>
-          <p className="mt-1 font-mono text-label-sm text-on-surface">{id}</p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ActivityTab({ view }: { view: ProfileView }) {
-  const social = useSocial();
-  const rows = view.isSelfView
-    ? social.activity
-    : social.activity.filter((r) => r.actor_username === view.username);
-  if (!rows.length) return <Empty msg="No activity yet." />;
-  if (view.isSelfView && social.profile?.hidden_activity) {
-    return <Empty msg="You've hidden your activity. Re-enable in Privacy settings." />;
-  }
-  return (
-    <ul className="space-y-2">
-      {rows.map((r) => <ActivityRow key={r.id} r={r} />)}
-    </ul>
   );
 }
 
@@ -1103,10 +1009,6 @@ function FollowersTab({ view }: { view: ProfileView }) {
   return <UserList users={view.followersList} />;
 }
 
-function NotesTab({ view }: { view: ProfileView }) {
-  return <Empty msg={view.isSelfView ? 'Your public notes will appear here once you publish a note.' : `@${view.username} hasn't published any notes yet.`} />;
-}
-
 function ReelsTab({ view }: { view: ProfileView }) {
   const reels = view.docs.flatMap((d) =>
     Array.from({ length: d.counts.reel_script }).map((_, i) => ({ docId: d.id, title: d.title, idx: i })),
@@ -1132,65 +1034,6 @@ function ReelsTab({ view }: { view: ProfileView }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function StoriesTab({ view }: { view: ProfileView }) {
-  return <Empty msg={view.isSelfView ? 'Stories you complete will be listed here.' : `@${view.username} hasn't shared stories publicly.`} />;
-}
-
-function QuizTab({ view }: { view: ProfileView }) {
-  const wr = view.stats.wins + view.stats.losses;
-  const rate = wr ? Math.round((view.stats.wins / wr) * 100) : 0;
-  const social = useSocial();
-  const myCh = view.isSelfView ? social.challenges : [];
-  return (
-    <div className="space-y-md">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <KpiTile icon="military_tech" value={view.stats.wins} label="Wins" />
-        <KpiTile icon="close" value={view.stats.losses} label="Losses" />
-        <KpiTile icon="target" value={`${rate}%`} label="Win rate" />
-        <KpiTile icon="swords" value={wr} label="Total" />
-      </div>
-      <div>
-        <h3 className="mb-md text-headline-sm text-on-surface">Match history</h3>
-        {myCh.length ? (
-          <ul className="space-y-2">
-            {myCh.slice(0, 12).map((c) => (
-              <li key={c.id} className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md text-body-sm">
-                <span className="font-bold text-on-surface">@{(c.to?.username ?? c.from?.username) ?? '—'}</span>
-                <span className="text-on-surface-variant">· {c.mode}</span>
-                <span className="ml-auto rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-label-sm uppercase tracking-widest text-on-surface-variant">
-                  {c.status}
-                </span>
-                {c.status === 'finished' && c.wins_from != null && c.wins_to != null && (
-                  <span className="text-label-sm tabular-nums text-on-surface-variant">{c.wins_from} – {c.wins_to}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <Empty msg="No matches yet. Challenge someone to start your record." />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function LeaderboardTab({ view }: { view: ProfileView }) {
-  return (
-    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-headline-sm text-on-surface">Leaderboard</h3>
-        <Link to="/leaderboard" className="text-label-md text-primary hover:underline">
-          Full board →
-        </Link>
-      </div>
-      <p className="text-body-sm text-on-surface-variant">
-        @{view.username} ranks by XP: <span className="font-bold text-on-surface">{view.xp.toLocaleString()}</span>.
-        Visit the full leaderboard for live rankings across global, friends, college, and subject scopes.
-      </p>
-    </div>
   );
 }
 
@@ -1251,17 +1094,6 @@ function EmptyTile({ msg }: { msg: string }) {
       {msg}
     </div>
   );
-}
-
-function relTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 60_000) return 'just now';
-  const m = Math.round(diff / 60_000);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
 }
 
 function hashHue(s: string): number {

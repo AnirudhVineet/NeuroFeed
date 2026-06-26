@@ -548,6 +548,18 @@ function saveCompletedIds(ids: Set<string>) {
   }
 }
 
+// Artifact types the feed knows how to render. Anything else (e.g. the
+// deprecated `learning_path_step` that the backend may still emit for older
+// documents) is dropped before it reaches FeedItemRender so the feed never
+// shows a "(no renderer yet)" placeholder for it.
+const RENDERABLE_TYPES: ReadonlySet<string> = new Set([
+  'reel_script',
+  'swipe_card',
+  'flashcard',
+  'quiz',
+  'summary',
+]);
+
 function applyFilters(
   items: FeedItem[],
   f: FeedFilters,
@@ -559,6 +571,7 @@ function applyFilters(
   const noDiff = f.difficulties.size === 0;
 
   return items.filter((it) => {
+    if (!RENDERABLE_TYPES.has(it.type)) return false;
     if (!noDoc && it.document_id && !f.documentIds.has(it.document_id)) return false;
     if (!noSubject) {
       const subj = inferSubject(it.document_title ?? '');

@@ -451,12 +451,12 @@ export function ReelCard({
           darker so the left-bottom info panel stays legible. */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/40" />
 
-      {/* TOP: single progress bar for this reel. In fullscreen it sits below
-          the floating TopHud; when embedded inline in the feed there's no
-          TopHud above us, so we hug the card edge instead. */}
+      {/* TOP: single progress bar for this reel. In the fullscreen overlay
+          we only need to clear the safe area + the close button (40px, sat at
+          safe + 12px). Embedded inline in a feed card we hug the card edge. */}
       <div
         className="absolute left-3 right-3 z-30"
-        style={{ top: embedded ? '0.5rem' : 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
+        style={{ top: embedded ? '0.5rem' : 'calc(env(safe-area-inset-top, 0px) + 3.5rem)' }}
       >
         <div className="h-1 w-full overflow-hidden rounded-full bg-white/20">
           <div
@@ -495,30 +495,21 @@ export function ReelCard({
         )}
       </AnimatePresence>
 
-      {/* RIGHT RAIL — vertical action stack in Instagram-Reels order. When
-          embedded inline we drop the BottomNav offset (the nav doesn't float
-          over us inside a feed card) and trim the rail to the essentials so
-          eight 48px buttons don't overflow a 4:5 thumbnail. */}
+      {/* RIGHT RAIL — vertical action stack in Instagram-Reels order. The
+          rail is bottom-anchored and grows upward; on viewports too short
+          to fit all 9 buttons the *top* items get clipped by ReelCard's
+          overflow-hidden parent, so source order matters: least-important
+          actions go first (top, clipped first), Ask AI + Fullscreen go
+          last (bottom, always visible). We intentionally do NOT use
+          justify-end + overflow-y-auto here — that combo leaves some
+          rail items unreachable in WebKit/Blink. */}
       <div
-        className="absolute right-3 z-30 flex flex-col items-center gap-3"
-        style={{ bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+        className="absolute right-3 z-30 flex flex-col items-center gap-2.5"
+        style={{
+          bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+        }}
       >
-        <RailBtn
-          glyph={muted ? '🔇' : '🔊'}
-          title={muted ? 'Unmute' : 'Mute'}
-          onClick={() => setMuted((m) => !m)}
-        />
-        {!embedded && (
-          <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
-        )}
-        <RailBtn glyph="↗" title="Share" onClick={onShare} />
-        {!embedded && (
-          <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} />
-        )}
-        <InterestButtons
-          userId={userId ?? null}
-          target={{ artifactId, documentId, conceptId }}
-        />
+        {!embedded && <RailBtn glyph="⬇" title="Download" onClick={onDownload} />}
         {!embedded && (
           <SpeedRailBtn
             speed={speed}
@@ -527,7 +518,22 @@ export function ReelCard({
             onSelect={(s) => { setSpeed(s); setSpeedMenuOpen(false); }}
           />
         )}
-        {!embedded && <RailBtn glyph="⬇" title="Download" onClick={onDownload} />}
+        <RailBtn glyph="↗" title="Share" onClick={onShare} />
+        <RailBtn
+          glyph={muted ? '🔇' : '🔊'}
+          title={muted ? 'Unmute' : 'Mute'}
+          onClick={() => setMuted((m) => !m)}
+        />
+        {!embedded && (
+          <RailBtn glyph="🎓" title="Quick Learning" onClick={() => setQuickLearningOpen(true)} accent />
+        )}
+        <InterestButtons
+          userId={userId ?? null}
+          target={{ artifactId, documentId, conceptId }}
+        />
+        {!embedded && (
+          <RailBtn glyph="?" title="Ask AI" onClick={() => setTutorOpen(true)} accent />
+        )}
         <RailBtn
           glyph={fullscreen ? '⤡' : '⛶'}
           title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
@@ -535,10 +541,12 @@ export function ReelCard({
         />
       </div>
 
-      {/* LEFT BOTTOM — creator + subject + topic + part marker. */}
+      {/* LEFT BOTTOM — creator + subject + topic + part marker. Bottom offset
+          matches the right rail so both panels align against the same edge in
+          overlay mode (no BottomNav to clear). */}
       <div
         className="pointer-events-none absolute left-4 right-20 z-30 flex flex-col gap-1.5"
-        style={{ bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
+        style={{ bottom: embedded ? '0.75rem' : 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
       >
         <div className="pointer-events-auto flex items-center gap-2 text-[11px] font-medium text-white/85">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[11px]">N</span>

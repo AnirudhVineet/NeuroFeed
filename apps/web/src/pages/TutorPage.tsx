@@ -79,6 +79,7 @@ export default function TutorPage() {
     );
   }
 
+  // Dark canvas comes from App.tsx (route is in DARK_PAGE_PREFIXES).
   return (
     <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col px-3 pb-28 pt-[5.25rem]">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -140,7 +141,7 @@ export default function TutorPage() {
       </main>
 
       <footer className="mt-3">
-        <div className="glass-strong flex items-end gap-2 rounded-2xl p-2 shadow-soft">
+        <div className="glass-dark flex items-end gap-2 rounded-2xl p-2 shadow-soft">
           <textarea
             ref={inputRef}
             value={draft}

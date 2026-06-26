@@ -42,7 +42,7 @@ export function Avatar({
       {initial}
       {online && (
         <span
-          className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-ink bg-emerald-400"
+          className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-background bg-emerald-400"
           style={{ width: ringSize, height: ringSize }}
         />
       )}

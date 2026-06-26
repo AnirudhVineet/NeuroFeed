@@ -85,13 +85,21 @@ export default {
         // Legacy aliases — used by yet-to-be-migrated components so the app
         // still renders during the T2-T8 page-by-page port. Remove once
         // every page has been ported.
+        //
+        // `ink` and `card` must stay DARK: every unmigrated component using
+        // `bg-ink` / `bg-card/X` (TutorPanel, QuickLearningSheet,
+        // NotificationBell, ToastHost, ChallengeDialog, FilterSheet, and the
+        // dashboard/tutor pages) layers `text-white` on top. Flipping these
+        // to light off-white made all that text invisible. The values match
+        // the reel canvas gradient (#0a0e18 → #03050a) so the dark panels
+        // feel consistent with the rest of the dark-media surfaces.
         accent: '#006a61',
         secondaryLegacy: '#6366F1',
         danger: '#EF4444',
         muted: '#6d7a77',
         bg: '#f5faf8',
-        ink: '#f5faf8',
-        card: '#ffffff',
+        ink: '#0a0e18',
+        card: '#141a26',
       },
       fontFamily: {
         // Single Inter face globally; per-role font-* tokens kept so we can

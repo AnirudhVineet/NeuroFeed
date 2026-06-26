@@ -1,15 +1,104 @@
 # NeuroFeed
 
-Upload your study material — PDFs, slides, docs, lecture audio — and get back a TikTok-style learning feed: animated reels, swipe cards, flashcards, quizzes, learning paths, and an AI tutor that cites your own pages. Wrapped in XP, streaks, a friends layer, 1v1 challenges, and a leaderboard.
+Upload your study material — PDFs, slides, docs, lecture audio — and get back a TikTok-style learning feed: animated reels, swipe cards, flashcards, quizzes, and an AI tutor that cites your own pages. Wrapped in XP, streaks, a friends layer, 1v1 challenges, and a leaderboard.
 
 > Make learning feel like scrolling TikTok and stick like flashcards.
+
+## The problem
+
+- The average student attention span on a static PDF is **under 8 minutes**, but the average lecture slide deck is 40+ pages.
+- Students already spend **hours per day** on short-form video feeds (TikTok, Reels, Shorts) — the same dopamine loop that pulls them *away* from studying.
+- Existing study tools (Quizlet, Anki, Notion AI) are **active-work tools** — they require the student to sit down, decide to study, and stay focused.
+- The result is a widening gap: course material gets longer and denser; the only medium students passively engage with is entertainment.
+
+## Our solution
+
+**NeuroFeed turns the student's own course material into the feed itself.** Upload a PDF, a slide deck, or a lecture recording — and within minutes, the same material comes back as a vertical, swipeable, animated learning feed with karaoke subtitles, an AI tutor that cites the source page, and a gamified XP loop. The passive scroll *is* the studying.
+
+**One sentence:** *Spaced repetition meets short-form video — built on the student's own syllabus.*
+
+## Why it's novel
+
+| | Traditional study tools | Generic AI tutors | **NeuroFeed** |
+|---|---|---|---|
+| Content source | Pre-built decks | Public web | **Student's own uploads** |
+| Format | Text cards | Chat | **Animated reels + cards + chat** |
+| Engagement model | Active recall sessions | Q&A on demand | **Passive feed + active recall** |
+| Citations | None | Often hallucinated | **Page-level citations to source** |
+| Visual layer | Static | None | **16 animated educational visuals, beat-synced to TTS** |
+| Social loop | Solo | Solo | **1v1 challenges, leaderboards, friends** |
+
+The reels engine is the headline technical contribution: a **single user upload** is decomposed into topic-bounded narrations of 50–130 words, each rendered as 2–6 timed **visual beats** (network packets animating, neural nets propagating, sorting bars swapping, equations resolving), with the visual cross-fade ratio-synced to **actual TTS duration** rather than fixed timing. Long topics auto-split across 1–3 contiguous reels and are kept adjacent in the feed by a custom ranker.
+
+## Who it's for
+
+- **Undergraduates** in dense-content disciplines: CS, engineering, pre-med, economics, law.
+- **Self-learners** working through MOOC PDFs and lecture recordings without a structured course.
+- **Exam crammers** who need to convert a 200-page reader into something they can review on a phone in line for coffee.
+
+## Impact at a glance
+
+- **Time-to-first-review:** under ~2 minutes from upload to first playable reel (artifacts stream in incrementally via SSE — the feed populates as the generator finishes).
+- **Zero GPU cost:** embeddings run locally on CPU via `BAAI/bge-small-en-v1.5` (384-dim, `fastembed`).
+- **Offline-tolerant mobile:** Capacitor 8 Android shell + PWA on desktop/mobile browsers.
+- **Explainable ranking:** every feed item carries a `reason` field (weak-concept boost / recency / subject match / variety / interest signal) — no black-box ML.
+- **Six artifact types** from one upload: `summary`, `swipe_card`, `flashcard`, `quiz`, `reel_script`, plus an in-app RAG tutor on every chunk.
+
+## System architecture (high level)
+
+```
+                    ┌──────────────────────────────────────────┐
+                    │              React PWA + Capacitor       │
+                    │   Feed · Reels · Tutor · Profile · 1v1   │
+                    └────────────────┬─────────────────────────┘
+                                     │ HTTPS + SSE
+                    ┌────────────────▼─────────────────────────┐
+                    │             FastAPI (async)              │
+                    │   routers: ingest · feed · tutor ·       │
+                    │            actions · gamify · social     │
+                    └────────┬───────────────────┬─────────────┘
+                             │                   │
+              ┌──────────────▼──┐         ┌──────▼──────────┐
+              │  parse_job →    │         │   Supabase      │
+              │  generate_job   │         │  Postgres +     │
+              │  (background    │         │  pgvector +     │
+              │   asyncio tasks)│         │  Storage + Auth │
+              └──┬───────────┬──┘         └─────────────────┘
+                 │           │
+       ┌─────────▼──┐   ┌────▼─────────────┐
+       │  Groq      │   │  Featherless     │
+       │  (latency) │   │  (batch, 70B)    │
+       │  Llama-3.3 │   │  semaphore=1     │
+       │  Whisper   │   │                  │
+       └────────────┘   └──────────────────┘
+                 │
+       ┌─────────▼─────────────┐
+       │ Local CPU embeddings  │
+       │  BAAI/bge-small-en    │
+       │  (fastembed, 384-dim) │
+       └───────────────────────┘
+```
+
+**Two-stage pipeline.** `parse_job` extracts text → semantic chunks → embeddings into `chunks.embedding`. `generate_job` runs all six artifact types in parallel, persisting each one the moment its LLM call returns, so the feed populates incrementally over SSE. Background jobs are plain `asyncio.create_task` — no Celery, no Redis queue for the work itself (Redis is only the SSE event bus).
+
+**Hybrid LLM routing.** User-waiting paths (tutor, on-demand summaries) hit **Groq** for sub-second latency. Background batch artifact generation hits **Featherless** on the 70B model under a `FEATHERLESS_MAX_CONCURRENCY=1` semaphore — necessary because each 70B call consumes 4 plan units against a 4-unit cap.
+
+**Event-sourced learning state.** Every interaction (view, quiz answer, flashcard review, reel completion, tutor query, interested/not-interested) appends to `learning_events`. Per-concept mastery, XP, streaks, and achievements are all *derived* — drop the events table and you can rebuild every score. This makes the entire learning model auditable and the ranker fully explainable.
+
+## Roadmap
+
+- **Now:** core loop stable (upload → artifacts → feed → tutor → mastery). Social, multiplayer, and Android shell shipped recently.
+- **Next:** spaced-repetition scheduler for flashcards (SM-2), reel comments + remix, classroom mode (instructor uploads → student cohort feed), iOS shell.
+- **Research:** detecting and flagging non-educational uploaded content; a "story format" reel mode that connects multiple topics into a narrative arc.
+
+---
 
 ## What ships today
 
 **Ingest → artifacts**
 - Upload `pdf` / `docx` / `pptx` / `txt` or `mp3` / `wav` / `m4a` lecture audio
 - Two-stage pipeline (`parse_job` → `generate_job`) chunks, embeds with local `BAAI/bge-small-en-v1.5` (CPU, no GPU bill), and emits artifacts incrementally as they finish
-- Six artifact types: `summary`, `swipe_card`, `flashcard`, `quiz`, `reel_script`, `learning_path_step`
+- Five artifact types: `summary`, `swipe_card`, `flashcard`, `quiz`, `reel_script`
 
 **Reels (the headline feature)**
 - One reel = one topic, with a continuous 50–130 word narration

@@ -128,6 +128,7 @@ export default function DashboardPage() {
   if (err) return <Empty msg={err} />;
   if (!analytics || !stats) return <Empty msg="Loading…" />;
 
+  // Dark canvas comes from App.tsx (route is in DARK_PAGE_PREFIXES).
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-4 pb-32 pt-24">
       {/* Profile header */}

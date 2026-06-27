@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # Providers
     groq_api_key: str = ""
     featherless_api_key: str = ""
+    huggingface_api_key: str = ""
 
     groq_chat_model: str = "llama-3.3-70b-versatile"
     groq_reasoning_model: str = "openai/gpt-oss-120b"

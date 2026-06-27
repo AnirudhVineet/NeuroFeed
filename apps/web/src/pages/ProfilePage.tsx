@@ -11,6 +11,7 @@ import { friendlyError } from '@/lib/api';
 import {
   bootstrap as bootstrapSocial,
   fetchFollowers,
+  fetchFollowing,
   fetchProfileByUsername,
   isFollowing,
   isFriend,
@@ -91,9 +92,11 @@ export default function ProfilePage() {
   }, [isSelf, tab]);
 
   const [self, setSelf] = useState<SelfData | null>(null);
+  const [selfFollowers, setSelfFollowers] = useState<ProfileLite[]>([]);
   const [other, setOther] = useState<ProfileMeta | null>(null);
   const [otherDocs, setOtherDocs] = useState<DocSummary[]>([]);
   const [otherFollowers, setOtherFollowers] = useState<ProfileLite[]>([]);
+  const [otherFollowing, setOtherFollowing] = useState<ProfileLite[]>([]);
   const [authReady, setAuthReady] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [selfErr, setSelfErr] = useState<string | null>(null);
@@ -134,16 +137,19 @@ export default function ProfilePage() {
       const p = await fetchProfileByUsername(params.username);
       setOther(p);
       if (p) {
-        // Fan out followers + docs in parallel — they used to chain serially,
-        // which doubled the time-to-first-paint on /u/:username navigations.
+        // Fan out followers + following + docs in parallel — they used to chain
+        // serially, which doubled the time-to-first-paint on /u/:username
+        // navigations.
         const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000';
-        const [f, docs] = await Promise.all([
+        const [followers, following, docs] = await Promise.all([
           fetchFollowers(p.username).catch(() => [] as ProfileLite[]),
+          fetchFollowing(p.username).catch(() => [] as ProfileLite[]),
           fetch(`${apiBase}/api/documents?user_id=${encodeURIComponent(p.user_id)}`)
             .then((r) => (r.ok ? r.json() : { items: [] }))
             .catch(() => ({ items: [] })),
         ]);
-        setOtherFollowers(f);
+        setOtherFollowers(followers);
+        setOtherFollowing(following);
         setOtherDocs(docs.items ?? []);
       }
     } catch (e) {
@@ -156,9 +162,28 @@ export default function ProfilePage() {
     void loadOther();
   }, [isSelf, loadOther]);
 
+  // Fetch the signed-in user's own followers list once their social profile
+  // has hydrated (username is the input to the /api/follows/followers endpoint).
+  // bootstrap() only populates the `following` array — followers are not part
+  // of the initial snapshot, so the Followers tab needs a dedicated fetch.
+  const selfUsername = social.profile?.username;
+  useEffect(() => {
+    if (!isSelf || !selfUsername) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const f = await fetchFollowers(selfUsername);
+        if (!cancelled) setSelfFollowers(f);
+      } catch {
+        if (!cancelled) setSelfFollowers([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isSelf, selfUsername]);
+
   const view = useMemo(
-    () => buildView({ isSelf, social, self, other, otherDocs, otherFollowers }),
-    [isSelf, social, self, other, otherDocs, otherFollowers],
+    () => buildView({ isSelf, social, self, selfFollowers, other, otherDocs, otherFollowers, otherFollowing }),
+    [isSelf, social, self, selfFollowers, other, otherDocs, otherFollowers, otherFollowing],
   );
 
   // -------- Loading / error / signed-out states --------
@@ -272,11 +297,13 @@ function buildView(args: {
   isSelf: boolean;
   social: ReturnType<typeof useSocial>;
   self: SelfData | null;
+  selfFollowers: ProfileLite[];
   other: ProfileMeta | null;
   otherDocs: DocSummary[];
   otherFollowers: ProfileLite[];
+  otherFollowing: ProfileLite[];
 }): ProfileView | null {
-  const { isSelf, social, self, other, otherDocs, otherFollowers } = args;
+  const { isSelf, social, self, selfFollowers, other, otherDocs, otherFollowers, otherFollowing } = args;
   if (isSelf) {
     if (!social.profile || !self) return null;
     const xp = social.profile.xp;
@@ -317,7 +344,7 @@ function buildView(args: {
       },
       docs: self.docs,
       followingList: social.following,
-      followersList: [],
+      followersList: selfFollowers,
       badgesFromAchievements: social.profile.achievements,
     };
   }
@@ -352,7 +379,7 @@ function buildView(args: {
       losses: 0,
     },
     docs: enrichedOther,
-    followingList: [],
+    followingList: otherFollowing,
     followersList: otherFollowers,
     badgesFromAchievements: other.achievements,
   };
@@ -1040,23 +1067,34 @@ function ReelsTab({ view }: { view: ProfileView }) {
 // ---- Shared building blocks ----
 
 function UserList({ users }: { users: ProfileLite[] }) {
+  const social = useSocial();
+  const myUsername = social.profile?.username;
   if (!users.length) return <Empty msg="No users to show." />;
   return (
     <ul className="space-y-2">
-      {users.map((u) => (
-        <li key={u.user_id} className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
-          <Avatar seed={u.avatar_seed || u.user_id} username={u.username} size={40} />
-          <div className="min-w-0 flex-1">
-            <Link to={`/u/${u.username}`} className="text-label-md font-bold text-on-surface hover:text-primary">
-              {u.display_name || u.username}
-            </Link>
-            <p className="truncate text-label-sm text-on-surface-variant">
-              @{u.username}{u.college ? ` · ${u.college}` : ''}
-            </p>
-          </div>
-          <FollowButton username={u.username} />
-        </li>
-      ))}
+      {users.map((u) => {
+        const isMe = !!myUsername && u.username === myUsername;
+        return (
+          <li key={u.user_id} className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+            <Avatar seed={u.avatar_seed || u.user_id} username={u.username} size={40} />
+            <div className="min-w-0 flex-1">
+              <Link to={`/u/${u.username}`} className="text-label-md font-bold text-on-surface hover:text-primary">
+                {u.display_name || u.username}
+              </Link>
+              <p className="truncate text-label-sm text-on-surface-variant">
+                @{u.username}{u.college ? ` · ${u.college}` : ''}
+              </p>
+            </div>
+            {isMe ? (
+              <span className="rounded-full bg-surface-container px-3 py-1 text-label-sm font-bold text-on-surface-variant">
+                You
+              </span>
+            ) : (
+              <FollowButton username={u.username} />
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

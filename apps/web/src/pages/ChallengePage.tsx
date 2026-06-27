@@ -25,7 +25,12 @@ import { Avatar } from '@/components/social/Avatar';
 import { ChallengeDialog } from '@/components/social/ChallengeDialog';
 import { ErrorState } from '@/components/social/SocialStates';
 import { api, friendlyError } from '@/lib/api';
-import { fetchProfileByUsername, type ProfileLite, useSocial } from '@/lib/social';
+import {
+  fetchProfileByUsername,
+  type Challenge,
+  type ProfileLite,
+  useSocial,
+} from '@/lib/social';
 import { supabase } from '@/lib/supabase';
 import type { QuizItem } from '../../../../packages/shared-types/artifacts';
 
@@ -106,7 +111,7 @@ export default function ChallengePage() {
   }, [cid, legacyUser]);
 
   if (!cid && !legacyUser) {
-    return <Empty msg="No challenge specified. Open a profile and tap 'Challenge'." />;
+    return <ChallengeLobby />;
   }
   if (!cid && legacyUser) {
     return (
@@ -760,4 +765,192 @@ function FinalNotice({ title, body }: { title: string; body: string }) {
 
 function Empty({ msg }: { msg: string }) {
   return <div className="mx-auto max-w-md px-md py-xl text-center text-body-sm text-on-surface-variant">{msg}</div>;
+}
+
+// ===========================================================================
+// Lobby — shown when the sidebar Challenges link is opened with no `cid`.
+// Reads from the social store's `challenges` array (hydrated by bootstrap),
+// groups by status, and links each row to the room.
+// ===========================================================================
+
+function ChallengeLobby() {
+  const social = useSocial();
+  const meId = social.user_id;
+  const challenges = social.challenges;
+
+  if (!social.ready) {
+    return (
+      <div className="mx-auto max-w-2xl px-md py-xl text-center text-body-sm text-on-surface-variant">
+        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-surface-container border-t-primary" />
+        Loading your challenges…
+      </div>
+    );
+  }
+
+  const ongoing = challenges.filter((c) => c.status === 'accepted' || (c.status as string) === 'in_progress');
+  const incoming = challenges.filter((c) => c.status === 'pending' && c.to_user === meId);
+  const outgoing = challenges.filter((c) => c.status === 'pending' && c.from_user === meId);
+  const finished = challenges.filter((c) => c.status === 'finished' || c.status === 'declined');
+
+  const hasAny = ongoing.length + incoming.length + outgoing.length + finished.length > 0;
+
+  return (
+    <div className="mx-auto max-w-2xl px-md py-md">
+      <header className="mb-md">
+        <h1 className="text-headline-md text-on-surface">Challenges</h1>
+        <p className="mt-1 text-body-sm text-on-surface-variant">
+          Quiz battles with other learners. Open a profile and tap{' '}
+          <span className="rounded bg-tertiary-container/40 px-1 text-on-tertiary-container">Challenge</span>{' '}
+          to start a new one.
+        </p>
+      </header>
+
+      {!hasAny && (
+        <Empty msg="No challenges yet — head to a profile to send your first." />
+      )}
+
+      <ChallengeGroup
+        title="Ongoing"
+        items={ongoing}
+        meId={meId}
+        emptyMsg={null}
+      />
+      <ChallengeGroup
+        title="Incoming"
+        items={incoming}
+        meId={meId}
+        emptyMsg={null}
+        accent="incoming"
+      />
+      <ChallengeGroup
+        title="Awaiting opponent"
+        items={outgoing}
+        meId={meId}
+        emptyMsg={null}
+      />
+      <ChallengeGroup
+        title="Past battles"
+        items={finished}
+        meId={meId}
+        emptyMsg={null}
+      />
+    </div>
+  );
+}
+
+function ChallengeGroup({
+  title, items, meId, emptyMsg, accent,
+}: {
+  title: string;
+  items: Challenge[];
+  meId: string | null;
+  emptyMsg: string | null;
+  accent?: 'incoming';
+}) {
+  if (items.length === 0 && !emptyMsg) return null;
+  return (
+    <section className="mb-lg">
+      <h2 className="mb-2 text-label-md uppercase tracking-widest text-on-surface-variant">{title}</h2>
+      {items.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-outline-variant p-md text-body-sm text-on-surface-variant">
+          {emptyMsg}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((c) => (
+            <ChallengeListRow key={c.id} challenge={c} meId={meId} accent={accent} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ChallengeListRow({
+  challenge, meId, accent,
+}: { challenge: Challenge; meId: string | null; accent?: 'incoming' }) {
+  const meIsFrom = challenge.from_user === meId;
+  const opp = meIsFrom ? challenge.to : challenge.from;
+  const myScore = meIsFrom ? challenge.wins_from : challenge.wins_to;
+  const oppScore = meIsFrom ? challenge.wins_to : challenge.wins_from;
+
+  let verdict: 'win' | 'loss' | 'draw' | null = null;
+  if (challenge.status === 'finished' && myScore != null && oppScore != null) {
+    verdict = myScore > oppScore ? 'win' : myScore < oppScore ? 'loss' : 'draw';
+  }
+
+  return (
+    <li>
+      <Link
+        to={`/challenge?cid=${encodeURIComponent(challenge.id)}`}
+        className={
+          accent === 'incoming'
+            ? 'flex items-center gap-3 rounded-xl border border-primary/40 bg-primary-container/30 p-md transition-colors hover:bg-primary-container/50'
+            : 'flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-md transition-colors hover:bg-surface-container-low'
+        }
+      >
+        {opp ? (
+          <Avatar
+            seed={opp.avatar_seed || opp.user_id || opp.username}
+            username={opp.username}
+            size={40}
+            linkTo={false}
+          />
+        ) : (
+          <div className="h-10 w-10 rounded-full bg-surface-container" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-label-md font-bold text-on-surface">
+            {meIsFrom ? 'You vs ' : ''}
+            @{opp?.username ?? 'unknown'}
+            {!meIsFrom ? ' vs you' : ''}
+          </p>
+          <p className="text-label-sm text-on-surface-variant">
+            {labelForStatus(challenge.status)} · {challenge.mode}
+            {challenge.created_at && ` · ${formatRelative(challenge.created_at)}`}
+          </p>
+        </div>
+        {verdict && (
+          <span
+            className={
+              verdict === 'win'
+                ? 'rounded-full bg-secondary-container px-3 py-1 text-label-sm font-bold text-on-secondary-container tabular-nums'
+                : verdict === 'loss'
+                  ? 'rounded-full bg-error-container/60 px-3 py-1 text-label-sm font-bold text-on-error-container tabular-nums'
+                  : 'rounded-full bg-tertiary-container/60 px-3 py-1 text-label-sm font-bold text-on-tertiary-container tabular-nums'
+            }
+          >
+            {myScore}–{oppScore}
+          </span>
+        )}
+        {!verdict && challenge.status === 'pending' && (
+          <span className="rounded-full bg-amber-500/20 px-3 py-1 text-label-sm font-bold text-on-surface-variant">
+            Pending
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+function labelForStatus(s: Challenge['status'] | string): string {
+  switch (s) {
+    case 'pending': return 'Waiting';
+    case 'accepted': return 'Accepted';
+    case 'in_progress': return 'In progress';
+    case 'finished': return 'Finished';
+    case 'declined': return 'Declined';
+    default: return s;
+  }
+}
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff) || diff < 0) return '';
+  const m = Math.round(diff / 60_000);
+  if (m < 60) return `${Math.max(1, m)}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
 }

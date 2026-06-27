@@ -592,9 +592,23 @@ async def unfollow_user(username: str, user_id: str = Query(...)) -> dict[str, s
 
 @router.get("/follows/following")
 @safe_read(lambda: {"items": []})
-async def list_following(user_id: str = Query(...)) -> dict[str, list[dict[str, Any]]]:
+async def list_following(
+    user_id: Optional[str] = Query(None),
+    username: Optional[str] = Query(None),
+) -> dict[str, list[dict[str, Any]]]:
+    """List users the target follows. Accepts either `user_id` (used by the
+    current user's own bootstrap) or `username` (used when viewing another
+    user's profile)."""
+    if not user_id and not username:
+        raise HTTPException(422, "user_id or username required")
     sb = _sb()
-    res = sb.table("follows").select("followee").eq("follower", user_id).execute()
+    target_id = user_id
+    if not target_id:
+        target = _profile_by_username(username or "")
+        if not target:
+            raise HTTPException(404, "user not found")
+        target_id = target["user_id"]
+    res = sb.table("follows").select("followee").eq("follower", target_id).execute()
     ids = [r["followee"] for r in (getattr(res, "data", None) or [])]
     if not ids:
         return {"items": []}

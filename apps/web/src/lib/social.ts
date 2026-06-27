@@ -468,6 +468,13 @@ export async function fetchFollowers(username: string): Promise<ProfileLite[]> {
   return r.items;
 }
 
+export async function fetchFollowing(username: string): Promise<ProfileLite[]> {
+  const r = await api<{ items: ProfileLite[] }>(
+    `/api/follows/following?username=${encodeURIComponent(username)}`,
+  );
+  return r.items;
+}
+
 export async function fetchDiscover(opts: { subject?: string; q?: string; limit?: number } = {}): Promise<ProfileMeta[]> {
   const params = new URLSearchParams();
   if (state.user_id) params.set('user_id', state.user_id);

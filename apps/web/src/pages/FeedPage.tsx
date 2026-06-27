@@ -1,5 +1,5 @@
 import { Component, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   countActive,
   emptyFilters,
@@ -36,6 +36,7 @@ import type {
 // engine + karaoke captions + tutor panel stay intact.
 
 export default function FeedPage() {
+  const navigate = useNavigate();
   // Seed items from the last-cached feed so the launch shows real content
   // immediately and only the revalidation network round-trip happens in the
   // background. Without this, items is [] until /api/feed resolves and the
@@ -43,6 +44,7 @@ export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>(() => loadCachedFeed());
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [overrides, setOverrides] = useState<
     Record<string, { title: string; body: string } | null>
   >({});
@@ -83,11 +85,14 @@ export default function FeedPage() {
     void (async () => {
       const { data } = await supabase.auth.getSession();
       const uid = data.session?.user.id ?? null;
-      setUserId(uid);
       if (!uid) {
-        setLoading(false);
+        // Unauthenticated landing — the home feed is gated, so route the user
+        // to the auth page instead of showing a sign-in CTA panel.
+        navigate('/auth', { replace: true });
         return;
       }
+      setUserId(uid);
+      setAuthChecked(true);
       try {
         const res = await fetchFeed(uid);
         setItems(res.items);
@@ -98,7 +103,7 @@ export default function FeedPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [navigate]);
 
   function markCompleted(id: string) {
     setCompletedIds((prev) => {
@@ -110,23 +115,11 @@ export default function FeedPage() {
     });
   }
 
-  if (!userId) {
-    return (
-      <EmptyState
-        icon="lock"
-        message="Sign in to see your feed."
-        sub="Your personalised reels, quizzes, and flashcards live here."
-        cta={
-          <Link
-            to="/auth"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
-          >
-            Sign in
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
-          </Link>
-        }
-      />
-    );
+  // While we resolve the Supabase session, render a skeleton. If there's no
+  // user, the effect above navigates to /auth, so we never settle here without
+  // a userId.
+  if (!authChecked || !userId) {
+    return <FeedLoadingSkeleton />;
   }
   if (error) {
     return (

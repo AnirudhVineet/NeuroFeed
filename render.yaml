@@ -21,7 +21,7 @@ services:
       - key: GROQ_STT_MODEL
         value: whisper-large-v3
       - key: FEATHERLESS_MODEL
-        value: meta-llama/Meta-Llama-3.1-70B-Instruct
+        value: Qwen/Qwen2.5-72B-Instruct
       - key: FEATHERLESS_MAX_CONCURRENCY
         value: "1"
       - key: SUPABASE_URL

@@ -14,14 +14,18 @@ import { ReelOverlay } from '@/components/feed/ReelOverlay';
 import { StoriesRow, type StoryDoc } from '@/components/feed/StoriesRow';
 import { SwipeCard } from '@/components/feed/SwipeCard';
 import { QuickLearningSheet } from '@/components/feed/QuickLearningSheet';
+import { FeedTypeBar, type TypeCounts } from '@/components/feed/FeedTypeBar';
 import {
   explainSimpler,
   fetchFeed,
+  fetchGlobalFeed,
   postEvent,
+  type ArtifactType,
   type FeedItem,
 } from '@/lib/feed';
 import { supabase } from '@/lib/supabase';
 import { inferSubject } from '@/lib/subjects';
+import { useSocial, type Visibility } from '@/lib/social';
 import { useGamify } from '@/state/gamify';
 import type {
   Flashcard,
@@ -35,13 +39,33 @@ import type {
 // existing fullscreen ReelCard engine in an overlay so the visual_beats
 // engine + karaoke captions + tutor panel stay intact.
 
+type FeedScope = 'mine' | 'global';
+const SCOPE_STORAGE_KEY = 'neurofeed:feed-scope';
+
+function loadCachedScope(): FeedScope {
+  try {
+    const raw = localStorage.getItem(SCOPE_STORAGE_KEY);
+    return raw === 'global' ? 'global' : 'mine';
+  } catch {
+    return 'mine';
+  }
+}
+function saveCachedScope(scope: FeedScope) {
+  try { localStorage.setItem(SCOPE_STORAGE_KEY, scope); } catch { /* ignore */ }
+}
+
 export default function FeedPage() {
   const navigate = useNavigate();
+  const [scope, setScope] = useState<FeedScope>(() => loadCachedScope());
   // Seed items from the last-cached feed so the launch shows real content
   // immediately and only the revalidation network round-trip happens in the
   // background. Without this, items is [] until /api/feed resolves and the
-  // empty-state ("Upload now") flashes for the entire request duration.
-  const [items, setItems] = useState<FeedItem[]>(() => loadCachedFeed());
+  // empty-state ("Upload now") flashes for the entire request duration. The
+  // cache is keyed implicitly to the personal feed — the global feed always
+  // refetches fresh, since "Global, but stale" is worse than a brief skeleton.
+  const [items, setItems] = useState<FeedItem[]>(() =>
+    loadCachedScope() === 'mine' ? loadCachedFeed() : [],
+  );
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -55,6 +79,7 @@ export default function FeedPage() {
   const [openedReel, setOpenedReel] = useState<FeedItem | null>(null);
   const [quickLearning, setQuickLearning] = useState<FeedItem | null>(null);
   const refreshGamify = useGamify((s) => s.refreshAfter);
+  const docVisibility = useSocial().doc_visibility;
 
   const docOptions = useMemo<DocOption[]>(() => {
     const seen = new Map<string, DocOption>();
@@ -65,10 +90,15 @@ export default function FeedPage() {
         id: it.document_id,
         title,
         subject: inferSubject(title),
+        // On Global feed every item is public by definition; on My Feed we
+        // look up the doc's visibility from the social store. Falls back to
+        // 'private' for legacy docs without a stored visibility.
+        visibility:
+          scope === 'global' ? 'public' : (docVisibility[it.document_id] as Visibility | undefined) ?? 'private',
       });
     }
     return Array.from(seen.values()).sort((a, b) => a.title.localeCompare(b.title));
-  }, [items]);
+  }, [items, docVisibility, scope]);
 
   const storyDocs = useMemo<StoryDoc[]>(
     () => docOptions.map((d) => ({ id: d.id, title: d.title })),
@@ -76,10 +106,41 @@ export default function FeedPage() {
   );
 
   const visibleItems = useMemo(
-    () => applyFilters(items, filters, completedIds),
-    [items, filters, completedIds],
+    () => applyFilters(items, filters, completedIds, docVisibility, scope),
+    [items, filters, completedIds, docVisibility, scope],
   );
-  const activeCount = countActive(filters);
+  // Counts shown on the top type bar reflect everything *except* the type
+  // filter itself — so a chip's number tells the user "if you tap me, this is
+  // how many items you'll see," accurate against their other active facets.
+  const typeCounts = useMemo<TypeCounts>(() => {
+    const filtersNoTypes: FeedFilters = { ...filters, types: new Set() };
+    const arr = applyFilters(items, filtersNoTypes, completedIds, docVisibility, scope);
+    const c: TypeCounts = {
+      reel_script: 0,
+      swipe_card: 0,
+      flashcard: 0,
+      quiz: 0,
+      summary: 0,
+    };
+    for (const it of arr) {
+      if (it.type in c) c[it.type as ArtifactType]++;
+    }
+    return c;
+  }, [items, filters, completedIds, docVisibility, scope]);
+  // Filter-bar count excludes the type facet since that's now driven by the
+  // always-visible top bar — only "advanced" filters (subjects/docs/etc.)
+  // should bump the kebab button's badge.
+  const advancedCount = countActive({ ...filters, types: new Set() });
+
+  function toggleType(t: ArtifactType) {
+    const next = new Set(filters.types);
+    next.has(t) ? next.delete(t) : next.add(t);
+    setFilters({ ...filters, types: next });
+  }
+  function clearTypes() {
+    if (filters.types.size === 0) return;
+    setFilters({ ...filters, types: new Set() });
+  }
 
   useEffect(() => {
     void (async () => {
@@ -93,17 +154,43 @@ export default function FeedPage() {
       }
       setUserId(uid);
       setAuthChecked(true);
-      try {
-        const res = await fetchFeed(uid);
-        setItems(res.items);
-        saveCachedFeed(res.items);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
-      }
     })();
   }, [navigate]);
+
+  // Re-fetch whenever scope changes (mine ↔ global) OR on the initial auth-
+  // confirmed mount. We keep one effect for both so a fast scope toggle never
+  // races with the bootstrap fetch.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    void (async () => {
+      try {
+        const res = scope === 'global'
+          ? await fetchGlobalFeed(userId)
+          : await fetchFeed(userId);
+        if (cancelled) return;
+        setItems(res.items);
+        if (scope === 'mine') saveCachedFeed(res.items);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, scope]);
+
+  function chooseScope(next: FeedScope) {
+    if (next === scope) return;
+    saveCachedScope(next);
+    // Clear stale items immediately so the new scope's skeleton shows during
+    // the fetch instead of flashing the previous scope's data.
+    setItems(next === 'mine' ? loadCachedFeed() : []);
+    setScope(next);
+  }
 
   function markCompleted(id: string) {
     setCompletedIds((prev) => {
@@ -138,48 +225,85 @@ export default function FeedPage() {
     return <FeedLoadingSkeleton />;
   }
   // Real "empty" state — only show it once we know the fetch finished and
-  // there really is nothing to show.
+  // there really is nothing to show. Differs by scope: My = "upload a doc",
+  // Global = "no one's shared anything public yet" with a switch back to My.
   if (!loading && items.length === 0) {
+    if (scope === 'global') {
+      return (
+        <div className="mx-auto max-w-2xl px-md pt-md">
+          <FeedScopeTabs scope={scope} onChange={chooseScope} />
+          <EmptyState
+            icon="explore"
+            message="No public content yet."
+            sub="Be the first to share — set your next upload to Public, or switch back to My Feed."
+            cta={
+              <button
+                onClick={() => chooseScope('mine')}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
+                Go to My Feed
+              </button>
+            }
+            inline
+          />
+        </div>
+      );
+    }
     return (
-      <EmptyState
-        icon="auto_awesome"
-        message="Your feed is empty."
-        sub="Upload a document and we'll turn it into reels, flashcards, and quizzes."
-        cta={
-          <Link
-            to="/upload"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload</span>
-            Upload now
-          </Link>
-        }
-      />
+      <div className="mx-auto max-w-2xl px-md pt-md">
+        <FeedScopeTabs scope={scope} onChange={chooseScope} />
+        <EmptyState
+          icon="auto_awesome"
+          message="Your feed is empty."
+          sub="Upload a document and we'll turn it into reels, flashcards, and quizzes."
+          cta={
+            <Link
+              to="/upload"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-container px-5 py-2.5 text-label-md font-bold text-on-primary-container transition-all hover:brightness-95"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload</span>
+              Upload now
+            </Link>
+          }
+          inline
+        />
+      </div>
     );
   }
 
   return (
     <>
       <div className="mx-auto max-w-2xl px-md pt-md">
-        {storyDocs.length > 0 && <StoriesRow docs={storyDocs} />}
+        <FeedScopeTabs scope={scope} onChange={chooseScope} />
+        {scope === 'mine' && storyDocs.length > 0 && <StoriesRow docs={storyDocs} />}
 
-        <div className="mb-md flex items-center justify-between gap-sm">
-          <h1 className="text-headline-sm text-on-surface">For you</h1>
+        <div className="mb-2 flex items-center justify-between gap-sm">
+          <h1 className="text-headline-sm text-on-surface">
+            {scope === 'global' ? 'Public feed' : 'For you'}
+          </h1>
           <button
             type="button"
             onClick={() => setFilterOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
-            aria-label="Open filters"
+            aria-label="Open more filters (subjects, documents, difficulty)"
+            title="More filters"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_list</span>
-            <span>Filters</span>
-            {activeCount > 0 && (
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>tune</span>
+            <span className="hidden sm:inline">More</span>
+            {advancedCount > 0 && (
               <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-on-primary">
-                {activeCount}
+                {advancedCount}
               </span>
             )}
           </button>
         </div>
+        <FeedTypeBar
+          selected={filters.types}
+          counts={typeCounts}
+          onToggle={toggleType}
+          onClear={clearTypes}
+        />
 
         {visibleItems.length === 0 ? (
           <EmptyState
@@ -198,26 +322,50 @@ export default function FeedPage() {
           />
         ) : (
           <ul className="space-y-md pb-md">
-            {visibleItems.map((it) => (
-              <li key={`${it.id}-${it.created_at}`}>
-                <CardErrorBoundary type={it.type}>
-                  <FeedItemRender
-                    item={it}
-                    override={overrides[it.id] ?? null}
-                    userId={userId}
-                    isOpenedInOverlay={openedReel?.id === it.id}
-                    onComplete={() => markCompleted(it.id)}
-                    onExplainSimpler={async () => {
-                      const r = await explainSimpler(it.id, userId);
-                      setOverrides((m) => ({ ...m, [it.id]: r }));
-                      refreshGamify(userId);
-                    }}
-                    onOpenReel={() => setOpenedReel(it)}
-                    onOpenQuickLearning={() => setQuickLearning(it)}
-                  />
-                </CardErrorBoundary>
-              </li>
-            ))}
+            {visibleItems.map((it) => {
+              return (
+                <li
+                  key={`${it.id}-${it.created_at}`}
+                  className="relative"
+                >
+                  {scope === 'global' && it.creator && (
+                    <div className="mb-1 inline-flex items-center gap-1.5">
+                      <Link
+                        to={`/u/${it.creator.username}`}
+                        className="inline-flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-primary"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }} aria-hidden>person</span>
+                        by @{it.creator.username}
+                      </Link>
+                      {it.creator.user_id === userId && (
+                        <span
+                          title="This is your own published doc"
+                          className="rounded-full border border-primary/40 bg-primary-container/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-on-primary-container"
+                        >
+                          you
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <CardErrorBoundary type={it.type}>
+                    <FeedItemRender
+                      item={it}
+                      override={overrides[it.id] ?? null}
+                      userId={userId}
+                      isOpenedInOverlay={openedReel?.id === it.id}
+                      onComplete={() => markCompleted(it.id)}
+                      onExplainSimpler={async () => {
+                        const r = await explainSimpler(it.id, userId);
+                        setOverrides((m) => ({ ...m, [it.id]: r }));
+                        refreshGamify(userId);
+                      }}
+                      onOpenReel={() => setOpenedReel(it)}
+                      onOpenQuickLearning={() => setQuickLearning(it)}
+                    />
+                  </CardErrorBoundary>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -226,6 +374,7 @@ export default function FeedPage() {
         open={filterOpen}
         filters={filters}
         docs={docOptions}
+        showVisibility={scope === 'mine'}
         onChange={setFilters}
         onClose={() => setFilterOpen(false)}
         onClear={() => setFilters(emptyFilters())}
@@ -267,6 +416,40 @@ export default function FeedPage() {
         />
       )}
     </>
+  );
+}
+
+function FeedScopeTabs({ scope, onChange }: { scope: FeedScope; onChange: (s: FeedScope) => void }) {
+  const tabs: { id: FeedScope; label: string; icon: string }[] = [
+    { id: 'mine', label: 'My Feed', icon: 'person' },
+    { id: 'global', label: 'Global', icon: 'public' },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Feed scope"
+      className="mb-md inline-flex w-full max-w-xs gap-1 rounded-full border border-outline-variant bg-surface-container p-1"
+    >
+      {tabs.map((t) => {
+        const active = scope === t.id;
+        return (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(t.id)}
+            className={
+              active
+                ? 'flex flex-1 items-center justify-center gap-1.5 rounded-full bg-primary-container px-3 py-1.5 text-label-md font-bold text-on-primary-container'
+                : 'flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface'
+            }
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden>{t.icon}</span>
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -557,11 +740,14 @@ function applyFilters(
   items: FeedItem[],
   f: FeedFilters,
   completedIds: Set<string>,
+  docVisibility: Record<string, string>,
+  scope: FeedScope,
 ): FeedItem[] {
   const noSubject = f.subjects.size === 0;
   const noDoc = f.documentIds.size === 0;
   const noType = f.types.size === 0;
   const noDiff = f.difficulties.size === 0;
+  const noVis = f.visibilities.size === 0;
 
   return items.filter((it) => {
     if (!RENDERABLE_TYPES.has(it.type)) return false;
@@ -574,6 +760,13 @@ function applyFilters(
     if (!noDiff && it.type === 'flashcard') {
       const d = (it.payload as Flashcard).difficulty;
       if (!f.difficulties.has(d)) return false;
+    }
+    if (!noVis) {
+      // Global feed is implicitly all-public; only matters on My Feed.
+      const v = scope === 'global'
+        ? 'public'
+        : (docVisibility[it.document_id] as Visibility | undefined) ?? 'private';
+      if (!f.visibilities.has(v)) return false;
     }
     if (f.hideCompleted && completedIds.has(it.id)) return false;
     return true;

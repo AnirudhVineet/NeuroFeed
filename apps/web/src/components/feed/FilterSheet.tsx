@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ArtifactType } from '@/lib/feed';
+import type { Visibility } from '@/lib/social';
 import { SUBJECTS, type Subject } from '@/lib/subjects';
 
 // All possible card types that can appear in the feed.
@@ -12,6 +13,12 @@ export const TYPES: { id: ArtifactType; label: string }[] = [
   { id: 'summary', label: 'Summaries' },
 ];
 
+const VISIBILITIES: { id: Visibility; label: string; icon: string }[] = [
+  { id: 'private', label: 'Private', icon: 'lock' },
+  { id: 'friends', label: 'Friends', icon: 'group' },
+  { id: 'public', label: 'Public', icon: 'public' },
+];
+
 export type Difficulty = 1 | 2 | 3;
 export const DIFFICULTIES: Difficulty[] = [1, 2, 3];
 
@@ -20,6 +27,7 @@ export interface FeedFilters {
   documentIds: Set<string>;
   types: Set<ArtifactType>;
   difficulties: Set<Difficulty>;
+  visibilities: Set<Visibility>;
   hideCompleted: boolean;
 }
 
@@ -29,6 +37,7 @@ export function emptyFilters(): FeedFilters {
     documentIds: new Set(),
     types: new Set(),
     difficulties: new Set(),
+    visibilities: new Set(),
     hideCompleted: false,
   };
 }
@@ -39,6 +48,7 @@ export function countActive(f: FeedFilters): number {
     f.documentIds.size +
     f.types.size +
     f.difficulties.size +
+    f.visibilities.size +
     (f.hideCompleted ? 1 : 0)
   );
 }
@@ -47,9 +57,13 @@ export interface DocOption {
   id: string;
   title: string;
   subject: Subject;
+  // Optional — only known on My Feed (when the user owns the doc and its
+  // visibility is stored client-side). Absent on Global where everything is
+  // public by definition.
+  visibility?: Visibility | null;
 }
 
-type SectionId = 'subjects' | 'documents' | 'type' | 'difficulty' | 'progress';
+type SectionId = 'subjects' | 'documents' | 'type' | 'difficulty' | 'visibility' | 'progress';
 
 export function FilterSheet({
   open,
@@ -58,6 +72,7 @@ export function FilterSheet({
   onChange,
   onClose,
   onClear,
+  showVisibility = true,
 }: {
   open: boolean;
   filters: FeedFilters;
@@ -65,6 +80,9 @@ export function FilterSheet({
   onChange: (next: FeedFilters) => void;
   onClose: () => void;
   onClear: () => void;
+  // Visibility filter is meaningless on the Global feed (everything's public),
+  // so callers can hide that section by setting this to false.
+  showVisibility?: boolean;
 }) {
   const [docSearch, setDocSearch] = useState('');
   const [openSections, setOpenSections] = useState<Set<SectionId>>(
@@ -118,6 +136,11 @@ export function FilterSheet({
     const next = new Set(filters.difficulties);
     next.has(d) ? next.delete(d) : next.add(d);
     onChange({ ...filters, difficulties: next });
+  }
+  function toggleVisibility(v: Visibility) {
+    const next = new Set(filters.visibilities);
+    next.has(v) ? next.delete(v) : next.add(v);
+    onChange({ ...filters, visibilities: next });
   }
   function selectAllDocs() {
     onChange({ ...filters, documentIds: new Set(filteredDocs.map((d) => d.id)) });
@@ -301,6 +324,30 @@ export function FilterSheet({
                   ))}
                 </ChipGrid>
               </CollapsibleSection>
+
+              {showVisibility && (
+                <CollapsibleSection
+                  title="Visibility"
+                  badge={filters.visibilities.size}
+                  open={openSections.has('visibility')}
+                  onToggle={() => toggleSection('visibility')}
+                >
+                  <ChipGrid>
+                    {VISIBILITIES.map((v) => (
+                      <Chip
+                        key={v.id}
+                        active={filters.visibilities.has(v.id)}
+                        onClick={() => toggleVisibility(v.id)}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <span className="material-symbols-outlined" style={{ fontSize: '14px' }} aria-hidden>{v.icon}</span>
+                          {v.label}
+                        </span>
+                      </Chip>
+                    ))}
+                  </ChipGrid>
+                </CollapsibleSection>
+              )}
 
               <CollapsibleSection
                 title="Progress"

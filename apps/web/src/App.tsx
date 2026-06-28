@@ -18,6 +18,7 @@ const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 const BadgesPage = lazy(() => import('./pages/BadgesPage'));
 const PrivacySettingsPage = lazy(() => import('./pages/PrivacySettingsPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 import { TopHud } from '@/components/gamify/TopHud';
 import { AchievementToast } from '@/components/gamify/AchievementToast';
 import { SideNav } from '@/components/chrome/SideNav';
@@ -76,6 +77,7 @@ export default function App() {
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/badges" element={<BadgesPage />} />
               <Route path="/settings/privacy" element={<PrivacySettingsPage />} />
+              <Route path="/messages" element={<MessagesPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/auth/reset" element={<ResetPasswordPage />} />
             </Routes>

@@ -2,14 +2,30 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from ..deps import get_supabase_admin
 from ..workers.jobs import schedule_generate_job
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+Visibility = Literal["private", "friends", "public"]
+
+
+class DocumentPatch(BaseModel):
+    """Owner-only state changes for a document.
+
+    `hidden_from_owner` lets the owner remove a doc from their personal feed
+    + library list without unpublishing it; `visibility` lets them flip the
+    public/friends/private flag without touching artifacts.
+    """
+
+    user_id: str
+    hidden_from_owner: bool | None = None
+    visibility: Visibility | None = None
 
 
 @router.get("")
@@ -26,7 +42,9 @@ async def list_documents(user_id: str = Query(...)) -> dict[str, list[dict[str, 
 
     docs_res = (
         sb.table("documents")
-        .select("id,title,status,source_type,created_at,error")
+        .select(
+            "id,title,status,source_type,created_at,error,visibility,hidden_from_owner"
+        )
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .execute()
@@ -133,6 +151,39 @@ async def delete_document(doc_id: str, user_id: str = Query(...)) -> dict[str, s
             pass
 
     return {"ok": "true"}
+
+
+@router.patch("/{doc_id}")
+async def patch_document(doc_id: str, body: DocumentPatch) -> dict[str, Any]:
+    """Update owner-only flags. Currently `hidden_from_owner` and `visibility`.
+
+    Used by the delete-modal flow: "Remove from My Feed" sets
+    `hidden_from_owner=true`; "Unpublish" sets `visibility='private'`. The
+    full destructive delete still goes through DELETE.
+    """
+    sb = get_supabase_admin()
+    if sb is None:
+        raise HTTPException(503, "Supabase not configured")
+
+    owner = (
+        sb.table("documents").select("user_id").eq("id", doc_id).single().execute()
+    )
+    row = getattr(owner, "data", None)
+    if not row:
+        raise HTTPException(404, "document not found")
+    if row.get("user_id") != body.user_id:
+        raise HTTPException(403, "not the owner")
+
+    patch: dict[str, Any] = {}
+    if body.hidden_from_owner is not None:
+        patch["hidden_from_owner"] = body.hidden_from_owner
+    if body.visibility is not None:
+        patch["visibility"] = body.visibility
+    if not patch:
+        return {"ok": "true", "updated": {}}
+
+    sb.table("documents").update(patch).eq("id", doc_id).execute()
+    return {"ok": "true", "updated": patch}
 
 
 @router.post("/{doc_id}/regenerate")

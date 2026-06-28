@@ -16,6 +16,7 @@ const TABS: Tab[] = [
   { to: '/', label: 'Home', icon: 'home', matches: (p) => p === '/' || p.startsWith('/doc/') },
   { to: '/discover', label: 'Explore', icon: 'search', matches: (p) => isExplore(p) },
   { to: '/upload', label: 'Create', icon: 'add_box', matches: (p) => p.startsWith('/upload') },
+  { to: '/messages', label: 'Messages', icon: 'forum', matches: (p) => p.startsWith('/messages') },
   { to: '/challenge', label: 'Challenges', icon: 'emoji_events', matches: (p) => p.startsWith('/challenge') },
   { to: '/profile', label: 'Profile', icon: 'account_circle', matches: (p) => isProfile(p) },
 ];

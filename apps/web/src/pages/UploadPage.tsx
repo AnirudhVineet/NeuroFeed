@@ -4,6 +4,14 @@ import { uploadAndIngest } from '@/lib/upload';
 import { subscribeStatus, type IngestStatus } from '@/lib/ingestStatus';
 import { fetchDocuments, type DocSummary } from '@/lib/dashboard';
 import { supabase } from '@/lib/supabase';
+import type { Visibility } from '@/lib/social';
+import { VisibilityBadge } from '@/components/social/VisibilityBadge';
+
+const VISIBILITY_OPTS: { id: Visibility; label: string; description: string; icon: string }[] = [
+  { id: 'private', label: 'Private', description: 'Only you can see this document and its generated content.', icon: 'lock' },
+  { id: 'friends', label: 'Friends', description: 'Only people you have accepted as friends.', icon: 'group' },
+  { id: 'public', label: 'Public', description: 'Anyone on NeuroFeed can discover it in the global feed.', icon: 'public' },
+];
 
 // Create / Upload hub on the new clinical light theme. Matches the mockup
 // `home/create.html` for the drag-drop card + file-type shortcuts + recent
@@ -31,6 +39,7 @@ export default function UploadPage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [recent, setRecent] = useState<DocSummary[]>([]);
+  const [visibility, setVisibility] = useState<Visibility>('private');
 
   useEffect(() => {
     void (async () => {
@@ -52,7 +61,7 @@ export default function UploadPage() {
     setBusy(true);
     setFileName(file.name);
     try {
-      const res = await uploadAndIngest(file);
+      const res = await uploadAndIngest(file, { visibility });
       setDocId(res.document_id);
       subscribeStatus(
         res.document_id,
@@ -85,6 +94,61 @@ export default function UploadPage() {
               Upload any document, presentation, or lecture audio. We parse, chunk, and turn it into
               study reels, flashcards, and quizzes.
             </p>
+          </div>
+
+          <div className="mb-md">
+            <p className="mb-2 text-label-sm uppercase tracking-widest text-on-surface-variant">
+              Who can see this document
+            </p>
+            <div
+              role="radiogroup"
+              aria-label="Document visibility"
+              className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+            >
+              {VISIBILITY_OPTS.map((opt) => {
+                const active = visibility === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setVisibility(opt.id)}
+                    className={
+                      active
+                        ? 'flex items-start gap-3 rounded-xl border-2 border-primary bg-primary-container/30 p-3 text-left transition-colors'
+                        : 'flex items-start gap-3 rounded-xl border-2 border-outline-variant bg-surface p-3 text-left transition-colors hover:border-primary/50 hover:bg-surface-container-low'
+                    }
+                  >
+                    <span
+                      className={
+                        active
+                          ? 'material-symbols-outlined text-on-primary-container'
+                          : 'material-symbols-outlined text-on-surface-variant'
+                      }
+                      style={{ fontSize: '20px' }}
+                      aria-hidden
+                    >
+                      {opt.icon}
+                    </span>
+                    <span className="flex-1">
+                      <span
+                        className={
+                          active
+                            ? 'block text-label-md font-bold text-on-primary-container'
+                            : 'block text-label-md font-bold text-on-surface'
+                        }
+                      >
+                        {opt.label}
+                      </span>
+                      <span className="mt-0.5 block text-label-sm text-on-surface-variant">
+                        {opt.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <label
@@ -226,8 +290,9 @@ export default function UploadPage() {
                         {d.status}
                       </span>
                     </div>
-                    <div className="text-label-sm text-on-surface-variant">
-                      {new Date(d.created_at).toLocaleDateString()} · {d.counts.total} items
+                    <div className="flex items-center gap-2 text-label-sm text-on-surface-variant">
+                      <VisibilityBadge visibility={d.visibility} />
+                      <span>{new Date(d.created_at).toLocaleDateString()} · {d.counts.total} items</span>
                     </div>
                   </div>
                 </Link>

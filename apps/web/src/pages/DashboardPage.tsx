@@ -6,12 +6,16 @@ import {
   fetchDocuments,
   fetchStats,
   regenerateDocument,
+  updateDocument,
   type DashboardStats,
   type DocSummary,
 } from '@/lib/dashboard';
 import { inferSubject, SUBJECTS, type Subject } from '@/lib/subjects';
 import { supabase } from '@/lib/supabase';
 import { useGamify } from '@/state/gamify';
+import { VisibilityBadge } from '@/components/social/VisibilityBadge';
+import { DeleteDocModal, type DeleteAction } from '@/components/library/DeleteDocModal';
+import type { Visibility } from '@/lib/social';
 
 type SortKey = 'recent' | 'oldest' | 'title' | 'reels' | 'total';
 
@@ -25,6 +29,7 @@ export default function DashboardPage() {
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocSummary | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('recent');
@@ -92,15 +97,47 @@ export default function DashboardPage() {
     return list;
   }, [docsEnriched, search, sort, subjectFilter]);
 
-  async function onDelete(doc: DocSummary) {
-    if (!userId) return;
-    if (!window.confirm(`Delete "${doc.title}"? This removes the document and all generated content.`)) return;
+  function onDeleteClick(doc: DocSummary) {
+    setDeleteTarget(doc);
+  }
+
+  async function handleDeleteAction(action: DeleteAction) {
+    const doc = deleteTarget;
+    if (!doc || !userId) return;
     setBusyId(doc.id);
     try {
-      await deleteDocument(doc.id, userId);
-      setDocs((ds) => ds.filter((d) => d.id !== doc.id));
-      const s = await fetchStats(userId);
-      setStats(s);
+      if (action === 'delete') {
+        await deleteDocument(doc.id, userId);
+        setDocs((ds) => ds.filter((d) => d.id !== doc.id));
+        const s = await fetchStats(userId);
+        setStats(s);
+      } else if (action === 'hide') {
+        await updateDocument(doc.id, userId, { hidden_from_owner: true });
+        setDocs((ds) =>
+          ds.map((d) => (d.id === doc.id ? { ...d, hidden_from_owner: true } : d)),
+        );
+      } else if (action === 'unpublish') {
+        await updateDocument(doc.id, userId, { visibility: 'private' });
+        setDocs((ds) =>
+          ds.map((d) => (d.id === doc.id ? { ...d, visibility: 'private' } : d)),
+        );
+      }
+      setDeleteTarget(null);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function onUnhide(doc: DocSummary) {
+    if (!userId) return;
+    setBusyId(doc.id);
+    try {
+      await updateDocument(doc.id, userId, { hidden_from_owner: false });
+      setDocs((ds) =>
+        ds.map((d) => (d.id === doc.id ? { ...d, hidden_from_owner: false } : d)),
+      );
     } catch (e) {
       window.alert(e instanceof Error ? e.message : String(e));
     } finally {
@@ -244,8 +281,9 @@ export default function DashboardPage() {
                 key={d.id}
                 doc={d}
                 busy={busyId === d.id}
-                onDelete={() => onDelete(d)}
+                onDelete={() => onDeleteClick(d)}
                 onRegenerate={() => onRegenerate(d)}
+                onUnhide={() => onUnhide(d)}
               />
             ))}
           </ul>
@@ -267,6 +305,14 @@ export default function DashboardPage() {
       <Section title="Mastery heatmap">
         <Heatmap rows={analytics.mastery} />
       </Section>
+
+      <DeleteDocModal
+        open={deleteTarget !== null}
+        title={deleteTarget?.title ?? ''}
+        visibility={(deleteTarget?.visibility as Visibility | undefined) ?? 'private'}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteAction}
+      />
     </div>
   );
 }
@@ -364,20 +410,29 @@ function DocCard({
   busy,
   onDelete,
   onRegenerate,
+  onUnhide,
 }: {
   doc: DocSummary & { subject: Subject };
   busy: boolean;
   onDelete: () => void;
   onRegenerate: () => void;
+  onUnhide: () => void;
 }) {
   const date = new Date(doc.created_at).toLocaleDateString();
   const statusTone =
     doc.status === 'ready' ? 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200'
     : doc.status === 'error' ? 'border-rose-400/30 bg-rose-500/15 text-rose-200'
     : 'border-amber-400/30 bg-amber-500/15 text-amber-100';
+  const hidden = !!doc.hidden_from_owner;
 
   return (
-    <li className="group relative overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow">
+    <li
+      className={`group relative overflow-hidden rounded-2xl border bg-surface-container-lowest p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-glow ${
+        hidden
+          ? 'border-dashed border-outline opacity-70 hover:border-outline-variant'
+          : 'border-outline-variant hover:border-primary/40'
+      }`}
+    >
       <Link to={`/doc/${encodeURIComponent(doc.id)}`} className="block">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-[10px] uppercase tracking-widest text-on-surface-variant">
@@ -386,6 +441,18 @@ function DocCard({
           <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusTone}`}>
             {doc.status}
           </span>
+          <VisibilityBadge visibility={doc.visibility} />
+          {hidden && (
+            <span
+              title="Hidden from your My Feed — others can still see it if public"
+              className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-100"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }} aria-hidden>
+                visibility_off
+              </span>
+              Hidden
+            </span>
+          )}
           <span className="ml-auto text-[10px] text-outline">{date}</span>
         </div>
         <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-on-surface">{doc.title}</h3>
@@ -405,13 +472,23 @@ function DocCard({
         >
           Open Hub
         </Link>
-        <button
-          disabled={busy}
-          onClick={onRegenerate}
-          className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
-        >
-          {busy ? '…' : 'Regenerate'}
-        </button>
+        {hidden ? (
+          <button
+            disabled={busy}
+            onClick={onUnhide}
+            className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
+          >
+            {busy ? '…' : 'Unhide'}
+          </button>
+        ) : (
+          <button
+            disabled={busy}
+            onClick={onRegenerate}
+            className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
+          >
+            {busy ? '…' : 'Regenerate'}
+          </button>
+        )}
         <button
           disabled={busy}
           onClick={onDelete}

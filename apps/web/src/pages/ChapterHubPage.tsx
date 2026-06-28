@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { fetchAnalytics, type MasteryRow } from '@/lib/analytics';
 import { postEvent } from '@/lib/feed';
+import { deleteDocument, updateDocument } from '@/lib/dashboard';
 import { inferSubject } from '@/lib/subjects';
 import { supabase } from '@/lib/supabase';
+import { DeleteDocModal, type DeleteAction } from '@/components/library/DeleteDocModal';
+import type { Visibility } from '@/lib/social';
 import type {
   Flashcard,
   QuizItem,
@@ -14,11 +17,14 @@ import type {
 
 interface DocumentRow {
   id: string;
+  user_id: string;
   title: string;
   status: string;
   source_type: string;
   created_at: string;
   error: string | null;
+  visibility?: Visibility | null;
+  hidden_from_owner?: boolean;
 }
 
 interface ArtifactRow<T = unknown> {
@@ -41,12 +47,58 @@ type SectionId = 'overview' | 'reels' | 'flashcards' | 'quiz' | 'tutor' | 'progr
 
 export default function ChapterHubPage() {
   const { id: docId } = useParams();
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [artifacts, setArtifacts] = useState<GroupedArtifacts | null>(null);
   const [mastery, setMastery] = useState<MasteryRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [active, setActive] = useState<SectionId>('overview');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const isOwner = !!doc && !!userId && doc.user_id === userId;
+
+  async function handleDeleteAction(action: DeleteAction) {
+    if (!doc || !userId) return;
+    setDeleteBusy(true);
+    try {
+      if (action === 'delete') {
+        await deleteDocument(doc.id, userId);
+        setDeleteOpen(false);
+        navigate('/dashboard', { replace: true });
+      } else if (action === 'hide') {
+        await updateDocument(doc.id, userId, { hidden_from_owner: true });
+        setDoc({ ...doc, hidden_from_owner: true });
+        setDeleteOpen(false);
+      } else if (action === 'unpublish') {
+        await updateDocument(doc.id, userId, { visibility: 'private' });
+        setDoc({ ...doc, visibility: 'private' });
+        setDeleteOpen(false);
+      } else if (action === 'publish') {
+        await updateDocument(doc.id, userId, { visibility: 'public' });
+        setDoc({ ...doc, visibility: 'public' });
+        setDeleteOpen(false);
+      }
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  async function onUnhide() {
+    if (!doc || !userId) return;
+    setDeleteBusy(true);
+    try {
+      await updateDocument(doc.id, userId, { hidden_from_owner: false });
+      setDoc({ ...doc, hidden_from_owner: false });
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   useEffect(() => {
     void (async () => {
@@ -107,7 +159,40 @@ export default function ChapterHubPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-[10px] uppercase tracking-widest text-on-surface">{subject}</span>
           <StatusPill status={doc.status} />
+          {doc.hidden_from_owner && (
+            <span
+              title="Hidden from your My Feed — others can still see it if public"
+              className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-100"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }} aria-hidden>visibility_off</span>
+              Hidden
+            </span>
+          )}
           <span className="text-[10px] text-outline">· {new Date(doc.created_at).toLocaleDateString()}</span>
+          {isOwner && (
+            <div className="ml-auto flex items-center gap-1.5">
+              {doc.hidden_from_owner && (
+                <button
+                  type="button"
+                  onClick={onUnhide}
+                  disabled={deleteBusy}
+                  className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
+                >
+                  {deleteBusy ? '…' : 'Unhide'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                disabled={deleteBusy}
+                aria-label="Manage document — publish, hide, or delete"
+                className="inline-flex items-center gap-1 rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface transition-colors hover:border-primary/50 hover:bg-surface-container-high disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden>tune</span>
+                Manage…
+              </button>
+            </div>
+          )}
         </div>
         <h1 className="mt-1 text-2xl font-bold leading-tight">{doc.title}</h1>
         <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-on-surface-variant tabular-nums">
@@ -168,6 +253,14 @@ export default function ChapterHubPage() {
       </main>
 
       <ComingSoonRow />
+
+      <DeleteDocModal
+        open={deleteOpen}
+        title={doc.title}
+        visibility={(doc.visibility as Visibility | undefined) ?? 'private'}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteAction}
+      />
     </div>
   );
 }

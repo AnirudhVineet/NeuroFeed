@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { inferSubject } from '@/lib/subjects';
 import { postInterest } from '@/lib/feed';
 import { ReelCard } from './ReelCard';
+import { ShareReelSheet } from '@/components/messages/ShareReelSheet';
 import type { ReelScript } from '../../../../../packages/shared-types/artifacts';
 
 // 4:5 Instagram-style card representing one reel in the home feed. The reel
@@ -38,6 +39,7 @@ export function ReelFeedCard({
   const hue = hashHue(`${reel.topic}|${reel.title}`);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <article className="overflow-hidden rounded-xl border border-outline-variant bg-surface shadow-card">
@@ -110,7 +112,12 @@ export function ReelFeedCard({
             />
             <ActionButton icon="chat_bubble" onClick={onOpen} label="Open" />
             <ActionButton
-              icon="send"
+              icon="forward_to_inbox"
+              onClick={() => setShareOpen(true)}
+              label="Send to friend"
+            />
+            <ActionButton
+              icon="ios_share"
               onClick={async () => {
                 const url = window.location.origin;
                 const title = reel.title || reel.topic;
@@ -120,7 +127,7 @@ export function ReelFeedCard({
                   await navigator.clipboard.writeText(url);
                 }
               }}
-              label="Share"
+              label="Share link"
             />
           </div>
           <ActionButton
@@ -151,6 +158,14 @@ export function ReelFeedCard({
           </button>
         </div>
       </div>
+
+      <ShareReelSheet
+        open={shareOpen}
+        artifactId={artifactId}
+        reelTitle={reel.title || reel.topic}
+        userId={userId ?? null}
+        onClose={() => setShareOpen(false)}
+      />
     </article>
   );
 }

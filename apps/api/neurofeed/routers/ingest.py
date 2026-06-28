@@ -9,6 +9,8 @@ import asyncio
 import json
 from typing import AsyncIterator
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -20,6 +22,8 @@ from ..workers.jobs import schedule_generate_job, schedule_parse_job
 
 router = APIRouter(prefix="/api/ingest", tags=["ingest"])
 
+Visibility = Literal["private", "friends", "public"]
+
 
 class IngestRequest(BaseModel):
     user_id: str = Field(..., description="auth.users.id of the uploader")
@@ -28,6 +32,10 @@ class IngestRequest(BaseModel):
     filename: str
     content_type: str | None = None
     source_type: SourceType | None = None
+    visibility: Visibility = Field(
+        "private",
+        description="Who can see the document and its generated content. Defaults to private.",
+    )
 
 
 class IngestResponse(BaseModel):
@@ -52,6 +60,7 @@ async def ingest(req: IngestRequest) -> IngestResponse:
                 "source_type": src,
                 "storage_path": req.storage_path,
                 "status": "uploaded",
+                "visibility": req.visibility,
             }
         )
         .execute()

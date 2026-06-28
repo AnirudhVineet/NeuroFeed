@@ -14,6 +14,13 @@ export type ArtifactType =
   | 'quiz'
   | 'reel_script';
 
+export interface CreatorLite {
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_seed: string;
+}
+
 export interface FeedItem {
   id: string;
   document_id: string;
@@ -24,10 +31,20 @@ export interface FeedItem {
   score: number;
   reason: Record<string, number>;
   created_at: string;
+  // Only populated on the global feed — the personal feed always shows the
+  // requester's own docs so attribution is implicit.
+  creator?: CreatorLite | null;
 }
 
 export async function fetchFeed(userId: string, limit = 30) {
   return api<{ items: FeedItem[] }>(`/api/feed?user_id=${encodeURIComponent(userId)}&limit=${limit}`);
+}
+
+export async function fetchGlobalFeed(userId: string | null, limit = 40) {
+  const params = new URLSearchParams();
+  if (userId) params.set('user_id', userId);
+  params.set('limit', String(limit));
+  return api<{ items: FeedItem[] }>(`/api/feed/global?${params.toString()}`);
 }
 
 export async function postEvent(userId: string, type: string, payload: Record<string, unknown> = {}) {

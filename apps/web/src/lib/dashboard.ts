@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { ArtifactType } from './feed';
+import type { Visibility } from './social';
 
 export interface DocCounts {
   summary: number;
@@ -17,6 +18,11 @@ export interface DocSummary {
   source_type: string;
   created_at: string;
   error: string | null;
+  // Server may omit `visibility` for legacy rows; treat absence as 'private'.
+  visibility?: Visibility | null;
+  // True when the owner removed the doc from My Feed without deleting. The
+  // dashboard still shows the card (with a Hidden badge + Unhide action).
+  hidden_from_owner?: boolean;
   counts: DocCounts;
 }
 
@@ -45,6 +51,28 @@ export async function deleteDocument(docId: string, userId: string) {
   return api<{ ok: string }>(
     `/api/documents/${encodeURIComponent(docId)}?user_id=${encodeURIComponent(userId)}`,
     { method: 'DELETE' },
+  );
+}
+
+export interface DocumentPatch {
+  hidden_from_owner?: boolean;
+  visibility?: Visibility;
+}
+
+/** Owner-only patch: toggle `hidden_from_owner` and/or change `visibility`
+ * without touching artifacts. Used by the delete-modal "Remove from My Feed"
+ * and "Unpublish" options, and by the dashboard Unhide button. */
+export async function updateDocument(
+  docId: string,
+  userId: string,
+  patch: DocumentPatch,
+) {
+  return api<{ ok: string; updated: DocumentPatch }>(
+    `/api/documents/${encodeURIComponent(docId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ user_id: userId, ...patch }),
+    },
   );
 }
 

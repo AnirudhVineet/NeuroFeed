@@ -27,7 +27,7 @@ import { ToastHost } from '@/components/social/ToastHost';
 import { useSocialBootstrap } from '@/lib/social';
 import '@/lib/notifications';
 
-// New chrome layout:
+// Chrome layout:
 //   ┌──────────┬──────────────────────────────┐
 //   │          │  TopBar (search + bell)      │  ← sticky
 //   │  SideNav ├──────────────────────────────┤
@@ -39,46 +39,26 @@ import '@/lib/notifications';
 // On full-screen surfaces (the reel FeedPage), the page itself fills the
 // viewport and the TopBar floats over it. On other pages, TopBar is a normal
 // flow header sitting above the page content.
-// Routes that were authored against a dark canvas — every text class inside is
-// `text-white` and every card uses translucent dark fills. Without a `bg-ink`
-// wrapper they sit on the app's light body bg and the content becomes
-// low-contrast / invisible. Migrated (light-theme) pages — FeedPage,
-// UploadPage, ProfilePage, DiscoverPage, ChapterHubPage — are NOT in this list
-// and render against the default light surface.
-const DARK_PAGE_PREFIXES = [
-  '/tutor',
-  '/dashboard',
-  '/friends',
-  '/challenge',
-  '/activity',
-  '/leaderboard',
-  '/badges',
-  '/settings',
-];
-
-function isDarkPage(pathname: string): boolean {
-  return DARK_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
+//
+// Theme: handled globally — the `.dark` class is applied to <html> by
+// src/lib/theme.ts based on the user's preference (light / dark / system).
+// All semantic tokens (bg-surface, text-on-surface, etc.) resolve via CSS
+// variables and adapt automatically, so no per-route override lives here.
 
 export default function App() {
   const { pathname } = useLocation();
   const isAuthRoute = pathname.startsWith('/auth');
   const showChrome = !isAuthRoute;
-  const darkPage = isDarkPage(pathname);
   useSocialBootstrap();
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh bg-background text-on-background">
       {showChrome && <TopHud /* gamify state bootstrap, renders nothing */ />}
       {showChrome && <SideNav />}
       <div className={showChrome ? 'md:ml-64' : ''}>
         {showChrome && <TopBar />}
-        <main
-          className={[
-            showChrome ? 'pb-20 md:pb-0' : '',
-            darkPage ? 'min-h-dvh bg-ink' : '',
-          ].filter(Boolean).join(' ')}
-        >
+        <main className={showChrome ? 'pb-20 md:pb-0' : ''}>
+
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<FeedPage />} />

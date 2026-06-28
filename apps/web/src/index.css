@@ -2,6 +2,153 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   THEME TOKENS
+   Every color in Tailwind references a `--token` defined here. Values are
+   space-separated RGB triplets (no commas, no `#`) so Tailwind's
+   `<alpha-value>` substitution works (e.g. `bg-surface/50`).
+
+   The `.dark` class is toggled on `<html>` by src/lib/theme.ts. Brand hues
+   (primary/secondary/tertiary) stay constant in both themes — only the
+   surface ladder, foreground tokens, and outlines swap. That preserves the
+   Clinical Modernist identity across modes.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Primary (deep teal) */
+  --primary: 0 106 97;
+  --primary-fixed: 133 245 231;
+  --primary-fixed-dim: 103 217 203;
+  --primary-container: 99 213 199;
+  --on-primary: 255 255 255;
+  --on-primary-container: 0 90 83;
+  --on-primary-fixed: 0 32 29;
+  --on-primary-fixed-variant: 0 80 73;
+
+  /* Secondary (sibling teal) */
+  --secondary: 0 106 102;
+  --secondary-fixed: 143 243 237;
+  --secondary-fixed-dim: 114 215 209;
+  --secondary-container: 140 241 234;
+  --on-secondary: 255 255 255;
+  --on-secondary-container: 0 111 106;
+  --on-secondary-fixed: 0 32 30;
+  --on-secondary-fixed-variant: 0 80 77;
+
+  /* Tertiary (navy) */
+  --tertiary: 73 94 138;
+  --tertiary-fixed: 216 226 255;
+  --tertiary-fixed-dim: 177 198 249;
+  --tertiary-container: 174 195 245;
+  --on-tertiary: 255 255 255;
+  --on-tertiary-container: 59 80 123;
+  --on-tertiary-fixed: 0 26 66;
+  --on-tertiary-fixed-variant: 49 70 113;
+
+  /* Surface ladder — LIGHT */
+  --background: 245 250 248;
+  --on-background: 23 29 28;
+  --surface: 245 250 248;
+  --surface-dim: 214 219 217;
+  --surface-bright: 245 250 248;
+  --surface-tint: 0 106 97;
+  --surface-variant: 222 228 225;
+  --surface-container: 234 239 237;
+  --surface-container-lowest: 255 255 255;
+  --surface-container-low: 239 245 242;
+  --surface-container-high: 228 233 231;
+  --surface-container-highest: 222 228 225;
+  --on-surface: 23 29 28;
+  --on-surface-variant: 61 73 71;
+  --inverse-surface: 44 50 48;
+  --inverse-on-surface: 237 242 240;
+  --inverse-primary: 103 217 203;
+
+  /* Outlines */
+  --outline: 109 122 119;
+  --outline-variant: 188 201 198;
+
+  /* Error */
+  --error: 186 26 26;
+  --error-container: 255 218 214;
+  --on-error: 255 255 255;
+  --on-error-container: 147 0 10;
+
+  /* Legacy aliases — `ink` = darkest canvas, `card` = elevated panel. Mapped
+     to surface ladder so un-migrated components don't look out of place
+     during the migration window. Will be removed once every page is ported. */
+  --ink: 234 239 237;       /* same as surface-container in light */
+  --card: 255 255 255;      /* same as surface-container-lowest in light */
+
+  /* Non-token colors that the body/selection use directly */
+  --selection-bg: 0 106 97;
+  --scrollbar-thumb: 0 27 68;
+}
+
+.dark {
+  /* Brand hues (slightly brightened for dark — M3 convention is to lighten
+     primary in dark mode for AA contrast against deep surfaces). */
+  --primary: 103 217 203;
+  --primary-fixed: 133 245 231;
+  --primary-fixed-dim: 103 217 203;
+  --primary-container: 0 80 73;
+  --on-primary: 0 32 29;
+  --on-primary-container: 133 245 231;
+  --on-primary-fixed: 0 32 29;
+  --on-primary-fixed-variant: 133 245 231;
+
+  --secondary: 114 215 209;
+  --secondary-fixed: 143 243 237;
+  --secondary-fixed-dim: 114 215 209;
+  --secondary-container: 0 80 77;
+  --on-secondary: 0 32 30;
+  --on-secondary-container: 143 243 237;
+  --on-secondary-fixed: 0 32 30;
+  --on-secondary-fixed-variant: 143 243 237;
+
+  --tertiary: 177 198 249;
+  --tertiary-fixed: 216 226 255;
+  --tertiary-fixed-dim: 177 198 249;
+  --tertiary-container: 49 70 113;
+  --on-tertiary: 0 26 66;
+  --on-tertiary-container: 216 226 255;
+  --on-tertiary-fixed: 0 26 66;
+  --on-tertiary-fixed-variant: 216 226 255;
+
+  /* Surface ladder — DARK (deep navy-ink like the reel canvas) */
+  --background: 10 14 24;
+  --on-background: 237 242 240;
+  --surface: 10 14 24;
+  --surface-dim: 10 14 24;
+  --surface-bright: 39 46 64;
+  --surface-tint: 103 217 203;
+  --surface-variant: 61 73 71;
+  --surface-container: 20 26 38;
+  --surface-container-lowest: 6 9 16;
+  --surface-container-low: 15 21 33;
+  --surface-container-high: 26 32 48;
+  --surface-container-highest: 32 39 56;
+  --on-surface: 237 242 240;
+  --on-surface-variant: 188 201 198;
+  --inverse-surface: 237 242 240;
+  --inverse-on-surface: 44 50 48;
+  --inverse-primary: 0 106 97;
+
+  --outline: 139 150 148;
+  --outline-variant: 61 73 71;
+
+  --error: 255 180 171;
+  --error-container: 147 0 10;
+  --on-error: 105 0 5;
+  --on-error-container: 255 218 214;
+
+  --ink: 10 14 24;          /* same as background in dark */
+  --card: 20 26 38;         /* same as surface-container in dark */
+
+  --selection-bg: 103 217 203;
+  --scrollbar-thumb: 237 242 240;
+}
+
 html,
 body,
 #root {
@@ -10,20 +157,19 @@ body,
 
 body {
   overscroll-behavior: none;
-  background-color: #f5faf8;
-  color: #171d1c;
+  background-color: rgb(var(--background));
+  color: rgb(var(--on-background));
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(0, 106, 97, 0.18);
-  color: #00201d;
+  background: rgb(var(--selection-bg) / 0.22);
+  color: rgb(var(--on-surface));
 }
 
-/* Material Symbols Outlined — base variation settings shared across icons.
-   Per-instance overrides (FILL, weight, etc.) go via style="font-variation-settings". */
+/* Material Symbols Outlined — base variation settings shared across icons. */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -42,20 +188,23 @@ body {
 }
 
 @layer utilities {
-  /* Light-theme glass for floating chrome on the new surface ladder */
+  /* Theme-aware glass: in light mode it's a frosted white sheet; in dark
+     mode it's a frosted near-black panel. The same class on a component
+     adapts without per-component changes. */
   .glass {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgb(var(--surface-container-lowest) / 0.72);
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid rgba(0, 27, 68, 0.06);
+    border: 1px solid rgb(var(--outline-variant) / 0.5);
   }
   .glass-strong {
-    background: rgba(255, 255, 255, 0.88);
+    background: rgb(var(--surface-container-lowest) / 0.88);
     backdrop-filter: blur(22px) saturate(150%);
     -webkit-backdrop-filter: blur(22px) saturate(150%);
-    border: 1px solid rgba(0, 27, 68, 0.08);
+    border: 1px solid rgb(var(--outline-variant) / 0.6);
   }
-  /* Dark glass — used inside the reel media surface where the canvas stays dark */
+  /* Reel media surface — intentionally dark in BOTH themes (it's a media
+     canvas, not a content surface, like YouTube's player). */
   .glass-dark {
     background: rgba(11, 15, 26, 0.65);
     backdrop-filter: blur(18px) saturate(140%);
@@ -72,7 +221,6 @@ body {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Alias kept so any existing components using `scrollbar-hidden` keep working */
   .scrollbar-hidden {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -85,16 +233,15 @@ body {
     height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(0, 27, 68, 0.18);
+    background: rgb(var(--scrollbar-thumb) / 0.18);
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 27, 68, 0.3);
+    background: rgb(var(--scrollbar-thumb) / 0.3);
   }
 }
 
-/* TikTok-style vertical snap container — still used by full-screen reels.
-   Reels stay full-screen on tap from the new card-based home feed. */
+/* TikTok-style vertical snap container for full-screen reels. */
 .feed {
   scroll-snap-type: y mandatory;
   overflow-y: scroll;
@@ -114,13 +261,13 @@ body {
   height: 100dvh;
 }
 
-/* Reusable skeleton shimmer for loading states. Re-tuned for the light surface. */
+/* Skeleton shimmer — uses surface tokens so it adapts to the theme. */
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(15, 23, 42, 0.04) 25%,
-    rgba(15, 23, 42, 0.10) 50%,
-    rgba(15, 23, 42, 0.04) 75%
+    rgb(var(--on-surface) / 0.04) 25%,
+    rgb(var(--on-surface) / 0.10) 50%,
+    rgb(var(--on-surface) / 0.04) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;

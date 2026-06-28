@@ -121,12 +121,12 @@ export function QuickLearningSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 32 }}
-            className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[90dvh] max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-ink/95 text-white shadow-2xl"
+            className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[90dvh] max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="Quick learning"
           >
-            <div className="mx-auto mb-2 mt-3 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mx-auto mb-2 mt-3 h-1 w-10 rounded-full bg-surface-container-high" />
             <SheetHeader
               topic={topic}
               active={active}
@@ -146,7 +146,7 @@ export function QuickLearningSheet({
               )}
 
               {loading && active !== null && (
-                <p className="py-10 text-center text-sm text-white/60">Loading…</p>
+                <p className="py-10 text-center text-sm text-on-surface-variant">Loading…</p>
               )}
               {error && active !== null && (
                 <p className="py-10 text-center text-sm text-rose-300">{error}</p>
@@ -180,7 +180,7 @@ function SheetHeader({
   return (
     <div className="flex items-center justify-between gap-3 px-5 pb-3">
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-widest text-white/55">
+        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
           {active ? labelFor(active) : 'Quick Learning'}
         </p>
         <h2 className="truncate text-base font-bold">{topic}</h2>
@@ -189,14 +189,14 @@ function SheetHeader({
         {active && (
           <button
             onClick={onBack}
-            className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/85 hover:bg-white/10"
+            className="rounded-full border border-outline px-3 py-1 text-xs text-on-surface hover:bg-surface-container"
           >
             ← Back
           </button>
         )}
         <button
           onClick={onClose}
-          className="rounded-full bg-accent px-4 py-1 text-xs font-semibold text-white"
+          className="rounded-full bg-accent px-4 py-1 text-xs font-semibold text-on-primary"
         >
           Close
         </button>
@@ -249,13 +249,13 @@ function MenuGrid({
             disabled={disabled}
             className={`flex flex-col items-start gap-1.5 rounded-2xl border p-4 text-left transition-colors ${
               disabled
-                ? 'border-white/5 bg-white/[0.03] text-white/35'
-                : 'border-white/10 bg-white/5 hover:border-accent/40 hover:bg-white/10'
+                ? 'border-outline-variant bg-surface-container-lowest text-outline'
+                : 'border-outline-variant bg-surface-container-low hover:border-accent/40 hover:bg-surface-container'
             }`}
           >
             <span className="text-2xl">{t.glyph}</span>
             <span className="text-sm font-semibold">{t.label}</span>
-            <span className="text-[11px] text-white/55">
+            <span className="text-[11px] text-on-surface-variant">
               {t.comingSoon
                 ? 'Coming soon'
                 : count !== null && count === 0
@@ -293,7 +293,7 @@ function FlashcardList({
         </Group>
       )}
       {hot.length === 0 && rest.length === 0 && (
-        <p className="py-8 text-center text-sm text-white/55">No flashcards yet for this document.</p>
+        <p className="py-8 text-center text-sm text-on-surface-variant">No flashcards yet for this document.</p>
       )}
     </div>
   );
@@ -311,13 +311,13 @@ function FlashcardRow({ row, userId }: { row: ArtifactRow<Flashcard>; userId: st
           void postEvent(userId, 'flashcard_review', { artifact_id: row.id });
         }
       }}
-      className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/8"
+      className="w-full rounded-xl border border-outline-variant bg-surface-container-low p-3 text-left hover:bg-surface-container"
     >
-      <p className="text-[10px] uppercase tracking-widest text-white/45">
+      <p className="text-[10px] uppercase tracking-widest text-outline">
         Difficulty {card.difficulty}
       </p>
       <p className="mt-0.5 text-sm font-semibold">{card.question}</p>
-      <p className={`mt-2 text-xs ${revealed ? 'text-white/85' : 'text-white/35 blur-[3px]'}`}>
+      <p className={`mt-2 text-xs ${revealed ? 'text-on-surface' : 'text-outline blur-[3px]'}`}>
         {revealed ? card.answer : 'Tap to reveal answer'}
       </p>
     </button>
@@ -344,7 +344,7 @@ function QuizList({
         </Group>
       )}
       {hot.length === 0 && rest.length === 0 && (
-        <p className="py-8 text-center text-sm text-white/55">No quiz items yet for this document.</p>
+        <p className="py-8 text-center text-sm text-on-surface-variant">No quiz items yet for this document.</p>
       )}
     </div>
   );
@@ -367,19 +367,19 @@ function QuizRow({ row, userId }: { row: ArtifactRow<QuizItem>; userId: string |
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+    <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
       <p className="text-sm font-semibold">{q.stem}</p>
       <div className="mt-2 grid gap-1.5">
         {q.options.map((opt, i) => {
           const isAnswer = i === q.answer_index;
           const isPicked = i === chosen;
           const tone = !answered
-            ? 'border-white/10 bg-white/[0.03] hover:bg-white/10'
+            ? 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container'
             : isAnswer
               ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-50'
               : isPicked
                 ? 'border-rose-400/50 bg-rose-500/20 text-rose-50'
-                : 'border-white/10 bg-white/[0.03] text-white/55';
+                : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant';
           return (
             <button
               key={i}
@@ -404,7 +404,7 @@ function QuizRow({ row, userId }: { row: ArtifactRow<QuizItem>; userId: string |
 
 function SummaryView({ row }: { row: ArtifactRow<Summary> | null }) {
   if (!row) {
-    return <p className="py-8 text-center text-sm text-white/55">No summary yet.</p>;
+    return <p className="py-8 text-center text-sm text-on-surface-variant">No summary yet.</p>;
   }
   const s = row.payload;
   return (
@@ -415,8 +415,8 @@ function SummaryView({ row }: { row: ArtifactRow<Summary> | null }) {
       </div>
       {s.bullets?.length > 0 && (
         <div>
-          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-white/55">Key points</p>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-white/85">
+          <p className="mb-1.5 text-[10px] uppercase tracking-widest text-on-surface-variant">Key points</p>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-on-surface">
             {s.bullets.map((b, i) => <li key={i}>{b}</li>)}
           </ul>
         </div>
@@ -428,7 +428,7 @@ function SummaryView({ row }: { row: ArtifactRow<Summary> | null }) {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 text-[10px] uppercase tracking-widest text-white/55">{title}</p>
+      <p className="mb-1.5 text-[10px] uppercase tracking-widest text-on-surface-variant">{title}</p>
       <div className="space-y-1.5">{children}</div>
     </div>
   );

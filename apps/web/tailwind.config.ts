@@ -1,109 +1,110 @@
 import type { Config } from 'tailwindcss';
 
-// Design tokens ported from the new mockups (Material Design 3 inspired,
-// clinical teal/navy on a light surface). The mockup HTML files in
-// `neurofeed frontend/` are the source of truth for these values.
+// Design tokens follow Material Design 3 roles (primary/secondary/tertiary +
+// a surface ladder + on-* foreground tokens). Color values are NOT hardcoded
+// here — every color resolves to a CSS variable defined in `src/index.css`,
+// with a `:root` (light) set and a `.dark` set. That lets ANY component
+// written with `bg-surface text-on-surface` adapt automatically when the
+// theme flips, with zero `dark:` prefixes needed.
 //
-// Roles follow M3: primary (deep teal) for actions, secondary (a sibling
-// teal) for accents, tertiary (navy) for contrast, surface tones for the
-// off-white background ladder.
+// Brand hues (primary/secondary/tertiary) intentionally keep the same vars
+// in both themes — only the surface ladder, foreground tokens, and outlines
+// swap. That preserves the Clinical Modernist identity across modes.
+//
+// `rgb(var(--token) / <alpha-value>)` is the Tailwind v3 pattern that
+// lets `bg-primary/50` work via alpha substitution. Variables in index.css
+// are stored as space-separated RGB triplets (e.g. `0 106 97`, no commas,
+// no `#`) which is the format the alpha-value syntax expects.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // ---- M3 role tokens (the ones you'll use 90% of the time) ----
+        // ---- M3 role tokens ----
         primary: {
-          DEFAULT: '#006a61',
-          fixed: '#85f5e7',
-          'fixed-dim': '#67d9cb',
-          container: '#63d5c7',
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          fixed: 'rgb(var(--primary-fixed) / <alpha-value>)',
+          'fixed-dim': 'rgb(var(--primary-fixed-dim) / <alpha-value>)',
+          container: 'rgb(var(--primary-container) / <alpha-value>)',
         },
-        'on-primary': '#ffffff',
-        'on-primary-container': '#005a53',
-        'on-primary-fixed': '#00201d',
-        'on-primary-fixed-variant': '#005049',
+        'on-primary': 'rgb(var(--on-primary) / <alpha-value>)',
+        'on-primary-container': 'rgb(var(--on-primary-container) / <alpha-value>)',
+        'on-primary-fixed': 'rgb(var(--on-primary-fixed) / <alpha-value>)',
+        'on-primary-fixed-variant': 'rgb(var(--on-primary-fixed-variant) / <alpha-value>)',
 
         secondary: {
-          DEFAULT: '#006a66',
-          fixed: '#8ff3ed',
-          'fixed-dim': '#72d7d1',
-          container: '#8cf1ea',
+          DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+          fixed: 'rgb(var(--secondary-fixed) / <alpha-value>)',
+          'fixed-dim': 'rgb(var(--secondary-fixed-dim) / <alpha-value>)',
+          container: 'rgb(var(--secondary-container) / <alpha-value>)',
         },
-        'on-secondary': '#ffffff',
-        'on-secondary-container': '#006f6a',
-        'on-secondary-fixed': '#00201e',
-        'on-secondary-fixed-variant': '#00504d',
+        'on-secondary': 'rgb(var(--on-secondary) / <alpha-value>)',
+        'on-secondary-container': 'rgb(var(--on-secondary-container) / <alpha-value>)',
+        'on-secondary-fixed': 'rgb(var(--on-secondary-fixed) / <alpha-value>)',
+        'on-secondary-fixed-variant': 'rgb(var(--on-secondary-fixed-variant) / <alpha-value>)',
 
         tertiary: {
-          DEFAULT: '#495e8a',
-          fixed: '#d8e2ff',
-          'fixed-dim': '#b1c6f9',
-          container: '#aec3f5',
+          DEFAULT: 'rgb(var(--tertiary) / <alpha-value>)',
+          fixed: 'rgb(var(--tertiary-fixed) / <alpha-value>)',
+          'fixed-dim': 'rgb(var(--tertiary-fixed-dim) / <alpha-value>)',
+          container: 'rgb(var(--tertiary-container) / <alpha-value>)',
         },
-        'on-tertiary': '#ffffff',
-        'on-tertiary-container': '#3b507b',
-        'on-tertiary-fixed': '#001a42',
-        'on-tertiary-fixed-variant': '#314671',
+        'on-tertiary': 'rgb(var(--on-tertiary) / <alpha-value>)',
+        'on-tertiary-container': 'rgb(var(--on-tertiary-container) / <alpha-value>)',
+        'on-tertiary-fixed': 'rgb(var(--on-tertiary-fixed) / <alpha-value>)',
+        'on-tertiary-fixed-variant': 'rgb(var(--on-tertiary-fixed-variant) / <alpha-value>)',
 
-        // Surface ladder (light theme)
-        background: '#f5faf8',
-        'on-background': '#171d1c',
+        // Surface ladder
+        background: 'rgb(var(--background) / <alpha-value>)',
+        'on-background': 'rgb(var(--on-background) / <alpha-value>)',
         surface: {
-          DEFAULT: '#f5faf8',
-          dim: '#d6dbd9',
-          bright: '#f5faf8',
-          tint: '#006a61',
-          variant: '#dee4e1',
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          dim: 'rgb(var(--surface-dim) / <alpha-value>)',
+          bright: 'rgb(var(--surface-bright) / <alpha-value>)',
+          tint: 'rgb(var(--surface-tint) / <alpha-value>)',
+          variant: 'rgb(var(--surface-variant) / <alpha-value>)',
           container: {
-            DEFAULT: '#eaefed',
-            lowest: '#ffffff',
-            low: '#eff5f2',
-            high: '#e4e9e7',
-            highest: '#dee4e1',
+            DEFAULT: 'rgb(var(--surface-container) / <alpha-value>)',
+            lowest: 'rgb(var(--surface-container-lowest) / <alpha-value>)',
+            low: 'rgb(var(--surface-container-low) / <alpha-value>)',
+            high: 'rgb(var(--surface-container-high) / <alpha-value>)',
+            highest: 'rgb(var(--surface-container-highest) / <alpha-value>)',
           },
         },
-        'on-surface': '#171d1c',
-        'on-surface-variant': '#3d4947',
-        'inverse-surface': '#2c3230',
-        'inverse-on-surface': '#edf2f0',
-        'inverse-primary': '#67d9cb',
+        'on-surface': 'rgb(var(--on-surface) / <alpha-value>)',
+        'on-surface-variant': 'rgb(var(--on-surface-variant) / <alpha-value>)',
+        'inverse-surface': 'rgb(var(--inverse-surface) / <alpha-value>)',
+        'inverse-on-surface': 'rgb(var(--inverse-on-surface) / <alpha-value>)',
+        'inverse-primary': 'rgb(var(--inverse-primary) / <alpha-value>)',
 
         outline: {
-          DEFAULT: '#6d7a77',
-          variant: '#bcc9c6',
+          DEFAULT: 'rgb(var(--outline) / <alpha-value>)',
+          variant: 'rgb(var(--outline-variant) / <alpha-value>)',
         },
 
         error: {
-          DEFAULT: '#ba1a1a',
-          container: '#ffdad6',
+          DEFAULT: 'rgb(var(--error) / <alpha-value>)',
+          container: 'rgb(var(--error-container) / <alpha-value>)',
         },
-        'on-error': '#ffffff',
-        'on-error-container': '#93000a',
+        'on-error': 'rgb(var(--on-error) / <alpha-value>)',
+        'on-error-container': 'rgb(var(--on-error-container) / <alpha-value>)',
 
-        // Legacy aliases — used by yet-to-be-migrated components so the app
-        // still renders during the T2-T8 page-by-page port. Remove once
-        // every page has been ported.
-        //
-        // `ink` and `card` must stay DARK: every unmigrated component using
-        // `bg-ink` / `bg-card/X` (TutorPanel, QuickLearningSheet,
-        // NotificationBell, ToastHost, ChallengeDialog, FilterSheet, and the
-        // dashboard/tutor pages) layers `text-white` on top. Flipping these
-        // to light off-white made all that text invisible. The values match
-        // the reel canvas gradient (#0a0e18 → #03050a) so the dark panels
-        // feel consistent with the rest of the dark-media surfaces.
-        accent: '#006a61',
+        // Legacy aliases — kept theme-aware so any un-migrated component still
+        // adapts when the user flips themes. `ink` resolves to the deepest
+        // surface in both modes (the canvas), and `card` to an elevated
+        // container — so a stale `bg-ink text-white` will look like a dark
+        // sheet in light mode and a panel in dark mode rather than going
+        // invisible. Remove after every page is fully ported off these.
+        accent: 'rgb(var(--primary) / <alpha-value>)',
         secondaryLegacy: '#6366F1',
-        danger: '#EF4444',
-        muted: '#6d7a77',
-        bg: '#f5faf8',
-        ink: '#0a0e18',
-        card: '#141a26',
+        danger: 'rgb(var(--error) / <alpha-value>)',
+        muted: 'rgb(var(--outline) / <alpha-value>)',
+        bg: 'rgb(var(--background) / <alpha-value>)',
+        ink: 'rgb(var(--ink) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
       },
       fontFamily: {
-        // Single Inter face globally; per-role font-* tokens kept so we can
-        // paste mockup class strings verbatim. All map to Inter.
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Inter'],
         'headline-lg': ['Inter'],
@@ -146,24 +147,21 @@ export default {
         full: '9999px',
       },
       boxShadow: {
-        // Soft clinical shadows for cards on a light surface
         'auth-card': '0 8px 30px rgba(0, 27, 68, 0.05)',
         card: '0 4px 24px rgba(15, 23, 42, 0.06)',
         'card-lg': '0 12px 40px rgba(15, 23, 42, 0.08)',
-        // Legacy — used by old dark-themed components until migrated
         glow: '0 0 24px 0 rgba(0, 106, 97, 0.25)',
         'glow-lg': '0 0 48px 0 rgba(0, 106, 97, 0.35)',
         soft: '0 8px 32px -8px rgba(15, 23, 42, 0.12)',
         'soft-lg': '0 24px 60px -20px rgba(15, 23, 42, 0.18)',
       },
       backgroundImage: {
-        // New light-theme gradients
         'brand-gradient': 'linear-gradient(135deg, #006a61 0%, #006a66 50%, #495e8a 100%)',
         'brand-soft':
           'linear-gradient(135deg, rgba(0,106,97,0.10) 0%, rgba(73,94,138,0.08) 100%)',
         'surface-fade': 'linear-gradient(180deg, #ffffff 0%, #eff5f2 100%)',
-        // app-aurora kept (dark) for the reel media surface — reels stay dark
-        // even in the light app, as a "media canvas"
+        // Reel media canvas — intentionally dark in BOTH themes (it's a "media
+        // surface" like YouTube's player, not a content surface).
         'media-aurora':
           'radial-gradient(80% 60% at 12% 0%, rgba(0,106,97,0.20) 0%, transparent 60%), radial-gradient(70% 60% at 88% 100%, rgba(73,94,138,0.18) 0%, transparent 60%), linear-gradient(180deg, #050816 0%, #07091a 60%, #050816 100%)',
       },

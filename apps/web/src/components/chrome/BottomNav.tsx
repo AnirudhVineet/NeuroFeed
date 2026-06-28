@@ -22,7 +22,7 @@ export function BottomNav() {
   const { pathname } = useLocation();
   return (
     <nav
-      className="glass-strong fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant md:hidden"
+      className="glass-strong dark:glass-dark fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant dark:border-white/10 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       aria-label="Primary"
     >
@@ -37,8 +37,8 @@ export function BottomNav() {
                 aria-label={t.label}
                 className={
                   active
-                    ? 'flex flex-col items-center gap-0.5 py-2 text-primary'
-                    : 'flex flex-col items-center gap-0.5 py-2 text-on-surface-variant transition-colors hover:text-on-surface'
+                    ? 'flex flex-col items-center gap-0.5 py-2 text-primary dark:text-white'
+                    : 'flex flex-col items-center gap-0.5 py-2 text-on-surface-variant dark:text-white/50 transition-colors hover:text-on-surface dark:hover:text-white'
                 }
               >
                 <span

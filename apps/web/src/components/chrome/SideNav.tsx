@@ -24,12 +24,12 @@ export function SideNav() {
   const { pathname } = useLocation();
   return (
     <aside
-      className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-outline-variant bg-surface py-md md:flex"
+      className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-outline-variant dark:border-white/10 bg-surface dark:bg-ink py-md md:flex"
       aria-label="Primary"
     >
       <Link
         to="/"
-        className="mb-4 px-md py-lg text-headline-md font-bold tracking-tight text-primary"
+        className="mb-4 px-md py-lg text-headline-md font-bold tracking-tight text-primary dark:text-white"
       >
         NeuroFeed
       </Link>
@@ -43,8 +43,8 @@ export function SideNav() {
               aria-current={active ? 'page' : undefined}
               className={
                 active
-                  ? 'flex items-center gap-base rounded-lg bg-surface-container px-md py-sm font-bold text-primary'
-                  : 'flex items-center gap-base rounded-lg px-md py-sm text-on-surface-variant transition-all hover:bg-surface-container'
+                  ? 'flex items-center gap-base rounded-lg bg-surface-container dark:bg-white/10 px-md py-sm font-bold text-primary dark:text-white shadow-sm dark:shadow-glow'
+                  : 'flex items-center gap-base rounded-lg px-md py-sm text-on-surface-variant dark:text-white/60 transition-all hover:bg-surface-container dark:hover:bg-white/5 hover:text-on-surface dark:hover:text-white'
               }
             >
               <span
@@ -61,12 +61,12 @@ export function SideNav() {
       <div className="mt-auto px-md pt-md">
         <Link
           to="/profile"
-          className="flex items-center gap-base rounded-xl bg-tertiary-fixed p-sm text-on-tertiary-fixed transition-all hover:brightness-95"
+          className="flex items-center gap-base rounded-xl bg-tertiary-fixed dark:bg-white/5 dark:border dark:border-white/10 p-sm text-on-tertiary-fixed dark:text-white transition-all hover:brightness-95 dark:hover:bg-white/10"
         >
           <span className="material-symbols-outlined" aria-hidden>school</span>
           <div className="min-w-0 overflow-hidden">
             <p className="truncate text-label-sm font-bold">Your Learning</p>
-            <p className="text-[10px] opacity-70">View profile · stats</p>
+            <p className="text-[10px] opacity-70 dark:text-white/60">View profile · stats</p>
           </div>
         </Link>
       </div>

@@ -128,33 +128,32 @@ export default function DashboardPage() {
   if (err) return <Empty msg={err} />;
   if (!analytics || !stats) return <Empty msg="Loading…" />;
 
-  // Dark canvas comes from App.tsx (route is in DARK_PAGE_PREFIXES).
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-4 pb-32 pt-24">
       {/* Profile header */}
-      <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-card/60 p-5 shadow-soft">
+      <header className="relative overflow-hidden rounded-3xl border border-outline-variant bg-surface-container p-5 shadow-soft">
         <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-brand-gradient opacity-25 blur-3xl" />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-brand-gradient opacity-50 blur-md" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-xl font-bold uppercase text-white shadow-glow">
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-xl font-bold uppercase text-on-primary shadow-glow">
                 {(email ?? '?').slice(0, 1)}
               </div>
             </div>
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-white">
+              <p className="truncate text-base font-semibold text-on-surface">
                 {email ?? 'Unknown'}
               </p>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-on-surface-variant">
                 {createdAt && (
                   <span>Joined {new Date(createdAt).toLocaleDateString()}</span>
                 )}
                 {gamify && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-high px-2 py-0.5">
                     <span aria-hidden>🔥</span>
-                    <span className="font-semibold text-white">{gamify.streak}</span>
-                    <span className="text-white/55">day streak</span>
+                    <span className="font-semibold text-on-surface">{gamify.streak}</span>
+                    <span className="text-on-surface-variant">day streak</span>
                   </span>
                 )}
               </div>
@@ -163,13 +162,13 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/profile"
-              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10"
+              className="rounded-full border border-outline bg-surface-container px-4 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
             >
               View profile
             </Link>
             <Link
               to="/settings/privacy"
-              className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs text-white/75 hover:bg-white/10"
+              className="rounded-full border border-outline bg-surface-container px-4 py-2 text-xs text-on-surface-variant hover:bg-surface-container-high"
             >
               Privacy
             </Link>
@@ -214,7 +213,7 @@ export default function DashboardPage() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none transition-colors hover:bg-white/[0.08] focus:border-primary"
+            className="rounded-full border border-outline-variant bg-surface-container px-3.5 py-2 text-xs text-on-surface outline-none transition-colors hover:bg-surface-container-high focus:border-primary"
           >
             <option value="recent">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -225,7 +224,7 @@ export default function DashboardPage() {
           <select
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value as Subject | 'all')}
-            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none transition-colors hover:bg-white/[0.08] focus:border-primary"
+            className="rounded-full border border-outline-variant bg-surface-container px-3.5 py-2 text-xs text-on-surface outline-none transition-colors hover:bg-surface-container-high focus:border-primary"
           >
             <option value="all">All subjects</option>
             {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -236,7 +235,7 @@ export default function DashboardPage() {
           docs.length === 0 ? (
             <EmptyLibrary />
           ) : (
-            <p className="px-3 py-8 text-center text-sm text-white/55">No documents match those filters.</p>
+            <p className="px-3 py-8 text-center text-sm text-on-surface-variant">No documents match those filters.</p>
           )
         ) : (
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -286,7 +285,7 @@ function SocialQuickRow() {
         <Link
           key={l.to}
           to={l.to}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/85 hover:bg-white/10"
+          className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface hover:bg-surface-container-high"
         >
           <span aria-hidden>{l.glyph}</span>
           {l.label}
@@ -308,7 +307,7 @@ function SearchInput({
   return (
     <div className="relative min-w-[180px] flex-1">
       <svg
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -323,7 +322,7 @@ function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-full border border-white/10 bg-white/[0.04] py-2 pl-9 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/40 focus:border-primary"
+        className="w-full rounded-full border border-outline-variant bg-surface-container py-2 pl-9 pr-4 text-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary"
       />
     </div>
   );
@@ -347,15 +346,15 @@ function StatTile({
       className={`relative overflow-hidden rounded-2xl border p-3.5 shadow-soft transition-all hover:-translate-y-0.5 ${
         accent
           ? 'border-primary/30 bg-gradient-to-br from-primary/15 via-secondary/10 to-accent/15'
-          : 'border-white/10 bg-white/[0.03]'
+          : 'border-outline-variant bg-surface-container-lowest'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-widest text-white/55">{label}</div>
+        <div className="text-[10px] uppercase tracking-widest text-on-surface-variant">{label}</div>
         <span className="text-base leading-none opacity-80">{glyph}</span>
       </div>
-      <div className="mt-2 text-2xl font-bold tabular-nums leading-none text-white">{value}</div>
-      {sub && <div className="mt-1 text-[10px] text-white/55">{sub}</div>}
+      <div className="mt-2 text-2xl font-bold tabular-nums leading-none text-on-surface">{value}</div>
+      {sub && <div className="mt-1 text-[10px] text-on-surface-variant">{sub}</div>}
     </div>
   );
 }
@@ -378,18 +377,18 @@ function DocCard({
     : 'border-amber-400/30 bg-amber-500/15 text-amber-100';
 
   return (
-    <li className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow">
+    <li className="group relative overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow">
       <Link to={`/doc/${encodeURIComponent(doc.id)}`} className="block">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/75">
+          <span className="rounded-full border border-outline-variant bg-surface-container px-2 py-0.5 text-[10px] uppercase tracking-widest text-on-surface-variant">
             {doc.subject}
           </span>
           <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${statusTone}`}>
             {doc.status}
           </span>
-          <span className="ml-auto text-[10px] text-white/45">{date}</span>
+          <span className="ml-auto text-[10px] text-outline">{date}</span>
         </div>
-        <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-white">{doc.title}</h3>
+        <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-on-surface">{doc.title}</h3>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
           <CountBadge label="reels" value={doc.counts.reel_script} />
           <CountBadge label="cards" value={doc.counts.flashcard} />
@@ -402,14 +401,14 @@ function DocCard({
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <Link
           to={`/doc/${encodeURIComponent(doc.id)}`}
-          className="flex-1 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-center text-xs font-semibold text-white shadow-glow"
+          className="flex-1 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-center text-xs font-semibold text-on-primary shadow-glow"
         >
           Open Hub
         </Link>
         <button
           disabled={busy}
           onClick={onRegenerate}
-          className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:opacity-50"
+          className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
         >
           {busy ? '…' : 'Regenerate'}
         </button>
@@ -434,23 +433,23 @@ function DocCard({
 
 function CountBadge({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] py-1.5">
-      <div className="text-sm font-bold tabular-nums leading-none text-white">{value}</div>
-      <div className="mt-0.5 text-[9px] uppercase tracking-widest text-white/45">{label}</div>
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest py-1.5">
+      <div className="text-sm font-bold tabular-nums leading-none text-on-surface">{value}</div>
+      <div className="mt-0.5 text-[9px] uppercase tracking-widest text-outline">{label}</div>
     </div>
   );
 }
 
 function EmptyLibrary() {
   return (
-    <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center">
+    <div className="rounded-2xl border border-dashed border-outline p-10 text-center">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 text-2xl">
         📚
       </div>
-      <p className="mb-4 text-sm text-white/65">No uploads yet.</p>
+      <p className="mb-4 text-sm text-on-surface-variant">No uploads yet.</p>
       <Link
         to="/upload"
-        className="inline-flex rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-glow"
+        className="inline-flex rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2.5 text-sm font-semibold text-on-primary shadow-glow"
       >
         Upload your first document
       </Link>
@@ -462,10 +461,10 @@ function Section({ title, right, children }: { title: string; right?: React.Reac
   return (
     <section>
       <div className="mb-2.5 flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-white/55">{title}</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">{title}</h2>
         {right}
       </div>
-      <div className="rounded-3xl border border-white/10 bg-card/40 p-4 shadow-soft">{children}</div>
+      <div className="rounded-3xl border border-outline-variant bg-surface-container p-4 shadow-soft">{children}</div>
     </section>
   );
 }
@@ -499,7 +498,7 @@ function Sparkline({ points, labels, stroke = '#A855F7' }: {
         <path d={areaPath} fill="url(#spark-area)" />
         <path d={path} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <div className="mt-1 flex justify-between text-[10px] text-white/45">
+      <div className="mt-1 flex justify-between text-[10px] text-outline">
         <span>{labels[0]}</span><span>{labels[labels.length - 1]}</span>
       </div>
     </div>
@@ -508,20 +507,20 @@ function Sparkline({ points, labels, stroke = '#A855F7' }: {
 
 function Heatmap({ rows }: { rows: MasteryRow[] }) {
   if (!rows.length) {
-    return <p className="text-sm text-white/55">Answer a few quiz items to populate this.</p>;
+    return <p className="text-sm text-on-surface-variant">Answer a few quiz items to populate this.</p>;
   }
   return (
     <ul className="space-y-2">
       {rows.map((r) => (
         <li key={r.concept_id} className="flex items-center gap-3">
-          <span className="flex-1 truncate text-sm text-white/90">{r.name}</span>
-          <div className="h-2 w-32 overflow-hidden rounded-full bg-white/10">
+          <span className="flex-1 truncate text-sm text-on-surface">{r.name}</span>
+          <div className="h-2 w-32 overflow-hidden rounded-full bg-surface-container">
             <div
               className="h-full transition-all"
               style={{ width: `${Math.round(r.score * 100)}%`, background: barColor(r.score) }}
             />
           </div>
-          <span className="w-9 text-right text-xs tabular-nums text-white/55">{Math.round(r.score * 100)}%</span>
+          <span className="w-9 text-right text-xs tabular-nums text-on-surface-variant">{Math.round(r.score * 100)}%</span>
         </li>
       ))}
     </ul>
@@ -535,7 +534,7 @@ function barColor(score: number): string {
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <div className="px-8 pb-32 pt-32 text-center text-white/55">{msg}</div>;
+  return <div className="px-8 pb-32 pt-32 text-center text-on-surface-variant">{msg}</div>;
 }
 
 function fmtDuration(seconds: number): string {

@@ -456,7 +456,7 @@ function Scoreboard({
       </div>
       <div className="relative">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-label-sm uppercase tracking-widest text-white/70">Quiz Battle</p>
+          <p className="text-label-sm uppercase tracking-widest text-on-primary/70">Quiz Battle</p>
           <span className={`rounded-full px-2 py-0.5 text-label-sm uppercase tracking-widest ${statusToTone(status)}`}>
             {status.replace('_', ' ')}
           </span>
@@ -466,7 +466,7 @@ function Scoreboard({
         </div>
         <div className="mt-md grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <PlayerSide profile={me} score={myScore} completed={myCompleted} total={total} side="left" />
-          <span className="text-headline-md font-bold text-white/70">vs</span>
+          <span className="text-headline-md font-bold text-on-primary/70">vs</span>
           <PlayerSide profile={opp} score={oppScore} completed={oppCompleted} total={total} side="right" />
         </div>
       </div>
@@ -488,10 +488,10 @@ function PlayerSide({
     >
       <Avatar seed={profile.avatar_seed || profile.user_id} username={profile.username} size={40} linkTo={false} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-label-md font-bold text-white">@{profile.username}</p>
-        <p className="text-label-sm text-white/65">{completed}/{total} answered</p>
+        <p className="truncate text-label-md font-bold text-on-primary">@{profile.username}</p>
+        <p className="text-label-sm text-on-primary/70">{completed}/{total} answered</p>
       </div>
-      <span className="rounded-full bg-white/20 px-2.5 py-1 text-body-md font-bold tabular-nums text-white">
+      <span className="rounded-full bg-on-primary/20 px-2.5 py-1 text-body-md font-bold tabular-nums text-on-primary">
         {score}
       </span>
     </div>
@@ -501,13 +501,13 @@ function PlayerSide({
 function statusToTone(s: ChallengeStatus): string {
   switch (s) {
     case 'pending':     return 'bg-amber-500/30 text-white';
-    case 'in_progress': return 'bg-white/25 text-white';
+    case 'in_progress': return 'bg-on-primary/25 text-on-primary';
     case 'completed':
     case 'finished':    return 'bg-emerald-500/30 text-white';
     case 'declined':
     case 'cancelled':
     case 'expired':     return 'bg-red-500/30 text-white';
-    default:            return 'bg-white/15 text-white';
+    default:            return 'bg-on-primary/15 text-on-primary';
   }
 }
 

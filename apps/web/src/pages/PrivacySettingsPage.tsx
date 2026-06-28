@@ -9,6 +9,7 @@ import {
 } from '@/lib/social';
 import { fetchDocuments, type DocSummary } from '@/lib/dashboard';
 import { supabase } from '@/lib/supabase';
+import { useTheme, type ThemePref } from '@/lib/theme';
 
 const VISIBILITY_OPTS: { id: Visibility; label: string; description: string }[] = [
   { id: 'private', label: 'Private', description: 'Only you can see it.' },
@@ -16,8 +17,15 @@ const VISIBILITY_OPTS: { id: Visibility; label: string; description: string }[] 
   { id: 'public', label: 'Public', description: 'Visible to anyone on NeuroFeed.' },
 ];
 
+const THEME_OPTS: { id: ThemePref; label: string; description: string; icon: string }[] = [
+  { id: 'light', label: 'Light', description: 'Bright clinical surface.', icon: 'light_mode' },
+  { id: 'dark', label: 'Dark', description: 'Deep navy ink surface.', icon: 'dark_mode' },
+  { id: 'system', label: 'System', description: 'Follow your OS preference.', icon: 'computer' },
+];
+
 export default function PrivacySettingsPage() {
   const social = useSocial();
+  const { pref: themePref, setTheme } = useTheme();
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -42,16 +50,57 @@ export default function PrivacySettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-32 pt-24">
+    <div className="mx-auto max-w-3xl px-4 pb-32 pt-md">
       <header>
-        <p className="text-[10px] uppercase tracking-widest text-white/55">Settings</p>
-        <h1 className="text-2xl font-bold text-white">Privacy</h1>
-        <p className="mt-1 text-sm text-white/65">
-          Control who sees your profile, uploads, activity, and quiz records.
+        <p className="text-label-sm uppercase tracking-widest text-on-surface-variant">Settings</p>
+        <h1 className="text-headline-md text-on-surface">Preferences</h1>
+        <p className="mt-1 text-body-sm text-on-surface-variant">
+          Appearance, privacy, and per-upload visibility — all in one place.
         </p>
       </header>
 
-      <section className="mt-5 space-y-3">
+      <section className="mt-md">
+        <h2 className="mb-2 text-label-md uppercase tracking-widest text-on-surface-variant">Appearance</h2>
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-label-md font-bold text-on-surface">Theme</p>
+              <p className="text-label-sm text-on-surface-variant">
+                Switch between light and dark, or follow your operating system.
+              </p>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Theme"
+              className="flex shrink-0 gap-1 rounded-full border border-outline-variant bg-surface-container p-1"
+            >
+              {THEME_OPTS.map((o) => {
+                const active = themePref === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setTheme(o.id)}
+                    title={o.description}
+                    className={
+                      active
+                        ? 'inline-flex items-center gap-1 rounded-full bg-primary-container px-3 py-1 text-label-sm font-bold text-on-primary-container'
+                        : 'inline-flex items-center gap-1 rounded-full px-3 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface'
+                    }
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{o.icon}</span>
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-md space-y-3">
+        <h2 className="text-label-md uppercase tracking-widest text-on-surface-variant">Privacy</h2>
         <PrivacyRow
           label="Profile visibility"
           description="Who can open your profile page."
@@ -117,32 +166,35 @@ export default function PrivacySettingsPage() {
         />
       </section>
 
-      <section className="mt-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-white/55">Per-document visibility</h2>
-        <p className="mt-1 text-[11px] text-white/55">Override the default per upload.</p>
+      <section className="mt-md">
+        <h2 className="mb-2 text-label-md uppercase tracking-widest text-on-surface-variant">Per-document visibility</h2>
+        <p className="mb-2 text-label-sm text-on-surface-variant">Override the default per upload.</p>
         {docs.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/55">
+          <p className="rounded-xl border border-dashed border-outline-variant p-md text-center text-body-sm text-on-surface-variant">
             No uploads yet.<br />
-            <Link to="/upload" className="mt-2 inline-block text-primary">Upload a document →</Link>
+            <Link to="/upload" className="mt-2 inline-block text-primary hover:underline">Upload a document →</Link>
           </p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="space-y-2">
             {docs.map((d) => {
               const cur = (social.doc_visibility[d.id] as Visibility) ?? social.privacy.uploads;
               return (
-                <li key={d.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                  <span className="min-w-0 flex-1 truncate text-sm text-white">{d.title}</span>
-                  <div className="flex shrink-0 gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+                <li
+                  key={d.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-3"
+                >
+                  <span className="min-w-0 flex-1 truncate text-body-sm text-on-surface">{d.title}</span>
+                  <div className="flex shrink-0 gap-1 rounded-full border border-outline-variant bg-surface-container p-1">
                     {VISIBILITY_OPTS.map((o) => (
                       <button
                         key={o.id}
                         onClick={() => safePatch(() => setDocVisibility(d.id, o.id))}
                         disabled={busy}
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition-colors disabled:opacity-50 ${
+                        className={
                           cur === o.id
-                            ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white'
-                            : 'text-white/65 hover:bg-white/10 hover:text-white'
-                        }`}
+                            ? 'rounded-full bg-primary-container px-2.5 py-1 text-label-sm font-bold capitalize text-on-primary-container disabled:opacity-50'
+                            : 'rounded-full px-2.5 py-1 text-label-sm capitalize text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface disabled:opacity-50'
+                        }
                       >
                         {o.label}
                       </button>
@@ -164,24 +216,24 @@ function PrivacyRow({
   label: string; description: string; value: Visibility; onChange: (v: Visibility) => void; disabled?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">{label}</p>
-          <p className="text-[11px] text-white/65">{description}</p>
+          <p className="text-label-md font-bold text-on-surface">{label}</p>
+          <p className="text-label-sm text-on-surface-variant">{description}</p>
         </div>
-        <div className="flex shrink-0 gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+        <div className="flex shrink-0 gap-1 rounded-full border border-outline-variant bg-surface-container p-1">
           {VISIBILITY_OPTS.map((o) => (
             <button
               key={o.id}
               onClick={() => onChange(o.id)}
               disabled={disabled}
               title={o.description}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition-colors disabled:opacity-50 ${
+              className={
                 value === o.id
-                  ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white'
-                  : 'text-white/65 hover:bg-white/10 hover:text-white'
-              }`}
+                  ? 'rounded-full bg-primary-container px-2.5 py-1 text-label-sm font-bold capitalize text-on-primary-container disabled:opacity-50'
+                  : 'rounded-full px-2.5 py-1 text-label-sm capitalize text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface disabled:opacity-50'
+              }
             >
               {o.label}
             </button>
@@ -198,23 +250,27 @@ function Toggle({
   label: string; description: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-white">{label}</p>
-        <p className="text-[11px] text-white/65">{description}</p>
+        <p className="text-label-md font-bold text-on-surface">{label}</p>
+        <p className="text-label-sm text-on-surface-variant">{description}</p>
       </div>
       <button
         onClick={() => onChange(!value)}
         disabled={disabled}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-          value ? 'bg-gradient-to-br from-primary to-accent shadow-glow' : 'bg-white/15'
-        }`}
+        className={
+          value
+            ? 'relative h-6 w-11 shrink-0 rounded-full bg-primary transition-colors disabled:opacity-50'
+            : 'relative h-6 w-11 shrink-0 rounded-full bg-surface-container-highest transition-colors disabled:opacity-50'
+        }
         aria-pressed={value}
       >
         <span
-          className={`absolute top-0.5 inline-block h-5 w-5 rounded-full bg-white transition-transform ${
-            value ? 'translate-x-[1.4rem]' : 'translate-x-0.5'
-          }`}
+          className={
+            value
+              ? 'absolute top-0.5 inline-block h-5 w-5 translate-x-[1.4rem] rounded-full bg-on-primary transition-transform'
+              : 'absolute top-0.5 inline-block h-5 w-5 translate-x-0.5 rounded-full bg-surface-container-lowest transition-transform'
+          }
         />
       </button>
     </div>

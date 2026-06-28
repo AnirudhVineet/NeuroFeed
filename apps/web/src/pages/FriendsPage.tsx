@@ -32,22 +32,22 @@ export default function FriendsPage() {
     <div className="mx-auto max-w-3xl px-4 pb-32 pt-24">
       <SocialChips />
       <header className="mb-4">
-        <p className="text-[10px] uppercase tracking-widest text-white/55">Social</p>
-        <h1 className="text-2xl font-bold text-white">Friends & challenges</h1>
-        <p className="mt-1 text-sm text-white/65">
+        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Social</p>
+        <h1 className="text-2xl font-bold text-on-surface">Friends & challenges</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Send friend requests, challenge people to quiz battles, see your match history.
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+      <div className="flex flex-wrap gap-1 rounded-full border border-outline-variant bg-surface-container p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               tab === t.id
-                ? 'bg-gradient-to-br from-primary via-secondary to-accent text-white shadow-glow'
-                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                ? 'bg-gradient-to-br from-primary via-secondary to-accent text-on-primary shadow-glow'
+                : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
             }`}
           >
             {t.label}
@@ -79,9 +79,9 @@ export default function FriendsPage() {
               {social.friend_requests.incoming.length ? (
                 <ul className="space-y-1.5">
                   {social.friend_requests.incoming.map((r) => (
-                    <li key={r.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <li key={r.id} className="flex items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3">
                       <Avatar seed={r.from?.avatar_seed || r.from?.username || 'x'} username={r.from?.username} size={36} />
-                      <Link to={`/u/${r.from?.username}`} className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                      <Link to={`/u/${r.from?.username}`} className="min-w-0 flex-1 truncate text-sm font-semibold text-on-surface">
                         @{r.from?.username ?? 'unknown'}
                       </Link>
                       <AcceptDeclineButtons id={r.id} />
@@ -94,17 +94,17 @@ export default function FriendsPage() {
               {social.friend_requests.outgoing.length ? (
                 <ul className="space-y-1.5">
                   {social.friend_requests.outgoing.map((r) => (
-                    <li key={r.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <li key={r.id} className="flex items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3">
                       <Avatar seed={r.to?.avatar_seed || r.to?.username || 'x'} username={r.to?.username} size={32} />
-                      <span className="min-w-0 flex-1 truncate text-sm text-white/85">@{r.to?.username ?? 'unknown'}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-on-surface">@{r.to?.username ?? 'unknown'}</span>
                       <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] uppercase tracking-widest text-amber-100">Pending</span>
                     </li>
                   ))}
                 </ul>
               ) : <Empty msg="No outgoing requests." />}
             </Section>
-            <div className="rounded-2xl border border-dashed border-white/10 p-4 text-xs text-white/65">
-              <p className="font-semibold text-white">Add a friend by username</p>
+            <div className="rounded-2xl border border-dashed border-outline-variant p-4 text-xs text-on-surface-variant">
+              <p className="font-semibold text-on-surface">Add a friend by username</p>
               <AddFriendForm />
             </div>
           </>
@@ -114,12 +114,12 @@ export default function FriendsPage() {
           social.challenges.length ? (
             <ul className="space-y-1.5">
               {social.challenges.map((c) => (
-                <li key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <li key={c.id} className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-3">
                   <div className="flex items-center gap-2">
                     <Avatar seed={c.to?.avatar_seed || c.to?.username || 'x'} username={c.to?.username} size={32} />
-                    <p className="min-w-0 flex-1 truncate text-sm text-white">
+                    <p className="min-w-0 flex-1 truncate text-sm text-on-surface">
                       <span className="font-semibold">@{c.to?.username ?? 'unknown'}</span>{' '}
-                      <span className="text-white/55">· {c.mode} · {new Date(c.created_at).toLocaleString()}</span>
+                      <span className="text-on-surface-variant">· {c.mode} · {new Date(c.created_at).toLocaleString()}</span>
                     </p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${
                       c.status === 'finished'
@@ -132,7 +132,7 @@ export default function FriendsPage() {
                     </span>
                   </div>
                   {c.status === 'finished' && c.wins_from != null && c.wins_to != null && (
-                    <p className="mt-1 text-[11px] text-white/65">
+                    <p className="mt-1 text-[11px] text-on-surface-variant">
                       Score: {c.wins_from} – {c.wins_to}
                     </p>
                   )}
@@ -167,14 +167,14 @@ function AcceptDeclineButtons({ id }: { id: string }) {
       <button
         onClick={async () => { setBusy(true); try { await acceptFriendRequest(id); } finally { setBusy(false); } }}
         disabled={busy}
-        className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+        className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-[11px] font-semibold text-on-primary disabled:opacity-50"
       >
         Accept
       </button>
       <button
         onClick={async () => { setBusy(true); try { await declineFriendRequest(id); } finally { setBusy(false); } }}
         disabled={busy}
-        className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/80 disabled:opacity-50"
+        className="rounded-full border border-outline bg-surface-container px-3 py-1.5 text-[11px] text-on-surface disabled:opacity-50"
       >
         Decline
       </button>
@@ -185,17 +185,17 @@ function AcceptDeclineButtons({ id }: { id: string }) {
 function FriendRow({ user }: { user: ProfileLite }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3">
       <Avatar seed={user.avatar_seed || user.user_id} username={user.username} size={44} />
       <div className="min-w-0 flex-1">
-        <Link to={`/u/${user.username}`} className="block text-sm font-semibold text-white hover:text-primary-soft">
+        <Link to={`/u/${user.username}`} className="block text-sm font-semibold text-on-surface hover:text-primary-soft">
           {user.display_name || user.username}
         </Link>
-        <p className="truncate text-[11px] text-white/55">@{user.username}{user.college ? ` · ${user.college}` : ''}</p>
+        <p className="truncate text-[11px] text-on-surface-variant">@{user.username}{user.college ? ` · ${user.college}` : ''}</p>
       </div>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-white"
+        className="rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-on-surface"
       >
         ⚔ Challenge
       </button>
@@ -240,12 +240,12 @@ function AddFriendForm() {
         value={u}
         onChange={(e) => setU(e.target.value)}
         placeholder="@username"
-        className="flex-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-primary"
+        className="flex-1 rounded-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
       />
       <button
         type="submit"
         disabled={busy}
-        className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-2 text-xs font-semibold text-white shadow-glow disabled:opacity-50"
+        className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-2 text-xs font-semibold text-on-primary shadow-glow disabled:opacity-50"
       >
         Send request
       </button>
@@ -257,7 +257,7 @@ function AddFriendForm() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-2">
-      <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/55">{title}</h2>
+      <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">{title}</h2>
       {children}
     </section>
   );
@@ -265,7 +265,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Empty({ msg, children }: { msg: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/55">
+    <div className="rounded-2xl border border-dashed border-outline-variant p-6 text-center text-sm text-on-surface-variant">
       {msg}
       {children}
     </div>

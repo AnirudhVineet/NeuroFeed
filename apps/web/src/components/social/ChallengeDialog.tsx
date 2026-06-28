@@ -152,9 +152,9 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-card/90 shadow-soft-lg backdrop-blur"
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-outline-variant bg-surface-container-lowest shadow-soft-lg backdrop-blur"
       >
-        <header className="flex items-center gap-3 border-b border-white/10 p-4">
+        <header className="flex items-center gap-3 border-b border-outline-variant p-4">
           <Avatar
             seed={opponent.avatar_seed || opponent.username}
             username={opponent.username}
@@ -162,16 +162,16 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
             linkTo={false}
           />
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] uppercase tracking-widest text-white/55">Quiz Battle</p>
-            <h2 className="truncate text-base font-bold text-white">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Quiz Battle</p>
+            <h2 className="truncate text-base font-bold text-on-surface">
               {opponent.display_name || opponent.username}
             </h2>
-            <p className="truncate text-[11px] text-white/55">@{opponent.username}</p>
+            <p className="truncate text-[11px] text-on-surface-variant">@{opponent.username}</p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/70 hover:bg-white/20"
+            className="rounded-full bg-surface-container px-2.5 py-1 text-xs text-on-surface-variant hover:bg-surface-container-high"
           >
             ✕
           </button>
@@ -180,7 +180,7 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
         <div className="space-y-4 p-4">
           {selfDetected && (
             <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs text-rose-100">
-              <p className="font-semibold text-white">Same account detected</p>
+              <p className="font-semibold text-on-surface">Same account detected</p>
               <p className="mt-1 text-rose-100/80">
                 You're signed in as <strong>@{social.profile?.username ?? '(unknown)'}</strong> and
                 trying to challenge <strong>@{opponent.username}</strong>. Sign in as a different
@@ -191,7 +191,7 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
 
           {/* Mode selector */}
           <section>
-            <p className="text-[10px] uppercase tracking-widest text-white/55">Mode</p>
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Mode</p>
             <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {MODES.map((m) => (
                 <button
@@ -199,12 +199,12 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
                   onClick={() => setMode(m.id)}
                   className={`rounded-2xl border px-3 py-2 text-left text-[11px] transition-colors ${
                     mode === m.id
-                      ? 'border-primary/50 bg-primary/15 text-white shadow-glow'
-                      : 'border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/10'
+                      ? 'border-primary/50 bg-primary/15 text-on-surface shadow-glow'
+                      : 'border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
                   }`}
                 >
                   <span className="block font-semibold">{m.label}</span>
-                  <span className="mt-0.5 block text-[10px] text-white/55">{m.hint}</span>
+                  <span className="mt-0.5 block text-[10px] text-on-surface-variant">{m.hint}</span>
                 </button>
               ))}
             </div>
@@ -213,13 +213,13 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
           {/* Document picker */}
           {showDocPicker && (
             <section>
-              <p className="text-[10px] uppercase tracking-widest text-white/55">
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
                 Document {needsDoc ? '' : '(optional)'}
               </p>
               {docsLoading ? (
-                <p className="mt-2 text-xs text-white/55">Loading your documents…</p>
+                <p className="mt-2 text-xs text-on-surface-variant">Loading your documents…</p>
               ) : docs.length === 0 ? (
-                <p className="mt-2 rounded-2xl border border-dashed border-white/10 p-3 text-xs text-white/55">
+                <p className="mt-2 rounded-2xl border border-dashed border-outline-variant p-3 text-xs text-on-surface-variant">
                   No documents with quizzes yet.{' '}
                   {needsDoc
                     ? 'Upload one first, or pick a different mode.'
@@ -229,7 +229,7 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
                 <select
                   value={docId}
                   onChange={(e) => setDocId(e.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-primary"
+                  className="mt-2 w-full rounded-2xl border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
                 >
                   {!needsDoc && <option value="">Any document (mixed)</option>}
                   {docs.map((d) => (
@@ -245,11 +245,11 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
           {/* Chapter picker */}
           {needsChapter && chapterOptions.length > 0 && (
             <section>
-              <p className="text-[10px] uppercase tracking-widest text-white/55">Chapter</p>
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Chapter</p>
               <select
                 value={chapter}
                 onChange={(e) => setChapter(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-primary"
+                className="mt-2 w-full rounded-2xl border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
               >
                 {chapterOptions.map((c) => (
                   <option key={c} value={c}>
@@ -267,17 +267,17 @@ export function ChallengeDialog({ opponent, open, onClose }: Props) {
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-white/10 bg-white/[0.02] p-3">
+        <footer className="flex items-center justify-end gap-2 border-t border-outline-variant bg-surface-container p-3">
           <button
             onClick={onClose}
-            className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10"
+            className="rounded-full border border-outline bg-surface-container px-4 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={busy || selfDetected || (needsDoc && !docId)}
-            className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2 text-xs font-semibold text-white shadow-glow disabled:opacity-50"
+            className="rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-5 py-2 text-xs font-semibold text-on-primary shadow-glow disabled:opacity-50"
           >
             {busy ? 'Sending…' : '⚔ Send challenge'}
           </button>

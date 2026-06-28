@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import { applyResolvedTheme, watchSystemTheme } from './lib/theme';
+
+// Apply persisted theme synchronously before React mounts to avoid a
+// light-flash-of-unstyled-dark on initial paint when the user prefers dark.
+applyResolvedTheme();
+watchSystemTheme();
 
 // crypto.randomUUID is gated to secure contexts. The Capacitor Android WebView
 // loads the dev server over plain HTTP during development, so the API is

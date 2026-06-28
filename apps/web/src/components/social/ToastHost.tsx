@@ -165,18 +165,18 @@ function Toast({ notif, onDismiss }: { notif: NotificationRow; onDismiss: () => 
   return (
     <div
       role="alert"
-      className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-card/95 shadow-soft-lg backdrop-blur"
+      className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-soft-lg backdrop-blur"
     >
       <button
         onClick={open}
-        className="flex w-full items-start gap-3 p-3 text-left hover:bg-white/[0.04]"
+        className="flex w-full items-start gap-3 p-3 text-left hover:bg-surface-container-low"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-secondary to-accent text-base">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-secondary to-tertiary text-base text-on-primary">
           {iconFor(notif.kind)}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">{copy.title}</p>
-          {copy.body && <p className="mt-0.5 truncate text-[11px] text-white/65">{copy.body}</p>}
+          <p className="text-label-md font-bold text-on-surface">{copy.title}</p>
+          {copy.body && <p className="mt-0.5 truncate text-label-sm text-on-surface-variant">{copy.body}</p>}
         </div>
         <button
           onClick={(e) => {
@@ -184,32 +184,32 @@ function Toast({ notif, onDismiss }: { notif: NotificationRow; onDismiss: () => 
             onDismiss();
           }}
           aria-label="Dismiss"
-          className="rounded-full px-2 py-0.5 text-xs text-white/50 hover:bg-white/10"
+          className="rounded-full px-2 py-0.5 text-label-sm text-on-surface-variant hover:bg-surface-container"
         >
           ✕
         </button>
       </button>
 
       {(isFriendReq || isChallenge) && (
-        <div className="flex items-center gap-1.5 border-t border-white/10 bg-white/[0.03] p-2">
+        <div className="flex items-center gap-1.5 border-t border-outline-variant bg-surface-container-low p-2">
           <button
             onClick={isFriendReq ? onAcceptFriend : onAcceptChallenge}
             disabled={busy}
-            className="flex-1 rounded-full bg-gradient-to-br from-primary via-secondary to-accent px-3 py-1.5 text-[11px] font-semibold text-white shadow-glow disabled:opacity-50"
+            className="flex-1 rounded-full bg-primary px-3 py-1.5 text-label-sm font-bold text-on-primary shadow-glow disabled:opacity-50"
           >
             {busy ? '…' : 'Accept'}
           </button>
           <button
             onClick={isFriendReq ? onDeclineFriend : onDeclineChallenge}
             disabled={busy}
-            className="flex-1 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-white/85 disabled:opacity-50"
+            className="flex-1 rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50"
           >
             Decline
           </button>
           {isChallenge && notif.actor?.username && (
             <Link
               to={`/u/${notif.actor.username}`}
-              className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/85"
+              className="rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-label-sm text-on-surface hover:bg-surface-container-high"
               onClick={() => onDismiss()}
             >
               View
@@ -218,7 +218,7 @@ function Toast({ notif, onDismiss }: { notif: NotificationRow; onDismiss: () => 
         </div>
       )}
 
-      {err && <p className="px-3 pb-2 text-[10px] text-rose-300">{err}</p>}
+      {err && <p className="px-3 pb-2 text-label-sm text-error">{err}</p>}
     </div>
   );
 }

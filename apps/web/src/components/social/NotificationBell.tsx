@@ -27,24 +27,24 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={unread > 0 ? `${unread} unread notifications` : 'Notifications'}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-container"
+        className="relative flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-container hover:text-on-surface"
       >
         <span className="material-symbols-outlined" aria-hidden>notifications</span>
         {unread > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-on-error">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 max-w-[90vw] overflow-hidden rounded-2xl border border-white/15 bg-card/95 shadow-soft-lg backdrop-blur">
-          <header className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-            <span className="text-xs font-semibold uppercase tracking-widest text-white/65">Notifications</span>
+        <div className="absolute right-0 top-11 z-50 w-80 max-w-[90vw] overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-soft-lg backdrop-blur">
+          <header className="flex items-center justify-between border-b border-outline-variant px-3 py-2">
+            <span className="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant">Notifications</span>
             {unread > 0 && (
               <button
                 onClick={() => void markAllRead()}
-                className="text-[10px] text-primary hover:underline"
+                className="text-label-sm text-primary hover:underline"
               >
                 Mark all read
               </button>
@@ -52,7 +52,7 @@ export function NotificationBell() {
           </header>
           <ul className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
-              <li className="px-4 py-6 text-center text-xs text-white/55">No notifications yet.</li>
+              <li className="px-4 py-6 text-center text-label-sm text-on-surface-variant">No notifications yet.</li>
             ) : (
               items.slice(0, 30).map((n) => <NotifRow key={n.id} n={n} onPick={() => setOpen(false)} />)
             )}
@@ -82,23 +82,23 @@ function NotifRow({ n, onPick }: { n: NotificationRow; onPick: () => void }) {
   return (
     <li
       onClick={open}
-      className={`flex cursor-pointer items-start gap-2.5 border-b border-white/[0.06] px-3 py-2.5 last:border-b-0 hover:bg-white/[0.04] ${
-        n.read ? '' : 'bg-primary/[0.05]'
+      className={`flex cursor-pointer items-start gap-2.5 border-b border-outline-variant px-3 py-2.5 last:border-b-0 hover:bg-surface-container-low ${
+        n.read ? '' : 'bg-primary-container/30'
       }`}
     >
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-secondary to-accent text-xs">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-secondary to-tertiary text-xs text-on-primary">
         {iconFor(n.kind)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-white">{copy.title}</p>
-        {copy.body && <p className="mt-0.5 line-clamp-2 text-[11px] text-white/60">{copy.body}</p>}
-        <p className="mt-0.5 text-[10px] text-white/40">{relTime(n.created_at)}</p>
+        <p className="truncate text-label-md font-bold text-on-surface">{copy.title}</p>
+        {copy.body && <p className="mt-0.5 line-clamp-2 text-label-sm text-on-surface-variant">{copy.body}</p>}
+        <p className="mt-0.5 text-[10px] text-outline">{relTime(n.created_at)}</p>
       </div>
       {n.actor?.username && (
         <Link
           to={`/u/${n.actor.username}`}
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 self-center text-[10px] text-primary/85 hover:text-primary"
+          className="shrink-0 self-center text-label-sm text-primary hover:underline"
         >
           View
         </Link>

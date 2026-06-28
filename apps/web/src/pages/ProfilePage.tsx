@@ -465,7 +465,7 @@ function Header({ view, isSelf, onTab }: { view: ProfileView; isSelf: boolean; o
               <Avatar seed={view.avatar_seed} username={view.username} size={120} linkTo={false} />
             </div>
           </div>
-          <div className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-4 border-surface bg-primary text-white">
+          <div className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-4 border-surface bg-primary text-on-primary">
             <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>
               verified
             </span>

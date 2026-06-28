@@ -86,23 +86,23 @@ export default function BadgesPage() {
     <div className="mx-auto max-w-3xl px-4 pb-32 pt-24">
       <SocialChips />
       <header>
-        <p className="text-[10px] uppercase tracking-widest text-white/55">Achievements</p>
-        <h1 className="text-2xl font-bold text-white">Badges</h1>
-        <p className="mt-1 text-sm text-white/65">
+        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Achievements</p>
+        <h1 className="text-2xl font-bold text-on-surface">Badges</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           {earned.length} / {items.length} earned. Earn more by studying daily and winning quizzes.
         </p>
       </header>
 
       <section className="mt-5">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-white/55">Earned</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Earned</h2>
         <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {earned.map((b) => <BadgeCard key={b.key} bp={b} />)}
-          {!earned.length && <li className="col-span-full rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/55">No badges yet.</li>}
+          {!earned.length && <li className="col-span-full rounded-2xl border border-dashed border-outline-variant p-6 text-center text-sm text-on-surface-variant">No badges yet.</li>}
         </ul>
       </section>
 
       <section className="mt-5">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-white/55">In progress</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">In progress</h2>
         <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {locked.map((b) => <BadgeCard key={b.key} bp={b} />)}
         </ul>
@@ -117,23 +117,23 @@ function BadgeCard({ bp }: { bp: BadgeProgress }) {
   return (
     <li
       className={`relative overflow-hidden rounded-2xl border p-4 ${
-        bp.earned ? 'border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-rose-500/15 shadow-glow' : 'border-white/10 bg-white/[0.03] opacity-90'
+        bp.earned ? 'border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-rose-500/15 shadow-glow' : 'border-outline-variant bg-surface-container-lowest opacity-90'
       }`}
     >
       <div className="flex items-start gap-3">
         <span className={`text-3xl ${bp.earned ? '' : 'grayscale opacity-60'}`}>{meta.glyph}</span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">{meta.label}</p>
-          <p className="mt-0.5 text-[11px] text-white/65">{meta.description}</p>
+          <p className="text-sm font-semibold text-on-surface">{meta.label}</p>
+          <p className="mt-0.5 text-[11px] text-on-surface-variant">{meta.description}</p>
         </div>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-container">
         <div
           className="h-full bg-gradient-to-r from-primary via-secondary to-accent"
           style={{ width: `${bp.pct}%` }}
         />
       </div>
-      <p className="mt-1 text-[10px] text-white/55">{bp.hint}</p>
+      <p className="mt-1 text-[10px] text-on-surface-variant">{bp.hint}</p>
     </li>
   );
 }

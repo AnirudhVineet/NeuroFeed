@@ -273,3 +273,39 @@ body {
   animation: shimmer 2.4s linear infinite;
   border-radius: 0.75rem;
 }
+
+/* ---------- LoadingScreen animations (ported from loading.html) ---------- */
+@keyframes loading-synapse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(2px); }
+  50%      { opacity: 1;   transform: scale(1.2); filter: blur(0); }
+}
+@keyframes loading-brain-pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.92; }
+  50%      { transform: scale(1.05); opacity: 1;    }
+}
+@keyframes loading-progress-load {
+  0%   { width: 0%;   }
+  50%  { width: 70%;  }
+  100% { width: 100%; }
+}
+@keyframes loading-text-breathing {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1;   }
+}
+
+.loading-synapse {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgb(var(--primary));
+  border-radius: 9999px;
+  filter: blur(2px);
+  z-index: 5;
+}
+.loading-synapse-1 { top: 18%; left: 28%; animation: loading-synapse-glow 2.0s infinite ease-in-out; }
+.loading-synapse-2 { top: 48%; left: 72%; animation: loading-synapse-glow 2.5s infinite ease-in-out 0.5s; }
+.loading-synapse-3 { top: 78%; left: 40%; animation: loading-synapse-glow 1.8s infinite ease-in-out 1s; }
+
+.loading-pulse     { animation: loading-brain-pulse 3s infinite ease-in-out; }
+.loading-progress  { animation: loading-progress-load 3.5s infinite ease-in-out; }
+.loading-breathing { animation: loading-text-breathing 2s infinite ease-in-out; }

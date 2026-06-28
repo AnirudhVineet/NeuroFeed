@@ -18,6 +18,32 @@ import type {
 let AUDIO_UNLOCKED = false;
 const AUDIO_UNLOCK_EVENT = 'reel-audio-unlocked';
 
+// ---------- Cross-instance coordination ----------
+// (1) TTS URL cache so re-entering a reel doesn't refetch (LRU-trimmed at 80).
+// (2) Single-active-reel pact: only one ReelCard owns the live audio playhead
+//     at a time. Stale instances (left behind during fast scroll) get a
+//     pause-callback fired so they don't keep narrating offscreen.
+const TTS_URL_CACHE = new Map<string, string>();
+function cacheTtsUrl(narration: string, url: string) {
+  if (TTS_URL_CACHE.size >= 80) {
+    const oldest = TTS_URL_CACHE.keys().next().value;
+    if (oldest) TTS_URL_CACHE.delete(oldest);
+  }
+  TTS_URL_CACHE.set(narration, url);
+}
+
+type Releaser = () => void;
+let ACTIVE_PAUSE: Releaser | null = null;
+function claimActiveSlot(release: Releaser): Releaser {
+  if (ACTIVE_PAUSE && ACTIVE_PAUSE !== release) {
+    try { ACTIVE_PAUSE(); } catch { /* ignore */ }
+  }
+  ACTIVE_PAUSE = release;
+  return () => {
+    if (ACTIVE_PAUSE === release) ACTIVE_PAUSE = null;
+  };
+}
+
 const SPEEDS = [0.5, 1, 1.25, 1.5, 1.75, 2] as const;
 type Speed = (typeof SPEEDS)[number];
 const SPEED_STORAGE_KEY = 'neurofeed.reel.speed';
@@ -155,21 +181,36 @@ export function ReelCard({
     return () => io.disconnect();
   }, []);
 
-  // Restart playback when this reel scrolls back into view. When scrolling
-  // away, only pause; don't reset until the next entrance.
+  // Visibility transitions:
+  //   - first ever entrance: prime fresh playback state.
+  //   - re-entry after scrolling away: KEEP elapsed/audioUrl so the reel
+  //     resumes at the same playhead. Only restart if the reel had
+  //     previously completed.
+  //   - leaving view: pause audio (state stays intact).
   const wasVisible = useRef(false);
+  const hasEnteredRef = useRef(false);
   const completedRef = useRef(false);
   useEffect(() => {
     if (visible && !wasVisible.current) {
-      setProgress(0);
-      setElapsedSec(0);
-      setPaused(false);
-      elapsedRef.current = 0;
-      audioUrlRef.current = null;
-      completedRef.current = false;
-      setActiveDuration(reel.duration_sec);
-      if (audioRef.current) audioRef.current.src = '';
-      startRef.current = performance.now();
+      const isReplay = completedRef.current;
+      if (!hasEnteredRef.current || isReplay) {
+        setProgress(0);
+        setElapsedSec(0);
+        setPaused(false);
+        elapsedRef.current = 0;
+        audioUrlRef.current = null;
+        completedRef.current = false;
+        setActiveDuration(reel.duration_sec);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          try { audioRef.current.currentTime = 0; } catch { /* ignore */ }
+        }
+        startRef.current = performance.now();
+        hasEnteredRef.current = true;
+      } else {
+        // Resume — just realign the fallback clock to the saved elapsed.
+        startRef.current = performance.now() - (elapsedRef.current * 1000) / speedRef.current;
+      }
     } else if (!visible) {
       audioRef.current?.pause();
     }
@@ -218,6 +259,16 @@ export function ReelCard({
     let timer: number | undefined;
     let audioReady = audioUrlRef.current !== null;
 
+    // Claim the global "only one reel narrates at a time" slot. If another
+    // reel was holding it, that reel's pause-callback fires immediately so
+    // its audio stops before ours starts. The release function clears the
+    // slot on unmount or when visibility drops.
+    const pauseMe = () => {
+      audioRef.current?.pause();
+      setPaused(true);
+    };
+    const releaseSlot = claimActiveSlot(pauseMe);
+
     startRef.current = performance.now() - (elapsedRef.current * 1000) / speedRef.current;
 
     function tick() {
@@ -250,11 +301,13 @@ export function ReelCard({
     void (async () => {
       if (unlocked && !paused && !audioUrlRef.current) {
         try {
-          const url = await ttsUrl(reel.narration);
+          const cached = TTS_URL_CACHE.get(reel.narration);
+          const url = cached ?? await ttsUrl(reel.narration);
           if (cancelled) return;
+          if (!cached) cacheTtsUrl(reel.narration, url);
           const audio = audioRef.current ?? new Audio();
           audioRef.current = audio;
-          audio.src = url;
+          if (audio.src !== url) audio.src = url;
           audio.currentTime = elapsedRef.current;
           audio.playbackRate = speedRef.current;
           audio.muted = mutedRef.current;
@@ -272,6 +325,7 @@ export function ReelCard({
     return () => {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
+      releaseSlot();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, unlocked, paused, reel.narration]);

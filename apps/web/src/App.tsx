@@ -24,6 +24,7 @@ import { AchievementToast } from '@/components/gamify/AchievementToast';
 import { SideNav } from '@/components/chrome/SideNav';
 import { TopBar } from '@/components/chrome/TopBar';
 import { BottomNav } from '@/components/chrome/BottomNav';
+import { LoadingScreen } from '@/components/chrome/LoadingScreen';
 import { ToastHost } from '@/components/social/ToastHost';
 import { useSocialBootstrap } from '@/lib/social';
 import '@/lib/notifications';
@@ -92,17 +93,5 @@ export default function App() {
 }
 
 function RouteFallback() {
-  return (
-    <div className="mx-auto max-w-4xl px-md py-md" aria-busy="true">
-      <div className="space-y-3">
-        <span className="block h-7 w-1/3 animate-pulse rounded-full bg-surface-container" />
-        <span className="block h-4 w-2/3 animate-pulse rounded-full bg-surface-container-low" />
-        <div className="mt-md grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <span key={i} className="block h-24 animate-pulse rounded-xl bg-surface-container-low" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <LoadingScreen />;
 }

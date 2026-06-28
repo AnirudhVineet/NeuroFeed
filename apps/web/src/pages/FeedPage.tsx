@@ -352,6 +352,7 @@ export default function FeedPage() {
                       item={it}
                       override={overrides[it.id] ?? null}
                       userId={userId}
+                      scope={scope}
                       isOpenedInOverlay={openedReel?.id === it.id}
                       onComplete={() => markCompleted(it.id)}
                       onExplainSimpler={async () => {
@@ -465,6 +466,7 @@ function FeedItemRender({
   item,
   override,
   userId,
+  scope,
   isOpenedInOverlay,
   onComplete,
   onExplainSimpler: _onExplainSimpler,
@@ -474,6 +476,7 @@ function FeedItemRender({
   item: FeedItem;
   override: { title: string; body: string } | null;
   userId: string;
+  scope: FeedScope;
   isOpenedInOverlay: boolean;
   onComplete: () => void;
   onExplainSimpler: () => Promise<void>;
@@ -491,6 +494,7 @@ function FeedItemRender({
           documentId={item.document_id}
           conceptId={item.concept_id}
           userId={userId}
+          scope={scope}
           isOpenedInOverlay={isOpenedInOverlay}
           onOpen={onOpenReel}
           onQuickLearning={onOpenQuickLearning}

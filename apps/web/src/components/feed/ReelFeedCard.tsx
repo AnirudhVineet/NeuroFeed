@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { inferSubject } from '@/lib/subjects';
-import { postInterest } from '@/lib/feed';
 import { ReelCard } from './ReelCard';
+import {
+  CommentToggleButton,
+  LikeButton,
+  ReelCommentsInline,
+  useReelEngagement,
+} from './ReelEngagement';
 import { ShareReelSheet } from '@/components/messages/ShareReelSheet';
 import type { ReelScript } from '../../../../../packages/shared-types/artifacts';
 
@@ -20,6 +25,10 @@ export interface ReelFeedCardProps {
   conceptId?: string | null;
   userId?: string | null;
   isOpenedInOverlay?: boolean;
+  /** When 'global', renders the public like/comment engagement bar.
+   * On 'mine', those buttons are hidden — likes/comments are an audience
+   * signal, not a personal-feed signal. */
+  scope?: 'mine' | 'global';
   onOpen: () => void;
   onQuickLearning?: () => void;
 }
@@ -32,14 +41,18 @@ export function ReelFeedCard({
   conceptId,
   userId,
   isOpenedInOverlay = false,
+  scope = 'mine',
   onOpen,
   onQuickLearning,
 }: ReelFeedCardProps) {
   const subject = inferSubject(reel.topic || reel.title || documentTitle);
   const hue = hashHue(`${reel.topic}|${reel.title}`);
-  const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  // Engagement is only meaningful on Global Feed — skip the fetch on My Feed.
+  const isGlobal = scope === 'global';
+  const engagement = useReelEngagement(artifactId, userId ?? null, isGlobal);
 
   return (
     <article className="overflow-hidden rounded-xl border border-outline-variant bg-surface shadow-card">
@@ -96,21 +109,23 @@ export function ReelFeedCard({
       </div>
 
       <div className="p-md">
-        <div className="mb-md flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-md text-on-surface-variant">
-            <ActionButton
-              icon="favorite"
-              filled={liked}
-              activeColor="text-error"
-              onClick={() => {
-                setLiked((v) => !v);
-                if (userId && !liked) {
-                  void postInterest(userId, 'interested', { artifact_id: artifactId, document_id: documentId, concept_id: conceptId });
-                }
-              }}
-              label={liked ? 'Unlike' : 'Like'}
-            />
-            <ActionButton icon="chat_bubble" onClick={onOpen} label="Open" />
+            {isGlobal && (
+              <>
+                <LikeButton
+                  summary={engagement.summary}
+                  pending={engagement.pending}
+                  disabled={!userId}
+                  onToggle={() => void engagement.toggleLike()}
+                />
+                <CommentToggleButton
+                  count={engagement.summary?.comment_count ?? 0}
+                  active={commentsOpen}
+                  onClick={() => setCommentsOpen((v) => !v)}
+                />
+              </>
+            )}
             <ActionButton
               icon="forward_to_inbox"
               onClick={() => setShareOpen(true)}
@@ -138,6 +153,19 @@ export function ReelFeedCard({
             label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
           />
         </div>
+
+        {isGlobal && (
+          <ReelCommentsInline
+            artifactId={artifactId}
+            userId={userId ?? null}
+            open={commentsOpen}
+            commentCount={engagement.summary?.comment_count ?? 0}
+            onOpen={() => setCommentsOpen(true)}
+            onCountChange={engagement.bumpCommentCount}
+          />
+        )}
+
+        <div className="mt-md" />
 
         <div className="grid grid-cols-2 gap-sm">
           <button

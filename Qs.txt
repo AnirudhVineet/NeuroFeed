@@ -1,0 +1,6 @@
+Q1 What problem are you solving?
+Q2 Briefly explain your solution and how it works.
+Q3 Key Features Implemented So Far
+Q4 Features Planned Before Final Evaluation
+Q5 Technology Stack Used
+Q6 What support would you like from mentors before the final evaluation?

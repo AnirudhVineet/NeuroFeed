@@ -10,8 +10,6 @@ services:
     envVars:
       - key: GROQ_API_KEY
         sync: false
-      - key: FEATHERLESS_API_KEY
-        sync: false
       - key: HUGGINGFACE_API_KEY
         sync: false
       - key: GROQ_CHAT_MODEL
@@ -20,10 +18,8 @@ services:
         value: openai/gpt-oss-120b
       - key: GROQ_STT_MODEL
         value: whisper-large-v3
-      - key: FEATHERLESS_MODEL
-        value: Qwen/Qwen2.5-72B-Instruct
-      - key: FEATHERLESS_MAX_CONCURRENCY
-        value: "1"
+      - key: GROQ_BATCH_MAX_CONCURRENCY
+        value: "2"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY

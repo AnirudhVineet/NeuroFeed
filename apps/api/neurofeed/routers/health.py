@@ -12,7 +12,6 @@ async def health():
         "ok": True,
         "providers": {
             "groq": bool(s.groq_api_key),
-            "featherless": bool(s.featherless_api_key),
         },
         "supabase": bool(s.supabase_url and s.supabase_service_role),
     }

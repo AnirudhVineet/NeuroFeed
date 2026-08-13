@@ -11,19 +11,17 @@ class Settings(BaseSettings):
 
     # Providers
     groq_api_key: str = ""
-    featherless_api_key: str = ""
     huggingface_api_key: str = ""
 
     groq_chat_model: str = "llama-3.3-70b-versatile"
     groq_reasoning_model: str = "openai/gpt-oss-120b"
     groq_stt_model: str = "whisper-large-v3"
-    featherless_model: str = "meta-llama/Meta-Llama-3.1-70B-Instruct"
 
     groq_base_url: str = "https://api.groq.com/openai/v1"
-    featherless_base_url: str = "https://api.featherless.ai/v1"
 
-    # Featherless concurrency cap (build prompt: max 4)
-    featherless_max_concurrency: int = 4
+    # Background ingest pipeline fans out ~10 generation calls per document;
+    # this caps how many hit Groq at once so we don't blow past its RPM limit.
+    groq_batch_max_concurrency: int = 2
 
     # Supabase
     supabase_url: str = ""

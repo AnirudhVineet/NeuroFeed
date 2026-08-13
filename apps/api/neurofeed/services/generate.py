@@ -1,4 +1,4 @@
-"""Per-artifact generators (Featherless, batched, JSON-strict).
+"""Per-artifact generators (Groq, JSON-strict).
 
 Each generator:
   1. Builds a system prompt that declares the JSON schema inline.
@@ -6,14 +6,15 @@ Each generator:
   3. Calls generate_json (single retry on parse failure).
   4. Validates with pydantic and returns the model.
 
-The Featherless client wraps every call in a 4-wide semaphore — fan-out is safe.
+Callers (workers/jobs.py) throttle concurrency via `groq_batch_max_concurrency`
+since Groq's rate limit is shared with the human-waiting endpoints.
 """
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from .llm.featherless import featherless_client
+from .llm.groq import groq_client
 from .llm.json_gen import generate_json
 from .llm.schemas import (
     FlashcardSet,
@@ -43,9 +44,9 @@ CAPS = {
 
 # ---------- Helpers ----------
 def _client():
-    c = featherless_client()
+    c = groq_client()
     if c is None:
-        raise RuntimeError("FEATHERLESS_API_KEY not configured")
+        raise RuntimeError("GROQ_API_KEY not configured")
     return c
 
 
@@ -78,7 +79,7 @@ async def gen_summary(chunks: list[dict[str, Any]]) -> Summary:
         'Schema: {"tldr": "<=400 chars", "bullets": ["5 to 8 concise bullets"]}'
     )
     user = "Summarize this material.\n\n" + _context(chunks)
-    data = await generate_json(client=_client(), system=sys, user=user, provider="featherless")
+    data = await generate_json(client=_client(), system=sys, user=user, provider="groq")
     return Summary.model_validate(data)
 
 
@@ -102,7 +103,7 @@ async def gen_key_concepts(chunks: list[dict[str, Any]]) -> KeyConceptList:
         + _context(chunks, max_chunks=50, max_chars=20000)
     )
     data = await generate_json(
-        client=_client(), system=sys, user=user, provider="featherless", max_tokens=3500
+        client=_client(), system=sys, user=user, provider="groq", max_tokens=3500
     )
     return KeyConceptList.model_validate(data)
 
@@ -127,7 +128,7 @@ async def gen_swipe_cards(
         + _context(chunks)
     )
     data = await generate_json(
-        client=_client(), system=sys, user=user, provider="featherless", max_tokens=1600
+        client=_client(), system=sys, user=user, provider="groq", max_tokens=1600
     )
     return SwipeCardSet.model_validate(data)
 
@@ -152,7 +153,7 @@ async def gen_flashcards(
         + _context(chunks)
     )
     data = await generate_json(
-        client=_client(), system=sys, user=user, provider="featherless", max_tokens=2000
+        client=_client(), system=sys, user=user, provider="groq", max_tokens=2000
     )
     return FlashcardSet.model_validate(data)
 
@@ -168,7 +169,7 @@ async def gen_quiz(chunks: list[dict[str, Any]]) -> QuizSet:
     )
     user = "Material:\n" + _context(chunks)
     data = await generate_json(
-        client=_client(), system=sys, user=user, provider="featherless", max_tokens=2000
+        client=_client(), system=sys, user=user, provider="groq", max_tokens=2000
     )
     return QuizSet.model_validate(data)
 
@@ -184,7 +185,7 @@ async def gen_learning_path(concepts: list[dict[str, Any]]) -> LearningPath:
         '"artifact_ids": [str]}]}'
     )
     user = f"Concepts:\n{concept_lines}"
-    data = await generate_json(client=_client(), system=sys, user=user, provider="featherless")
+    data = await generate_json(client=_client(), system=sys, user=user, provider="groq")
     return LearningPath.model_validate(data)
 
 
@@ -380,7 +381,7 @@ async def gen_reels_for_concept(
         + _context(chunks, max_chunks=15, max_chars=9000)
     )
     data = await generate_json(
-        client=_client(), system=sys, user=user, provider="featherless",
+        client=_client(), system=sys, user=user, provider="groq",
         max_tokens=6000, temperature=0.55,
     )
     return list(ReelScriptList.model_validate(data).reels)

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from functools import lru_cache
 from typing import Any
 
+from ..config import get_settings
 from ..deps import get_supabase_admin
 from ..services.chunk import chunk as chunker
 from ..services.embed import embed_texts
@@ -13,6 +15,12 @@ from ..services import generate as gen
 from . import bus
 
 log = logging.getLogger(__name__)
+
+
+@lru_cache
+def _gen_semaphore() -> asyncio.Semaphore:
+    """Caps concurrent Groq calls from the background fan-out; Groq's RPM is shared with human-waiting endpoints."""
+    return asyncio.Semaphore(get_settings().groq_batch_max_concurrency)
 
 
 async def _set_status(doc_id: str, status: str, *, error: str | None = None) -> None:
@@ -94,7 +102,7 @@ async def parse_job(
 # generate_job
 # ===================================================================
 async def generate_job(*, doc_id: str) -> None:
-    """Fan out per-artifact generators (Featherless 4-wide pool), persist, mark ready."""
+    """Fan out per-artifact generators (Groq, throttled), persist, mark ready."""
     sb = get_supabase_admin()
     if sb is None:
         log.warning("generate_job: supabase not configured; skipping (doc=%s)", doc_id)
@@ -139,7 +147,7 @@ async def generate_job(*, doc_id: str) -> None:
 
         # Helper: persist one artifact immediately so the feed surfaces it as
         # soon as it's ready. Avoids the "0 items until the entire job finishes"
-        # UX when concurrency is throttled (e.g. Featherless serial mode).
+        # UX when the Groq semaphore throttles concurrency.
         def _persist(row: dict[str, Any]) -> None:
             try:
                 sb.table("artifacts").insert(row).execute()
@@ -148,7 +156,8 @@ async def generate_job(*, doc_id: str) -> None:
 
         async def _run_and_persist(coro, on_success) -> None:
             try:
-                result = await coro
+                async with _gen_semaphore():
+                    result = await coro
             except Exception as e:
                 log.warning("generator failed (doc=%s): %s", doc_id, e)
                 return
@@ -181,8 +190,8 @@ async def generate_job(*, doc_id: str) -> None:
                           "concept_id": step.concept_id or None,
                           "type": "learning_path_step", "payload": step.model_dump()})
 
-        # Fan out the non-reel generators. With the Featherless semaphore set
-        # to 1 these still serialise, but each result is persisted the moment
+        # Fan out the non-reel generators. The Groq semaphore throttles how many
+        # actually hit the API at once, but each result is persisted the moment
         # it lands instead of being buffered until the whole job finishes.
         await asyncio.gather(
             _run_and_persist(gen.gen_summary(chunks), _persist_summary),
@@ -215,7 +224,8 @@ async def generate_job(*, doc_id: str) -> None:
 
         async def _run_reel(target: dict[str, Any]) -> None:
             try:
-                reels = await gen.gen_reels_for_concept(target, _chunks_for_topic(target))
+                async with _gen_semaphore():
+                    reels = await gen.gen_reels_for_concept(target, _chunks_for_topic(target))
             except Exception as e:
                 log.warning("reel_script failed for concept %s: %s", target["name"], e)
                 return
@@ -230,9 +240,9 @@ async def generate_job(*, doc_id: str) -> None:
                 doc_id, target["name"], len(reels),
             )
 
-        # Kick all reel generators off at once; the Featherless semaphore
-        # caps how many actually hit the API, but every successful reel writes
-        # itself the moment it finishes so the feed populates incrementally.
+        # Kick all reel generators off at once; the Groq semaphore caps how
+        # many actually hit the API, but every successful reel writes itself
+        # the moment it finishes so the feed populates incrementally.
         await asyncio.gather(*(_run_reel(t) for t in reel_targets))
 
         await _set_status(doc_id, "ready")

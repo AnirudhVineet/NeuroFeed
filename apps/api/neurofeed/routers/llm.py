@@ -15,7 +15,7 @@ class EchoRequest(BaseModel):
 
 
 class EchoResponse(BaseModel):
-    provider: Literal["groq", "featherless"]
+    provider: Literal["groq"]
     message: str
 
 
